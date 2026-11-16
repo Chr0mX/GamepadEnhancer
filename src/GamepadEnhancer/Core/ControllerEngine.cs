@@ -36,6 +36,13 @@ namespace GamepadEnhancer
         public const string ActionDPadRight = "DPad Right";
         /// <summary>Xbox Guide / PlayStation PS button. Appended last so every existing action keeps its bit index.</summary>
         public const string ActionGuidePs = "Guide / PS";
+        /// <summary>DualShock 4 touchpad click (no Xbox 360 equivalent; ignored there).</summary>
+        public const string ActionTouchpad = "Touchpad Click";
+        /// <summary>Keyboard-driven left stick directions. They are not buttons: opposite keys cancel, diagonals are normalized.</summary>
+        public const string ActionLeftStickUp = "Left Stick Up";
+        public const string ActionLeftStickDown = "Left Stick Down";
+        public const string ActionLeftStickLeft = "Left Stick Left";
+        public const string ActionLeftStickRight = "Left Stick Right";
 
         public static readonly string[] BindingActions =
         {
@@ -43,7 +50,8 @@ namespace GamepadEnhancer
             ActionLbL1, ActionRbR1, ActionLtL2, ActionRtR2,
             ActionBackShare, ActionStartOptions, ActionLsL3, ActionRsR3,
             ActionDPadUp, ActionDPadDown, ActionDPadLeft, ActionDPadRight,
-            ActionGuidePs
+            ActionGuidePs, ActionTouchpad,
+            ActionLeftStickUp, ActionLeftStickDown, ActionLeftStickLeft, ActionLeftStickRight
         };
 
         private const double NormalPeriodMs = 10.0;
@@ -70,7 +78,6 @@ namespace GamepadEnhancer
         private long lastReportMs = -1_000_000;
         private bool submitPending;                      // set by Tick, executed by Loop after the lock is released
         private string lastStatus;
-        private bool leftWasRemote;
 
         /// <summary>Controls set over the network (see NetworkApiServer); cleared whenever the pad disconnects.</summary>
         public RemoteControlState Remote { get; } = new();
@@ -170,7 +177,6 @@ namespace GamepadEnhancer
             turboHeldSinceMs.Clear();
             wheelPulseUntilMs.Clear();
             mouseLook.Reset();
-            leftWasRemote = false;
             padLx = padLy = 0.0;
             Remote.Clear();
         }
@@ -313,7 +319,7 @@ namespace GamepadEnhancer
                     xbox.SetAxisValue(Xbox360Axis.RightThumbX, rx);
                     xbox.SetAxisValue(Xbox360Axis.RightThumbY, rsY);
                     ApplyXboxBindings(mask);
-                    ApplyXboxRemote(rf);
+                    ApplyXboxLeftAndTriggers(rf, mask);
                     MarkReport(rx, rsY, mask, now, rf.Signature);
                     if (Snapshots.Enabled)
                         PublishPad(s, now, rf, mask, mouseLookX, mouseLookY, processedX, processedY,
@@ -327,7 +333,7 @@ namespace GamepadEnhancer
                     ds4.SetAxisValue(DualShock4Axis.RightThumbX, rx);
                     ds4.SetAxisValue(DualShock4Axis.RightThumbY, rsY);
                     ApplyDs4Bindings(mask);
-                    ApplyDs4Remote(rf);
+                    ApplyDs4LeftAndTriggers(rf, mask);
                     MarkReport(rx, rsY, mask, now, rf.Signature);
                     if (Snapshots.Enabled)
                         PublishPad(s, now, rf, mask, mouseLookX, mouseLookY, processedX, processedY,
@@ -447,33 +453,45 @@ namespace GamepadEnhancer
             ds4.SetSliderValue(DualShock4Slider.RightTrigger, Has(m, ActionRtR2) ? byte.MaxValue : (byte)0);
             ds4.SetDPadDirection(DPad(m));
             ds4.SetButtonState(DualShock4SpecialButton.Ps, Has(m, ActionGuidePs));
+            ds4.SetButtonState(DualShock4SpecialButton.Touchpad, Has(m, ActionTouchpad));
         }
 
-        /// <summary>Remote left stick and analog triggers (the right stick and buttons are merged in Tick). Under the lock.</summary>
-        private void ApplyXboxRemote(RemoteFrame rf)
+        /// <summary>
+        /// Left stick and analog triggers (the right stick and buttons are merged in Tick). The left stick is the network
+        /// client's value while it drives it, otherwise the left-stick keys. Under the lock.
+        /// </summary>
+        private void ApplyXboxLeftAndTriggers(RemoteFrame rf, int mask)
         {
-            if (rf.LeftActive || leftWasRemote)
+            short lx, ly;
+            if (rf.LeftActive) { lx = RemoteControlState.ToXboxAxis(rf.Lx); ly = RemoteControlState.ToXboxAxisY(rf.Ly); }
+            else
             {
-                xbox.SetAxisValue(Xbox360Axis.LeftThumbX, rf.LeftActive ? RemoteControlState.ToXboxAxis(rf.Lx) : (short)0);
-                xbox.SetAxisValue(Xbox360Axis.LeftThumbY, rf.LeftActive ? RemoteControlState.ToXboxAxisY(rf.Ly) : (short)0);
-                padLx = rf.LeftActive ? PadStateMath.FromRemoteX(rf.Lx) : 0.0;
-                padLy = rf.LeftActive ? PadStateMath.FromRemoteYUp(rf.Ly) : 0.0;
-                leftWasRemote = rf.LeftActive;
+                (double kx, double ky) = PadStateMath.LeftFromMask(mask);   // +Y up, which is also Xbox's convention
+                lx = StickMath.PercentToXboxAxis(kx * 100.0);
+                ly = StickMath.PercentToXboxAxis(ky * 100.0);
             }
+            xbox.SetAxisValue(Xbox360Axis.LeftThumbX, lx);
+            xbox.SetAxisValue(Xbox360Axis.LeftThumbY, ly);
+            padLx = PadStateMath.FromXboxAxis(lx);
+            padLy = PadStateMath.FromXboxAxis(ly);
             if (rf.Lt >= 0) xbox.SetSliderValue(Xbox360Slider.LeftTrigger, RemoteControlState.ToTriggerByte(rf.Lt));
             if (rf.Rt >= 0) xbox.SetSliderValue(Xbox360Slider.RightTrigger, RemoteControlState.ToTriggerByte(rf.Rt));
         }
 
-        private void ApplyDs4Remote(RemoteFrame rf)
+        private void ApplyDs4LeftAndTriggers(RemoteFrame rf, int mask)
         {
-            if (rf.LeftActive || leftWasRemote)
+            byte lx, ly;
+            if (rf.LeftActive) { lx = RemoteControlState.ToDs4Axis(rf.Lx); ly = RemoteControlState.ToDs4Axis(rf.Ly); }
+            else
             {
-                ds4.SetAxisValue(DualShock4Axis.LeftThumbX, rf.LeftActive ? RemoteControlState.ToDs4Axis(rf.Lx) : StickMath.Ds4Center);
-                ds4.SetAxisValue(DualShock4Axis.LeftThumbY, rf.LeftActive ? RemoteControlState.ToDs4Axis(rf.Ly) : StickMath.Ds4Center);
-                padLx = rf.LeftActive ? PadStateMath.FromRemoteX(rf.Lx) : 0.0;
-                padLy = rf.LeftActive ? PadStateMath.FromRemoteYUp(rf.Ly) : 0.0;
-                leftWasRemote = rf.LeftActive;
+                (double kx, double ky) = PadStateMath.LeftFromMask(mask);   // +Y up; the DS4 axis counts down
+                lx = StickMath.PercentToDs4Axis(kx * 100.0);
+                ly = StickMath.PercentToDs4Axis(-ky * 100.0);
             }
+            ds4.SetAxisValue(DualShock4Axis.LeftThumbX, lx);
+            ds4.SetAxisValue(DualShock4Axis.LeftThumbY, ly);
+            padLx = PadStateMath.FromDs4Axis(lx);
+            padLy = -PadStateMath.FromDs4Axis(ly);
             if (rf.Lt >= 0) ds4.SetSliderValue(DualShock4Slider.LeftTrigger, RemoteControlState.ToTriggerByte(rf.Lt));
             if (rf.Rt >= 0) ds4.SetSliderValue(DualShock4Slider.RightTrigger, RemoteControlState.ToTriggerByte(rf.Rt));
         }

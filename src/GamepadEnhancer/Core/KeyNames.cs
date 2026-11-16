@@ -21,6 +21,7 @@ namespace GamepadEnhancer
                 case 0x25: return "Left";
                 case 0x26: return "Up";
                 case 0x27: return "Right";
+                case 0x24: return "Home";
                 case 0x28: return "Down";
             }
             if (vk >= 0x30 && vk <= 0x39) return ((char)vk).ToString();
@@ -49,6 +50,7 @@ namespace GamepadEnhancer
                 case "Left": return new[] { 0x25 };
                 case "Up": return new[] { 0x26 };
                 case "Right": return new[] { 0x27 };
+                case "Home": return new[] { 0x24 };
                 case "Down": return new[] { 0x28 };
             }
             if (name.Length == 1 && ((name[0] >= '0' && name[0] <= '9') || (name[0] >= 'A' && name[0] <= 'Z'))) return new[] { (int)name[0] };

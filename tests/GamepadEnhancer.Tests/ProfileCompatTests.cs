@@ -59,7 +59,7 @@ namespace GamepadEnhancer.Tests
             InputProfile d = DefaultProfile.Create();
             Assert.Equal("Default", d.Name);
             Assert.Equal("PS4", d.ControllerType);
-            Assert.NotEmpty(d.KeyBindings);
+            Assert.NotEmpty(d.Mappings);
         }
     }
 }

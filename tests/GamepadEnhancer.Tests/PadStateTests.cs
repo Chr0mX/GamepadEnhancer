@@ -13,7 +13,9 @@ namespace GamepadEnhancer.Tests
         public void GuideActionIsAppendedSoExistingBitsKeepTheirIndex()
         {
             string[] a = ControllerEngine.BindingActions;
-            Assert.Equal(ControllerEngine.ActionGuidePs, a[^1]);
+            Assert.Equal(ControllerEngine.ActionGuidePs, a[16]);          // unchanged since Beta 2.5
+            Assert.Equal(ControllerEngine.ActionTouchpad, a[17]);          // new actions are appended after it
+            Assert.Equal(ControllerEngine.ActionLeftStickRight, a[^1]);
             Assert.Equal(ControllerEngine.ActionACross, a[0]);
             Assert.Equal(ControllerEngine.ActionDPadRight, a[PadStateMath.ActionDpadRight]);
             Assert.Equal(ControllerEngine.ActionLtL2, a[PadStateMath.ActionLt]);
@@ -217,8 +219,11 @@ namespace GamepadEnhancer.Tests
             Assert.Equal("Share", PadLabels.For(PadFamily.DualShock4, 8));
             Assert.Equal("Menu", PadLabels.For(PadFamily.Xbox360, 9));
             Assert.Equal("Options", PadLabels.For(PadFamily.DualShock4, 9));
-            Assert.Equal("Guide", PadLabels.For(PadFamily.Xbox360, count - 1));
-            Assert.Equal("PS", PadLabels.For(PadFamily.DualShock4, count - 1));
+            Assert.Equal("Guide", PadLabels.For(PadFamily.Xbox360, 16));
+            Assert.Equal("PS", PadLabels.For(PadFamily.DualShock4, 16));
+            Assert.Equal("Touchpad", PadLabels.For(PadFamily.DualShock4, 17));
+            Assert.Equal("Left Stick Up", PadLabels.For(PadFamily.DualShock4, 18));
+            Assert.Equal("Left Stick Right", PadLabels.For(PadFamily.Xbox360, count - 1));
         }
     }
 

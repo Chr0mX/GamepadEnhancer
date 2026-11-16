@@ -24,7 +24,10 @@
         <TextBox x:Name="profileNameBox" MinWidth="140" Watermark="Profile name" Margin="0,4,6,4" VerticalAlignment="Center" />
         <Button Content="Save" Margin="0,4,6,4" Click="SaveProfileButton_Click" />
         <Button Content="Load" Margin="0,4,6,4" Click="LoadProfileButton_Click" />
-        <Button Content="Delete" Margin="0,4,18,4" Click="DeleteProfileButton_Click" />
+        <Button Content="Delete" Margin="0,4,6,4" Click="DeleteProfileButton_Click" />
+        <Button Content="Import..." Margin="0,4,6,4" Click="ImportProfileButton_Click" ToolTip.Tip="Load a profile file (.json) and add it to the list" />
+        <Button Content="Export..." Margin="0,4,6,4" Click="ExportProfileButton_Click" ToolTip.Tip="Save the current mapping to a file you can share or edit" />
+        <Button Content="Folder" Margin="0,4,18,4" Click="OpenProfilesFolderButton_Click" ToolTip.Tip="Open the profiles folder" />
 
         <ToggleButton x:Name="darkModeToggle" Content="Dark mode" IsChecked="True" Margin="0,4,18,4" Click="DarkModeToggle_Click" />
 
@@ -48,10 +51,43 @@
           <StackPanel Margin="0,12,0,12" Spacing="12">
             <Border Classes="card">
               <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="PC key -> controller" />
-                <TextBlock Classes="muted"
-                           Text="Bind keyboard keys to virtual controller actions, then optionally enable Turbo (rapid fire) per action with a custom Hz rate." />
+                <TextBlock Classes="h" Text="Buttons" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Bind each pad button to a keyboard key, a mouse button or a mouse wheel notch (the tag beside each picker says which). Turbo (rapid fire) is optional per button. Names show the PlayStation button first, then the Xbox 360 one." />
                 <UniformGrid x:Name="bindingsGrid" Columns="2" />
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Left stick  ·  keyboard" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Four keyboard keys move the left stick. Opposite keys cancel out and diagonals are scaled so they are no faster than straight lines. A left stick value sent over the Network API replaces these keys while it is set." />
+                <UniformGrid x:Name="leftStickGrid" Columns="2" />
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Right stick  ·  mouse movement" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="The right stick is not bound to a key: moving the mouse moves the stick (Mouse Up / Down / Left / Right = stick up / down / left / right). A stick value sent over the Network API replaces it while set. Movement is read with Raw Input, so it works with either input capture method. Sensitivity is percent of stick per (mouse count per millisecond): higher = a slower mouse reaches full tilt." />
+                <CheckBox x:Name="mouseLookBox" Content="Mouse movement drives the right stick" IsCheckedChanged="AnySettingChangedChecked" />
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="Sensitivity X" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseSensXBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <TextBlock Text="Sensitivity Y" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseSensYBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <TextBlock Text="Curve" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseCurveBox" Minimum="0.5" Maximum="4" Value="1" Increment="0.1" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                </WrapPanel>
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="Game dead zone (%)" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseDeadZoneBox" Minimum="0" Maximum="50" Value="0" Increment="1" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <TextBlock Text="Release (ms)" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseReleaseBox" Minimum="0" Maximum="500" Value="30" Increment="5" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <CheckBox x:Name="mouseInvertYBox" Content="Invert Y" Margin="0,0,0,4" IsCheckedChanged="AnySettingChangedChecked" />
+                </WrapPanel>
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Game dead zone: set this to the game's own inner stick dead zone so small mouse moves still register. Release: how long the last stick value is held with no movement before the stick recenters." />
               </StackPanel>
             </Border>
           </StackPanel>
@@ -121,31 +157,6 @@
                   <ComboBox x:Name="blockHotkeyBox" MinWidth="150" Margin="0,0,0,4" SelectionChanged="BlockHotkeyBox_SelectionChanged" />
                 </WrapPanel>
                 <TextBlock x:Name="blockStatusLabel" Classes="muted" Text="Input blocking is off" TextWrapping="Wrap" />
-              </StackPanel>
-            </Border>
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Mouse look (mouse to right stick)" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Mouse movement drives the right stick (a stick value sent over the Network API replaces it while set). Movement is read with Raw Input, so it works with either input capture method. Mouse buttons and the wheel can be bound to pad actions on the PC to Controller tab. Sensitivity is percent of stick per (mouse count per millisecond): higher = a slower mouse reaches full tilt." />
-                <CheckBox x:Name="mouseLookBox" Content="Mouse movement drives the right stick" IsCheckedChanged="AnySettingChangedChecked" />
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="Sensitivity X" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseSensXBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <TextBlock Text="Sensitivity Y" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseSensYBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <TextBlock Text="Curve" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseCurveBox" Minimum="0.5" Maximum="4" Value="1" Increment="0.1" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                </WrapPanel>
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="Game dead zone (%)" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseDeadZoneBox" Minimum="0" Maximum="50" Value="0" Increment="1" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <TextBlock Text="Release (ms)" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseReleaseBox" Minimum="0" Maximum="500" Value="30" Increment="5" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <CheckBox x:Name="mouseInvertYBox" Content="Invert Y" Margin="0,0,0,4" IsCheckedChanged="AnySettingChangedChecked" />
-                </WrapPanel>
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Game dead zone: set this to the game's own inner stick dead zone so small mouse moves still register. Release: how long the last stick value is held with no movement before the stick recenters." />
               </StackPanel>
             </Border>
           </StackPanel>

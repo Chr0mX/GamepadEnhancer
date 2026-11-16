@@ -11,6 +11,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 
@@ -43,7 +44,8 @@ namespace GamepadEnhancer
         private sealed class BindingControlSet
         {
             public ComboBox KeySelector { get; init; }
-            public CheckBox TurboToggle { get; init; }
+            public TextBlock KindTag { get; init; }
+            public CheckBox TurboToggle { get; init; }      // null for left-stick directions (they are not buttons)
             public NumericUpDown TurboHzBox { get; init; }
         }
 
@@ -54,10 +56,9 @@ namespace GamepadEnhancer
             controllerTypeBox.ItemsSource = new[] { "Xbox 360", "PS4" };
             controllerTypeBox.SelectedItem = "PS4";
             foreach (string action in ControllerEngine.BindingActions)
-                bindingsGrid.Children.Add(CreateBindingSelector(action));
+                (InputChoices.IsStickAction(action) ? leftStickGrid : bindingsGrid).Children.Add(CreateBindingSelector(action));
 
             Directory.CreateDirectory(profilesDirectory);
-            DefaultProfile.EnsureFile(profilesDirectory);   // first run: write the shipped Default.json into profiles/
 
             engine.StatusChanged += text => Dispatcher.UIThread.Post(() => statusLabel.Text = text);
             engine.Faulted += ex => Dispatcher.UIThread.Post(async () =>
@@ -68,6 +69,13 @@ namespace GamepadEnhancer
             });
 
             InitializeInputHook();
+            // First run writes the shipped Default.json; after an upgrade that changed the shipped mapping the old file is
+            // replaced once (and kept as Default.json.bak).
+            if (DefaultProfile.PrepareStartup(profilesDirectory, appSettings.DefaultMappingVersion))
+            {
+                appSettings.DefaultMappingVersion = DefaultProfile.MappingVersion;
+                appSettings.Save();
+            }
             InitializeBlocking();
             InitializeNetworkApi();
             InitializeMonitor();
@@ -91,47 +99,86 @@ namespace GamepadEnhancer
         {
             double w = Math.Max(0, windowWidth - 48);
             bindingsGrid.Columns = Math.Clamp((int)(w / 380), 1, 4);
+            leftStickGrid.Columns = Math.Clamp((int)(w / 380), 1, 4);
         }
 
         // ── Binding rows ─────────────────────────────────────────────────────────
 
-        private static string[] GetKeyChoices()
+        /// <summary>
+        /// A picker whose list is split into labelled groups (keyboard keys, mouse buttons, mouse wheel). The stored value
+        /// (the name profiles have always used) is kept in <c>Tag</c>; the visible text is friendlier. Left-stick directions
+        /// only get the keyboard group.
+        /// </summary>
+        private static ComboBox CreatePicker(bool keyboardOnly)
         {
-            var keys = new List<string>
+            var combo = new ComboBox { MinWidth = 190, Margin = new Thickness(0, 0, 10, 4) };
+            var items = new List<ComboBoxItem> { new ComboBoxItem { Content = "None (not bound)", Tag = InputChoices.None } };
+            void Group(string title, IEnumerable<string> names)
             {
-                "None", "Shift", "Ctrl", "Alt", "Space", "Tab", "Enter", "Escape", "Backspace",
-                "Up", "Down", "Left", "Right"
-            };
-            keys.AddRange(Enumerable.Range(0, 10).Select(i => i.ToString(CultureInfo.InvariantCulture)));
-            for (char c = 'A'; c <= 'Z'; c++) keys.Add(c.ToString());
-            for (int i = 1; i <= 12; i++) keys.Add("F" + i.ToString(CultureInfo.InvariantCulture));
-            keys.AddRange(MouseInputNames.All);   // mouse buttons and wheel can be bound to pad actions too
-            return keys.ToArray();
+                items.Add(new ComboBoxItem { Content = "— " + title + " —", IsEnabled = false, Tag = null, FontWeight = Avalonia.Media.FontWeight.SemiBold });
+                items.AddRange(names.Select(n => new ComboBoxItem { Content = InputChoices.DisplayName(n), Tag = n }));
+            }
+            Group("Keyboard", InputChoices.Keyboard);
+            if (!keyboardOnly)
+            {
+                Group("Mouse buttons", InputChoices.MouseButtons);
+                Group("Mouse wheel", InputChoices.MouseWheel);
+            }
+            combo.ItemsSource = items;
+            combo.SelectedIndex = 0;
+            return combo;
+        }
+
+        private static string ChoiceValue(ComboBox combo) => (combo.SelectedItem as ComboBoxItem)?.Tag as string ?? InputChoices.None;
+
+        private static void SetChoice(ComboBox combo, string value)
+        {
+            var match = (combo.ItemsSource as IEnumerable<ComboBoxItem>)?.FirstOrDefault(i =>
+                i.Tag is string t && string.Equals(t, value, StringComparison.OrdinalIgnoreCase));
+            combo.SelectedItem = match ?? (combo.ItemsSource as IEnumerable<ComboBoxItem>)?.First();
+        }
+
+        private static string ActionTitle(string actionName)
+        {
+            int i = Array.IndexOf(ControllerEngine.BindingActions, actionName);
+            if (i < 0) return actionName;
+            if (InputChoices.IsStickAction(actionName)) return PadLabels.For(PadFamily.DualShock4, i);
+            return $"{PadLabels.For(PadFamily.DualShock4, i)}  ·  Xbox {PadLabels.For(PadFamily.Xbox360, i)}";
         }
 
         private Control CreateBindingSelector(string actionName)
         {
-            var combo = new ComboBox { ItemsSource = GetKeyChoices(), SelectedItem = "None", MinWidth = 100, Margin = new Thickness(0, 0, 10, 4) };
-            var turbo = new CheckBox { Content = "Turbo", Margin = new Thickness(0, 0, 8, 4) };
-            var hz = new NumericUpDown { Minimum = 1, Maximum = 30, Value = 12, Increment = 1, FormatString = "0", MinWidth = 100, Margin = new Thickness(0, 0, 6, 4) };
-            combo.SelectionChanged += AnySettingChanged;
-            turbo.IsCheckedChanged += AnySettingChangedChecked;
-            hz.ValueChanged += AnySettingChangedNumeric;
+            bool stick = InputChoices.IsStickAction(actionName);
+            ComboBox combo = CreatePicker(keyboardOnly: stick);
+            var tag = new TextBlock { Classes = { "muted" }, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 4), MinWidth = 90, Text = InputChoices.KindLabel(InputKind.None) };
+            combo.SelectionChanged += (_, _) =>
+            {
+                tag.Text = InputChoices.KindLabel(InputChoices.KindOf(ChoiceValue(combo)));
+                PushSettings();
+            };
 
-            bindingControls[actionName] = new BindingControlSet { KeySelector = combo, TurboToggle = turbo, TurboHzBox = hz };
-
+            CheckBox turbo = null;
+            NumericUpDown hz = null;
             var row = new WrapPanel { Orientation = Orientation.Horizontal };
             row.Children.Add(combo);
-            row.Children.Add(turbo);
-            row.Children.Add(hz);
-            row.Children.Add(new TextBlock { Text = "Hz", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 4) });
+            row.Children.Add(tag);
+            if (!stick)
+            {
+                turbo = new CheckBox { Content = "Turbo", Margin = new Thickness(0, 0, 8, 4) };
+                hz = new NumericUpDown { Minimum = 1, Maximum = 30, Value = 12, Increment = 1, FormatString = "0", MinWidth = 100, Margin = new Thickness(0, 0, 6, 4) };
+                turbo.IsCheckedChanged += AnySettingChangedChecked;
+                hz.ValueChanged += AnySettingChangedNumeric;
+                row.Children.Add(turbo);
+                row.Children.Add(hz);
+                row.Children.Add(new TextBlock { Text = "Hz", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 4) });
+            }
+
+            bindingControls[actionName] = new BindingControlSet { KeySelector = combo, KindTag = tag, TurboToggle = turbo, TurboHzBox = hz };
 
             var panel = new StackPanel { Spacing = 4 };
-            panel.Children.Add(new TextBlock { Text = actionName, FontWeight = Avalonia.Media.FontWeight.SemiBold });
+            panel.Children.Add(new TextBlock { Text = ActionTitle(actionName), FontWeight = Avalonia.Media.FontWeight.SemiBold });
             panel.Children.Add(row);
-
-            var card = new Border { Classes = { "card" }, Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(10), Child = panel };
-            return card;
+            return new Border { Classes = { "card" }, Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(10), Child = panel };
         }
 
         // ── Settings snapshot → engine ───────────────────────────────────────────
@@ -148,9 +195,9 @@ namespace GamepadEnhancer
             {
                 bindings[pair.Key] = new BindingSetting
                 {
-                    Key = pair.Value.KeySelector.SelectedItem as string ?? "None",
-                    Turbo = pair.Value.TurboToggle.IsChecked == true,
-                    TurboHz = (int)(pair.Value.TurboHzBox.Value ?? 12)
+                    Key = ChoiceValue(pair.Value.KeySelector),
+                    Turbo = pair.Value.TurboToggle?.IsChecked == true,
+                    TurboHz = (int)(pair.Value.TurboHzBox?.Value ?? 12)
                 };
             }
 
@@ -625,30 +672,105 @@ namespace GamepadEnhancer
             if (profileComboBox.SelectedItem is string name) profileNameBox.Text = name;
         }
 
+        /// <summary>The current UI as a profile (controller type, mouse look and every binding).</summary>
+        private InputProfile BuildProfileFromUi(string name) => new InputProfile
+        {
+            Name = name,
+            ControllerType = controllerTypeBox.SelectedItem as string ?? "PS4",
+            MouseLookEnabled = mouseLookBox.IsChecked == true,
+            MouseSensitivityX = (double)(mouseSensXBox.Value ?? 8m),
+            MouseSensitivityY = (double)(mouseSensYBox.Value ?? 8m),
+            MouseCurve = (double)(mouseCurveBox.Value ?? 1m),
+            MouseGameDeadZonePercent = (int)(mouseDeadZoneBox.Value ?? 0m),
+            MouseReleaseMs = (int)(mouseReleaseBox.Value ?? 30m),
+            MouseInvertY = mouseInvertYBox.IsChecked == true,
+            Mappings = ProfileMappings.Build(ControllerEngine.BindingActions.Select(a =>
+            {
+                BindingControlSet c = bindingControls[a];
+                return (a, ChoiceValue(c.KeySelector), c.TurboToggle?.IsChecked == true, (int)(c.TurboHzBox?.Value ?? 12));
+            }))
+        };
+
+        private static readonly JsonSerializerOptions ProfileJson = new() { WriteIndented = true };
+
         private async void SaveProfileButton_Click(object sender, RoutedEventArgs e)
         {
             string name = (profileNameBox.Text ?? string.Empty).Trim();
             if (name.Length == 0) { await Dialogs.ShowMessageAsync(this, "Profiles", "Enter a profile name first."); return; }
 
-            var profile = new InputProfile
-            {
-                Name = name,
-                ControllerType = controllerTypeBox.SelectedItem as string ?? "PS4",
-                MouseLookEnabled = mouseLookBox.IsChecked == true,
-                MouseSensitivityX = (double)(mouseSensXBox.Value ?? 8m),
-                MouseSensitivityY = (double)(mouseSensYBox.Value ?? 8m),
-                MouseCurve = (double)(mouseCurveBox.Value ?? 1m),
-                MouseGameDeadZonePercent = (int)(mouseDeadZoneBox.Value ?? 0m),
-                MouseReleaseMs = (int)(mouseReleaseBox.Value ?? 30m),
-                MouseInvertY = mouseInvertYBox.IsChecked == true,
-                KeyBindings = bindingControls.ToDictionary(p => p.Key, p => p.Value.KeySelector.SelectedItem as string ?? "None", StringComparer.OrdinalIgnoreCase),
-                TurboEnabled = bindingControls.ToDictionary(p => p.Key, p => p.Value.TurboToggle.IsChecked == true, StringComparer.OrdinalIgnoreCase),
-                TurboHz = bindingControls.ToDictionary(p => p.Key, p => (int)(p.Value.TurboHzBox.Value ?? 12), StringComparer.OrdinalIgnoreCase)
-            };
-
-            File.WriteAllText(GetProfilePath(name), JsonSerializer.Serialize(profile, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(GetProfilePath(name), JsonSerializer.Serialize(BuildProfileFromUi(name), ProfileJson));
             LoadProfileList(name);
             statusLabel.Text = $"Status: Saved profile '{name}'";
+        }
+
+        private static readonly FilePickerFileType JsonFileType = new("Profile (JSON)") { Patterns = new[] { "*.json" } };
+
+        /// <summary>Writes the current mapping to a file you choose, so it can be shared or edited by hand.</summary>
+        private async void ExportProfileButton_Click(object sender, RoutedEventArgs e)
+        {
+            string name = (profileNameBox.Text ?? string.Empty).Trim();
+            if (name.Length == 0) name = "profile";
+            IStorageFile file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Export profile",
+                SuggestedFileName = SafeName(name, "profile") + ".json",
+                DefaultExtension = "json",
+                FileTypeChoices = new[] { JsonFileType }
+            });
+            if (file == null) return;
+            try
+            {
+                await using Stream stream = await file.OpenWriteAsync();
+                if (stream.CanSeek) stream.SetLength(0);
+                await using var writer = new StreamWriter(stream);
+                await writer.WriteAsync(JsonSerializer.Serialize(BuildProfileFromUi(name), ProfileJson));
+                statusLabel.Text = $"Status: Exported profile '{name}'";
+            }
+            catch (Exception ex) { await Dialogs.ShowMessageAsync(this, "Export", "Could not write the file.\n\n" + ex.Message); }
+        }
+
+        /// <summary>Reads a profile file, clears anything invalid (and says what), saves it into profiles/ and applies it.</summary>
+        private async void ImportProfileButton_Click(object sender, RoutedEventArgs e)
+        {
+            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Import profile",
+                AllowMultiple = false,
+                FileTypeFilter = new[] { JsonFileType }
+            });
+            if (files.Count == 0) return;
+
+            string json;
+            try
+            {
+                await using Stream stream = await files[0].OpenReadAsync();
+                using var reader = new StreamReader(stream);
+                var buffer = new char[ProfileImport.MaxBytes + 1];
+                int n = await reader.ReadBlockAsync(buffer, 0, buffer.Length);
+                json = new string(buffer, 0, n);
+            }
+            catch (Exception ex) { await Dialogs.ShowMessageAsync(this, "Import", "Could not read the file.\n\n" + ex.Message); return; }
+
+            InputProfile profile = ProfileImport.Parse(json, out string error, out List<string> warnings);
+            if (profile == null) { await Dialogs.ShowMessageAsync(this, "Import", error); return; }
+
+            string baseName = SafeName(profile.Name, "Imported");
+            string name = baseName;
+            for (int i = 1; File.Exists(GetProfilePath(name)); i++) name = baseName + "_" + i;
+            profile.Name = name;
+            File.WriteAllText(GetProfilePath(name), JsonSerializer.Serialize(profile, ProfileJson));
+            LoadProfileList(name);
+            ApplyProfile(profile);
+            statusLabel.Text = $"Status: Imported profile '{name}'" + (warnings.Count > 0 ? $" ({warnings.Count} value(s) cleared)" : "");
+            if (warnings.Count > 0)
+                await Dialogs.ShowMessageAsync(this, "Import", "The profile was imported, but some values were not valid and were cleared:\n\n" + string.Join("\n", warnings.Take(12)));
+        }
+
+        private void OpenProfilesFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            Directory.CreateDirectory(profilesDirectory);
+            try { Process.Start(new ProcessStartInfo(profilesDirectory) { UseShellExecute = true }); }
+            catch (Exception ex) { statusLabel.Text = "Status: Could not open folder - " + ex.Message; }
         }
 
         private async void LoadProfileButton_Click(object sender, RoutedEventArgs e)
@@ -692,20 +814,15 @@ namespace GamepadEnhancer
             mouseReleaseBox.Value = Math.Clamp(profile.MouseReleaseMs, 0, 500);
             mouseInvertYBox.IsChecked = profile.MouseInvertY;
 
+            Dictionary<string, MappingEntry> map = ProfileMappings.Resolve(profile);
             foreach (string action in ControllerEngine.BindingActions)
             {
                 if (!bindingControls.TryGetValue(action, out BindingControlSet controls)) continue;
-                string key = "None";
-                if (profile.KeyBindings != null && profile.KeyBindings.TryGetValue(action, out string saved) && !string.IsNullOrWhiteSpace(saved))
-                    key = saved;
-                if (!((string[])controls.KeySelector.ItemsSource).Contains(key)) key = "None";
-                controls.KeySelector.SelectedItem = key;
-                controls.TurboToggle.IsChecked = profile.TurboEnabled?.TryGetValue(action, out bool te) == true && te;
-                int hz = 12;
-                if (profile.TurboHz?.TryGetValue(action, out int savedHz) == true) hz = savedHz;
-                controls.TurboHzBox.Value = Math.Clamp(hz, 1, 30);
+                MappingEntry entry = map[action];
+                SetChoice(controls.KeySelector, entry.Input);
+                if (controls.TurboToggle != null) controls.TurboToggle.IsChecked = entry.Turbo;
+                if (controls.TurboHzBox != null) controls.TurboHzBox.Value = entry.TurboHz;
             }
-
         }
 
         // ── Controller monitor ───────────────────────────────────────────────────

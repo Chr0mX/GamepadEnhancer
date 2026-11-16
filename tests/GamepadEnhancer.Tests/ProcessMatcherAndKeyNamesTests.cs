@@ -39,6 +39,7 @@ namespace GamepadEnhancer.Tests
         [InlineData("F1", 0x70)]
         [InlineData("F12", 0x7B)]
         [InlineData("Up", 0x26)]
+        [InlineData("Home", 0x24)]
         public void NamesMapBackToVirtualKeys(string name, int vk)
         {
             Assert.Contains(vk, KeyNames.ToVirtualKeys(name));

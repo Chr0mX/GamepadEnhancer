@@ -49,6 +49,20 @@ namespace GamepadEnhancer
     internal static class PadStateMath
     {
         public const int ActionLt = 6, ActionRt = 7, ActionDpadUp = 12, ActionDpadDown = 13, ActionDpadLeft = 14, ActionDpadRight = 15;
+        /// <summary>Bit positions of the keyboard-driven left stick directions (see <see cref="ControllerEngine.BindingActions"/>).</summary>
+        public const int ActionLeftUp = 18, ActionLeftDown = 19, ActionLeftLeft = 20, ActionLeftRight = 21;
+
+        /// <summary>
+        /// Left stick from the four left-stick key bits, as -1..1 with +Y up (the same convention as <see cref="PadState"/>).
+        /// Opposite keys cancel; a diagonal is scaled to the unit circle so it is not faster than a straight direction.
+        /// </summary>
+        public static (double X, double Y) LeftFromMask(int mask)
+        {
+            int x = ((mask >> ActionLeftRight) & 1) - ((mask >> ActionLeftLeft) & 1);
+            int y = ((mask >> ActionLeftUp) & 1) - ((mask >> ActionLeftDown) & 1);
+            if (x != 0 && y != 0) return (x * 0.70710678118654752, y * 0.70710678118654752);
+            return (x, y);
+        }
 
         public static double Clamp1(double v) => double.IsNaN(v) ? 0.0 : Math.Clamp(v, -1.0, 1.0);
 
@@ -115,9 +129,13 @@ namespace GamepadEnhancer
             double mouseX, double mouseY, double processedX, double processedY,
             double finalRightX, double finalRightY, double padLeftX, double padLeftY)
         {
-            // Left stick: only the network API drives it; physical and processed both show the request.
-            double reqLx = rf.LeftActive ? FromRemoteX(rf.Lx) : 0.0;
-            double reqLy = rf.LeftActive ? FromRemoteYUp(rf.Ly) : 0.0;
+            // Left stick: a network client's value while it drives it, otherwise the left-stick keys (physical = held, processed = after turbo).
+            (double keyRawX, double keyRawY) = LeftFromMask(rawMask);
+            (double keyProcX, double keyProcY) = LeftFromMask(mask);
+            double rawLx = rf.LeftActive ? FromRemoteX(rf.Lx) : keyRawX;
+            double rawLy = rf.LeftActive ? FromRemoteYUp(rf.Ly) : keyRawY;
+            double reqLx = rf.LeftActive ? FromRemoteX(rf.Lx) : keyProcX;
+            double reqLy = rf.LeftActive ? FromRemoteYUp(rf.Ly) : keyProcY;
             bool remoteRight = rf.RightActive;
 
             double rawRx = remoteRight ? FromRemoteX(rf.Rx) : FromPercent(mouseX);
@@ -132,7 +150,7 @@ namespace GamepadEnhancer
             double fnLt = rf.Lt >= 0 ? FromTriggerByte(RemoteControlState.ToTriggerByte(rf.Lt)) : ((mask >> ActionLt) & 1);
             double fnRt = rf.Rt >= 0 ? FromTriggerByte(RemoteControlState.ToTriggerByte(rf.Rt)) : ((mask >> ActionRt) & 1);
 
-            var physical = new PadState(reqLx, reqLy, rawRx, rawRy, rawLt, rawRt, rawMask);
+            var physical = new PadState(rawLx, rawLy, rawRx, rawRy, rawLt, rawRt, rawMask);
             var processed = new PadState(reqLx, reqLy, prRx, prRy, prLt, prRt, mask);
             var final = new PadState(padLeftX, padLeftY, finalRightX, NativeYToUp(xbox, finalRightY), fnLt, fnRt, FinalMask(mask, xbox));
             return (physical, processed, final);
@@ -260,13 +278,15 @@ namespace GamepadEnhancer
         private static readonly string[] Xbox =
         {
             "A", "B", "X", "Y", "LB", "RB", "LT", "RT", "View", "Menu", "L3", "R3",
-            "D-Pad Up", "D-Pad Down", "D-Pad Left", "D-Pad Right", "Guide"
+            "D-Pad Up", "D-Pad Down", "D-Pad Left", "D-Pad Right", "Guide",
+            "Touchpad (n/a)", "Left Stick Up", "Left Stick Down", "Left Stick Left", "Left Stick Right"
         };
 
         private static readonly string[] Ds4 =
         {
             "Cross", "Circle", "Square", "Triangle", "L1", "R1", "L2", "R2", "Share", "Options", "L3", "R3",
-            "D-Pad Up", "D-Pad Down", "D-Pad Left", "D-Pad Right", "PS"
+            "D-Pad Up", "D-Pad Down", "D-Pad Left", "D-Pad Right", "PS",
+            "Touchpad", "Left Stick Up", "Left Stick Down", "Left Stick Left", "Left Stick Right"
         };
 
         public static string For(PadFamily family, int action)
