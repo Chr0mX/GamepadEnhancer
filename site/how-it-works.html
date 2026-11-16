@@ -122,13 +122,13 @@
 
       <section id="bindings" class="section-head">
         <h2>Key bindings and turbo</h2>
-        <p>Up to 17 bindings map a keyboard key or mouse button to a controller action: any face button, bumper, stick click, D-pad direction, Start or Back, a trigger, or the Guide / PS button. Each can have <strong>turbo</strong>, pressing and releasing at 1 to 30 Hz while the key is held. The app only <em>presses controller buttons</em>; it never types into your keyboard.</p>
+        <p>Up to 18 buttons (face buttons, bumpers, triggers, stick clicks, D-pad, Share / Options, PS and the DS4 touchpad click) map to a <strong>keyboard key, a mouse button or a mouse wheel notch</strong>; the UI shows which kind each one is. Each can have <strong>turbo</strong>, pressing and releasing at 1 to 30 Hz while the input is held. The left stick is four keyboard keys (WASD by default; opposite keys cancel, diagonals are normalized), and the right stick is <strong>mouse movement</strong>. The app only <em>presses controller buttons and moves sticks</em>; it never types into your keyboard.</p>
       </section>
 
       <section id="profiles" class="section-head">
         <h2>Profiles and the default</h2>
         <p>A profile is a plain JSON file in <code>profiles/</code> beside the exe, so they are easy to copy, share or edit. <code>Default.json</code> ships <em>inside</em> the app as an embedded resource, is written to <code>profiles/Default.json</code> on first run, and is loaded at startup when it is valid. If the file is missing or broken the app falls back to the embedded copy.</p>
-        <p>The full list of fields is in the <a href="reference.html#profile">reference</a>.</p>
+        <p>The default is a PS4 keyboard + mouse layout. When a release changes it, the old <code>Default.json</code> is replaced once and kept as <code>Default.json.bak</code>. Profiles can be imported, exported and opened in the profiles folder from the top bar. The full list of fields is in the <a href="reference.html#profile">reference</a>.</p>
       </section>
     </div>
   </main>

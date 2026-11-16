@@ -13,7 +13,8 @@
           <tbody>
             <tr><td>Controller</td><td>PS4 (DS4), Xbox 360</td><td>Which virtual pad is created on Connect.</td></tr>
             <tr><td>Mouse look</td><td>on / off; sensitivity X/Y, curve, game dead zone, release, invert Y</td><td>Mouse movement drives the right stick. A stick value set over the Network API replaces it while set.</td></tr>
-            <tr><td>Key bindings / turbo</td><td>17 actions (incl. Guide / PS); 1 - 30 Hz</td><td>Press controller buttons from keys, mouse buttons and the wheel.</td></tr>
+            <tr><td>Button bindings / turbo</td><td>18 buttons (incl. PS and Touchpad); 1 - 30 Hz</td><td>Press controller buttons from keyboard keys, mouse buttons and the wheel.</td></tr>
+            <tr><td>Left stick keys</td><td>4 keyboard keys (default W A S D)</td><td>Move the left stick; opposite keys cancel, diagonals are normalized.</td></tr>
             <tr><td>Input capture</td><td>Low-Level Hooks, Raw Input</td><td>How mouse and keyboard are read. Saved app-wide.</td></tr>
             <tr><td>Network API</td><td>on / off, port, token, LAN</td><td>Lets another program (such as Axiom) drive sticks, triggers and buttons, and receive your mouse buttons. Saved app-wide.</td></tr>
             <tr><td>Input blocking</td><td>programs, keyboard / mouse, hotkey</td><td>Swallows mapped input while a listed game is focused. Saved app-wide.</td></tr>
@@ -26,11 +27,14 @@
 <pre><code>{
   "Name": "Default",
   "ControllerType": "PS4",
-  "KeyBindings": { "A / Cross": "None", "...": "..." },
-  "TurboEnabled": { "A / Cross": false, "...": "..." },
-  "TurboHz": { "A / Cross": 12, "...": 12 }
+  "MouseLookEnabled": true,
+  "Mappings": {
+    "A / Cross": { "Input": "Space", "Kind": "Keyboard", "Turbo": false, "TurboHz": 12 },
+    "RB / R1": { "Input": "Mouse X1", "Kind": "MouseButton", "Turbo": false, "TurboHz": 12 },
+    "Left Stick Up": { "Input": "W", "Kind": "Keyboard", "Turbo": false, "TurboHz": 12 }
+  }
 }</code></pre>
-        <p>Older profiles may still contain drift, filtering, recoil and disengage fields. They are ignored when loading and left out when saving.</p>
+        <p>The right stick is mouse movement (the <code>MouseLook*</code> fields). The full table and every action name are in <a href="https://github.com/Chr0mX/GamepadEnhancer/blob/main/docs/MAPPINGS.md">docs/MAPPINGS.md</a>. Older profiles (<code>KeyBindings</code> dictionaries, drift, filtering, recoil and disengage fields) still load; the old fields are ignored and the new layout is written when saving.</p>
       </section>
 
       <section id="files" class="section-head">

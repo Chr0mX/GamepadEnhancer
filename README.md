@@ -11,13 +11,13 @@ Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm
 - Choose **Xbox 360** or **PS4** virtual controller
 - Bind **PC keyboard keys** to virtual controller inputs, with optional per-action **turbo** (1-30 Hz)
 - **Input capture** dropdown: Low-Level Hooks (default) or Raw Input (background capture with `RIDEV_INPUTSINK`); one active at a time, held inputs are released when switching; saved in `settings.json`. See [docs/INPUT_CAPTURE.md](docs/INPUT_CAPTURE.md)
-- **Starting settings:** the default profile ships inside the app (`src/GamepadEnhancer/Defaults/Default.json`: PS4, no bindings). On first run it is also written to `profiles/Default.json`; the app starts with `profiles/Default.json` when it exists, otherwise with the shipped one. Older profile files that still contain drift, filtering, recoil or disengage fields load fine; those fields are ignored.
+- **Starting settings:** the default profile is a PS4 keyboard + mouse layout (WASD = left stick, mouse movement = right stick, Space = Cross, mouse buttons on R1 / L2 / R2 / R3, ...). It ships inside the app (`src/GamepadEnhancer/Defaults/Default.json`), is written to `profiles/Default.json` on first run, and replaces an older `Default.json` once after an upgrade (the old one is kept as `Default.json.bak`). Full table and file format: [docs/MAPPINGS.md](docs/MAPPINGS.md). Older profile files, including ones with drift, filtering, recoil or disengage fields, load fine.
 - **Network API:** accept MAKCU-style text commands (`km.controller(id,value[,hold_ms])`, `km.controller_clear()`) over TCP from another computer and play them on the virtual pad, with a token and off by default; the same app can also **send** its pad to another PC. See [docs/NETWORK_API.md](docs/NETWORK_API.md)
 - **Mouse buttons over the same link:** a client that subscribes with `km.mouse_stream(1)` gets this PC's mouse buttons pushed back as `km.mouse(mask)` on the connection it already uses for commands (one address, port and token), for example to give Axiom a remote aim button. See [docs/NETWORK_API.md](docs/NETWORK_API.md)
 - **Input blocking and mouse look:** while a chosen game is focused, swallow the keyboard/mouse input you mapped to pad actions so only the controller reaches the game, bind mouse buttons and the wheel to pad actions, and let mouse movement drive the right stick (off by default). See [docs/BLOCKING.md](docs/BLOCKING.md)
 - **Live controller monitor:** an Xbox 360 or DualShock 4 picture of the pad, with a view of the physical input, the processed input, or the final output sent to ViGEm; sticks, analog triggers, button history, pop-out window (always on top or transparent overlay). See [docs/MONITOR.md](docs/MONITOR.md)
 - **Switch the output type while connected** (Xbox 360 / PS4) without restarting; a **Guide / PS** button action
-- Profiles (JSON in `profiles/`) save the controller type, key bindings, turbo and mouse look; files from earlier builds load unchanged
+- Profiles (JSON in `profiles/`) save the controller type, bindings, turbo and mouse look, and can be **imported, exported and edited** by hand; keyboard keys, mouse buttons and mouse movement are kept clearly apart. Files from earlier builds load unchanged
 - **Aiming, recoil and stick shaping are done by the client that drives the pad** (Axiom); this app no longer has base drift, stick filtering or recoil patterns
 
 ## Requirements
@@ -87,6 +87,7 @@ The pure logic (input block policy, mouse look, process matching, key names) is 
 
 ## Documentation
 
+- [docs/MAPPINGS.md](docs/MAPPINGS.md): default mapping, profile format, import / export
 - [docs/INPUT_CAPTURE.md](docs/INPUT_CAPTURE.md): Low-Level Hooks vs Raw Input
 - [docs/NETWORK_API.md](docs/NETWORK_API.md): Network API and `km.mouse` mouse buttons
 - [docs/BLOCKING.md](docs/BLOCKING.md): input blocking and mouse look

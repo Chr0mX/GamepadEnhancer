@@ -18,6 +18,8 @@ Both virtual controllers come from the same driver and client: ViGEmBus with `Ne
 | LS / L3, RS / R3 | L3, R3 | L3, R3 |
 | D-pad | four direction bits | one hat switch (up+down or left+right cancel) |
 | Guide / PS | Guide | PS |
+| Touchpad Click | (none) | Touchpad |
+| Left Stick Up / Down / Left / Right | left stick (keys) | left stick (keys) |
 
 Not implemented (not requested, and not needed by the current engine): Xbox One / Series, DualSense, generic HID, running two pads at once.
 
