@@ -39,13 +39,10 @@ namespace GamepadEnhancer
         // ── Xbox 360 ──
         public void SetAxisValue(Xbox360Axis axis, short v)
         {
-            switch (axis)
-            {
-                case Xbox360Axis.LeftThumbX: value[RemoteControlState.IdLeftX] = v; break;
-                case Xbox360Axis.LeftThumbY: value[RemoteControlState.IdLeftY] = Math.Clamp(-(int)v, short.MinValue, short.MaxValue); break;   // Xbox +Y is up
-                case Xbox360Axis.RightThumbX: value[RemoteControlState.IdRightX] = v; break;
-                case Xbox360Axis.RightThumbY: value[RemoteControlState.IdRightY] = Math.Clamp(-(int)v, short.MinValue, short.MaxValue); break;
-            }
+            if (axis == Xbox360Axis.LeftThumbX) value[RemoteControlState.IdLeftX] = v;
+            else if (axis == Xbox360Axis.LeftThumbY) value[RemoteControlState.IdLeftY] = Math.Clamp(-(int)v, short.MinValue, short.MaxValue);   // Xbox +Y is up
+            else if (axis == Xbox360Axis.RightThumbX) value[RemoteControlState.IdRightX] = v;
+            else if (axis == Xbox360Axis.RightThumbY) value[RemoteControlState.IdRightY] = Math.Clamp(-(int)v, short.MinValue, short.MaxValue);
         }
 
         public void SetSliderValue(Xbox360Slider slider, byte v) =>
@@ -71,13 +68,10 @@ namespace GamepadEnhancer
         public void SetAxisValue(DualShock4Axis axis, byte v)
         {
             int n = (v << 8) - 32768;   // 128 -> 0, +Y is already down
-            switch (axis)
-            {
-                case DualShock4Axis.LeftThumbX: value[RemoteControlState.IdLeftX] = n; break;
-                case DualShock4Axis.LeftThumbY: value[RemoteControlState.IdLeftY] = n; break;
-                case DualShock4Axis.RightThumbX: value[RemoteControlState.IdRightX] = n; break;
-                case DualShock4Axis.RightThumbY: value[RemoteControlState.IdRightY] = n; break;
-            }
+            if (axis == DualShock4Axis.LeftThumbX) value[RemoteControlState.IdLeftX] = n;
+            else if (axis == DualShock4Axis.LeftThumbY) value[RemoteControlState.IdLeftY] = n;
+            else if (axis == DualShock4Axis.RightThumbX) value[RemoteControlState.IdRightX] = n;
+            else if (axis == DualShock4Axis.RightThumbY) value[RemoteControlState.IdRightY] = n;
         }
 
         public void SetSliderValue(DualShock4Slider slider, byte v) =>
