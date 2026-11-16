@@ -9,6 +9,9 @@ The default profile is now a ready-to-play layout instead of "nothing bound":
 
 Nothing else is bound. The whole table, the file format and the import / export workflow are in [docs/MAPPINGS.md](../MAPPINGS.md).
 
+### Apex hints
+The Buttons card shows what Apex Legends' default controller preset does on each pad button (Jump, Crouch, Tactical, Ping, Attack, ...), and notes that Ultimate is L1 + R1. Display only. See [docs/MAPPINGS.md](../MAPPINGS.md).
+
 ### New actions
 - **Touchpad click** (DS4 only; ignored on Xbox 360) and four **left stick direction** keys. Opposite keys cancel, diagonals are normalized, and a left stick value from the Network API replaces the keys while it is set. Both appear in the controller monitor.
 - **Home** is a named key.

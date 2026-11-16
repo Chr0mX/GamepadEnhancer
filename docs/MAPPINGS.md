@@ -35,6 +35,31 @@ Three kinds of PC input are kept clearly apart, in the picker groups, in the sma
 
 Nothing else is bound, and turbo is off everywhere.
 
+### What each button does in Apex Legends
+The game only sees a controller, so what matters is the pad button; in-game PC keybinds are irrelevant. This is Apex's **default controller preset** (the app also shows it under each button):
+
+| Pad button | Apex action | Hold |
+|---|---|---|
+| Cross / A | Jump | |
+| Circle / B | Crouch (toggle) | |
+| Square / X | Interact / Pickup / Reload | Interact / Pickup |
+| Triangle / Y | Cycle Weapon / Holster | Holster |
+| L1 / LB | Tactical Ability | |
+| R1 / RB | Ping | Ping Wheel |
+| L1 + R1 | Ultimate Ability (both together: Q + Mouse 4 by default) | |
+| L2 / LT | Aim Down Sight | |
+| R2 / RT | Attack | |
+| L3 | Sprint / Toggle Zoom | |
+| R3 | Melee | |
+| D-Pad Up | Use Health/Shield Kit | Health Wheel |
+| D-Pad Right | Toggle Fire Mode | Equip Survival Item |
+| D-Pad Down | Equip Grenade | Grenade Wheel |
+| D-Pad Left | Extra Character Action | Emote Wheel |
+| Share / Back | Map (toggle) | |
+| Options / Start | Inventory (toggle) | |
+
+PS / Guide and the touchpad click are not on the preset. The Apex names are display hints only; they do not change any mapping.
+
 Left stick keys: opposite keys cancel, and diagonals are scaled so they are no faster than a straight direction. A left stick value sent over the [Network API](NETWORK_API.md) replaces the keys while it is set (the right stick works the same way against mouse movement).
 
 Mouse Left / Mouse Right are bound to the triggers by default, so while a pad is connected every click on the PC also registers as R2 / L2. Input blocking ([BLOCKING.md](BLOCKING.md)) can swallow them while the game is focused.

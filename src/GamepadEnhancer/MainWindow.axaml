@@ -53,7 +53,7 @@
               <StackPanel Spacing="10">
                 <TextBlock Classes="h" Text="Buttons" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Bind each pad button to a keyboard key, a mouse button or a mouse wheel notch (the tag beside each picker says which). Turbo (rapid fire) is optional per button. Names show the PlayStation button first, then the Xbox 360 one." />
+                           Text="Bind each pad button to a keyboard key, a mouse button or a mouse wheel notch (the tag beside each picker says which). Turbo (rapid fire) is optional per button. Names show the PlayStation button first, then the Xbox 360 one. The Apex line is what Apex Legends' default controller preset does on that button; Ultimate Ability is L1 + R1 together (Q + Mouse 4 by default)." />
                 <UniformGrid x:Name="bindingsGrid" Columns="2" />
               </StackPanel>
             </Border>

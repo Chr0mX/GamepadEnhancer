@@ -80,6 +80,45 @@ namespace GamepadEnhancer.Tests
         }
     }
 
+    public class ApexHintsTests
+    {
+        [Theory]
+        [InlineData(ControllerEngine.ActionACross, "Jump")]
+        [InlineData(ControllerEngine.ActionBCircle, "Crouch")]
+        [InlineData(ControllerEngine.ActionXSquare, "Reload")]
+        [InlineData(ControllerEngine.ActionYTriangle, "Cycle Weapon")]
+        [InlineData(ControllerEngine.ActionLbL1, "Tactical")]
+        [InlineData(ControllerEngine.ActionRbR1, "Ping")]
+        [InlineData(ControllerEngine.ActionLtL2, "Aim Down Sight")]
+        [InlineData(ControllerEngine.ActionRtR2, "Attack")]
+        [InlineData(ControllerEngine.ActionLsL3, "Sprint")]
+        [InlineData(ControllerEngine.ActionRsR3, "Melee")]
+        [InlineData(ControllerEngine.ActionDPadUp, "Health")]
+        [InlineData(ControllerEngine.ActionDPadRight, "Fire Mode")]
+        [InlineData(ControllerEngine.ActionDPadDown, "Grenade")]
+        [InlineData(ControllerEngine.ActionDPadLeft, "Extra Character Action")]
+        [InlineData(ControllerEngine.ActionBackShare, "Map")]
+        [InlineData(ControllerEngine.ActionStartOptions, "Inventory")]
+        public void ButtonsShowTheirApexAction(string action, string expectedPart) =>
+            Assert.Contains(expectedPart, ApexHints.For(action));
+
+        [Fact]
+        public void ActionsNotOnThePresetHaveNoHint()
+        {
+            foreach (string a in new[] { ControllerEngine.ActionGuidePs, ControllerEngine.ActionTouchpad,
+                ControllerEngine.ActionLeftStickUp, ControllerEngine.ActionLeftStickDown,
+                ControllerEngine.ActionLeftStickLeft, ControllerEngine.ActionLeftStickRight })
+                Assert.Null(ApexHints.For(a));
+        }
+
+        [Fact]
+        public void EveryHintBelongsToARealAction()
+        {
+            int withHint = ControllerEngine.BindingActions.Count(a => ApexHints.For(a) != null);
+            Assert.Equal(16, withHint);
+        }
+    }
+
     public class LeftStickKeysTests
     {
         private static int Bit(string action) => 1 << Array.IndexOf(ControllerEngine.BindingActions, action);
