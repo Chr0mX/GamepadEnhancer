@@ -265,41 +265,49 @@ namespace GamepadEnhancer.Tests
 
 namespace GamepadEnhancer.Tests
 {
-    public class MouseCommandTests
+    public class MouseStreamTests
     {
-        private static string Run(string line, RemoteControlState state, long now = 0) =>
-            MakcuCommandParser.Handle(line, state, new MakcuSession(), now);
+        private static string Run(string line, MakcuSession session, Func<int> mouse = null) =>
+            MakcuCommandParser.Handle(line, new RemoteControlState(), session, 0, mouse);
 
         [Fact]
-        public void MouseMaskIsStoredAndQueried()
+        public void SubscribeAndUnsubscribeAreSilentAndToggleTheSession()
         {
-            var s = new RemoteControlState();
-            Assert.Null(Run("km.mouse(5)", s, 100));
-            Assert.Equal(5, s.GetMouse(100));
-            Assert.StartsWith("5", Run("km.mouse()", s, 100));
+            var s = new MakcuSession();
+            Assert.False(s.MouseStream);
+            Assert.Null(Run("km.mouse_stream(1)", s));
+            Assert.True(s.MouseStream);
+            Assert.Null(Run("km.mouse_stream(0)", s));
+            Assert.False(s.MouseStream);
         }
 
         [Fact]
-        public void BadMasksAreRejected()
+        public void BadSubscribeArgumentsAreRejected()
         {
-            var s = new RemoteControlState();
-            Assert.Equal("ERR", Run("km.mouse(32)", s));
-            Assert.Equal("ERR", Run("km.mouse(-1)", s));
-            Assert.Equal("ERR", Run("km.mouse(a)", s));
-            Assert.Equal("ERR", Run("km.mouse(1,2)", s));
-            Assert.Equal(0, s.GetMouse(0));
+            var s = new MakcuSession();
+            foreach (string bad in new[] { "km.mouse_stream(2)", "km.mouse_stream()", "km.mouse_stream(x)", "km.mouse_stream(1,0)" })
+                Assert.Equal("ERR", Run(bad, s));
+            Assert.False(s.MouseStream);
         }
 
         [Fact]
-        public void MaskGoesStaleAndClearsWithTheClient()
+        public void QueryReturnsTheLocalMaskAndClientCannotSetIt()
         {
-            var s = new RemoteControlState();
-            s.SetMouse(1, 1000);
-            Assert.Equal(1, s.GetMouse(1000 + RemoteControlState.MouseStaleMs));
-            Assert.Equal(0, s.GetMouse(1000 + RemoteControlState.MouseStaleMs + 1));
-            s.SetMouse(2, 5000);
-            s.Clear();
-            Assert.Equal(0, s.GetMouse(5000));
+            var s = new MakcuSession();
+            Assert.StartsWith("5", Run("km.mouse()", s, () => 5));
+            Assert.StartsWith("0", Run("km.mouse()", s));              // no source = nothing held
+            Assert.StartsWith("31", Run("km.mouse()", s, () => 0xFF)); // masked to five buttons
+            Assert.Equal("ERR", Run("km.mouse(2)", s, () => 0));       // the server pushes it; a client does not set it
+        }
+
+        [Fact]
+        public void PushHappensOnSubscribeChangeAndKeepAliveOnly()
+        {
+            Assert.False(MousePush.ShouldSend(false, 1, -1, 0, 0));                  // not subscribed
+            Assert.True(MousePush.ShouldSend(true, 0, -1, 0, 0));                    // first push, even with nothing held
+            Assert.False(MousePush.ShouldSend(true, 2, 2, 500, 0));                  // unchanged, keep-alive not due
+            Assert.True(MousePush.ShouldSend(true, 3, 2, 10, 0));                    // changed
+            Assert.True(MousePush.ShouldSend(true, 2, 2, MousePush.KeepAliveMs, 0)); // keep-alive due
         }
     }
 }

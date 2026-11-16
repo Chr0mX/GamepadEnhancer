@@ -28,9 +28,6 @@ namespace GamepadEnhancer
         /// <summary>Token of the other PC's Network API (stored in plain text in settings.json, like the receiver's own token).</summary>
         public string RemoteToken { get; set; } = "";
 
-        /// <summary>With Send to another PC: also send this PC's mouse buttons (km.mouse) over the same connection.</summary>
-        public bool RemoteSendMouse { get; set; }
-
         /// <summary>Input blocking: swallow the mapped physical keyboard/mouse input while a chosen game is focused. Off by default.</summary>
         public bool BlockEnabled { get; set; }
         /// <summary>Process names (comma / semicolon / newline separated, ".exe" optional) that blocking applies to.</summary>

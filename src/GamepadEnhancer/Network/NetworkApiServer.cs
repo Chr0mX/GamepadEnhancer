@@ -21,6 +21,7 @@ namespace GamepadEnhancer
         private readonly RemoteControlState state;
         private readonly Func<string> token;
         private readonly Func<bool> padConnected;
+        private readonly Func<byte> mouseSource;
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private readonly object sync = new();
 
@@ -29,8 +30,10 @@ namespace GamepadEnhancer
         private TcpClient current;
         private volatile bool authedClient;
 
-        public NetworkApiServer(RemoteControlState state, Func<string> token, Func<bool> padConnected)
+        /// <param name="mouseSource">This PC's physical mouse button mask, pushed to clients that send km.mouse_stream(1). Null = none.</param>
+        public NetworkApiServer(RemoteControlState state, Func<string> token, Func<bool> padConnected, Func<byte> mouseSource = null)
         {
+            this.mouseSource = mouseSource ?? (() => 0);
             this.state = state ?? throw new ArgumentNullException(nameof(state));
             this.token = token ?? throw new ArgumentNullException(nameof(token));
             this.padConnected = padConnected ?? (() => true);
@@ -89,6 +92,7 @@ namespace GamepadEnhancer
         private async Task HandleClient(TcpClient client, CancellationToken ct)
         {
             bool authed = false;
+            CancellationTokenSource pushCts = null;   // runs the mouse pusher while this client is subscribed
             try
             {
                 client.NoDelay = true;
@@ -97,35 +101,59 @@ namespace GamepadEnhancer
                 var reader = new LineReader(stream, MakcuCommandParser.MaxLineLength);
                 var session = new MakcuSession();
 
+                // Replies (this loop) and pushed mouse lines (the pusher task) share one socket: one whole line at a time.
+                var gate = new SemaphoreSlim(1, 1);
+                async Task SendLine(string text)
+                {
+                    await gate.WaitAsync().ConfigureAwait(false);
+                    try { await Send(stream, text).ConfigureAwait(false); }
+                    finally { gate.Release(); }
+                }
+
                 while (!ct.IsCancellationRequested)
                 {
                     using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
                     timeout.CancelAfter(authed ? IdleTimeoutMs : 5_000);
                     string line = await reader.ReadLineAsync(timeout.Token).ConfigureAwait(false);
                     if (line == null) break;                       // client closed
-                    if (line.Length > MakcuCommandParser.MaxLineLength) { await Send(stream, "ERR"); break; }
+                    if (line.Length > MakcuCommandParser.MaxLineLength) { await SendLine("ERR"); break; }
 
                     if (!authed)
                     {
-                        if (!CheckAuth(line)) { await Send(stream, "ERR auth"); break; }
+                        if (!CheckAuth(line)) { await SendLine("ERR auth"); break; }
                         authed = true;
                         TcpClient previous;
                         lock (sync) { previous = current; current = client; }
                         try { previous?.Close(); } catch { }       // newest client wins
                         authedClient = true;
                         Raise("Network API: client connected");
-                        await Send(stream, "OK" + MakcuCommandParser.Prompt);
+                        await SendLine("OK" + MakcuCommandParser.Prompt);
                         continue;
                     }
 
-                    if (!padConnected()) { await Send(stream, "ERR not connected"); continue; }
-                    string reply = MakcuCommandParser.Handle(line, state, session, clock.ElapsedMilliseconds);
-                    if (reply != null) await Send(stream, reply);
+                    // Mouse commands do not need the virtual pad, so a client can subscribe before the pad is connected.
+                    bool mouseCommand = line.StartsWith("km.mouse", StringComparison.OrdinalIgnoreCase);
+                    if (!mouseCommand && !padConnected()) { await SendLine("ERR not connected"); continue; }
+                    string reply = MakcuCommandParser.Handle(line, state, session, clock.ElapsedMilliseconds, () => mouseSource());
+                    if (reply != null) await SendLine(reply);
+
+                    if (session.MouseStream && pushCts == null)
+                    {
+                        pushCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                        CancellationToken pushToken = pushCts.Token;   // captured now: pushCts is cleared on unsubscribe
+                        _ = Task.Run(() => PushMouse(SendLine, pushToken));
+                    }
+                    else if (!session.MouseStream && pushCts != null)
+                    {
+                        try { pushCts.Cancel(); } catch { }
+                        pushCts = null;
+                    }
                 }
             }
             catch { /* disconnect, timeout or cancel */ }
             finally
             {
+                try { pushCts?.Cancel(); } catch { }
                 bool wasCurrent;
                 lock (sync) { wasCurrent = ReferenceEquals(current, client); if (wasCurrent) current = null; }
                 try { client.Close(); } catch { }
@@ -136,6 +164,30 @@ namespace GamepadEnhancer
                     Raise("Network API: client disconnected");
                 }
             }
+        }
+
+        /// <summary>Pushes km.mouse(mask) to one subscribed client: immediately, on every change, and as a keep-alive.</summary>
+        private async Task PushMouse(Func<string, Task> send, CancellationToken ct)
+        {
+            int last = -1;
+            long lastSend = 0;
+            var clk = Stopwatch.StartNew();
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    int mask = mouseSource() & MousePush.MaskAll;
+                    long now = clk.ElapsedMilliseconds;
+                    if (MousePush.ShouldSend(true, mask, last, now, lastSend))
+                    {
+                        await send("km.mouse(" + mask.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")").ConfigureAwait(false);
+                        last = mask;
+                        lastSend = now;
+                    }
+                    await Task.Delay(MousePush.PollMs, ct).ConfigureAwait(false);
+                }
+            }
+            catch { /* client gone or cancelled */ }
         }
 
         private bool CheckAuth(string line)

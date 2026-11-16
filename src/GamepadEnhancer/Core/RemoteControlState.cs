@@ -54,24 +54,6 @@ namespace GamepadEnhancer
         private readonly int[] value = new int[IdCount];
         private readonly bool[] active = new bool[IdCount];
         private readonly long[] expiresAt = new long[IdCount];   // 0 = no expiry
-        private int mouseMask;
-        private long mouseAtMs;
-
-        /// <summary>The sender's mouse buttons (km.mouse): bit0 left, bit1 right, bit2 middle, bit3 X1, bit4 X2.</summary>
-        public const int MouseMaskAll = 0x1F;
-        /// <summary>A sender that stops talking (without closing the connection) counts as "no buttons held" after this.</summary>
-        public const long MouseStaleMs = 3000;
-
-        public void SetMouse(int mask, long nowMs)
-        {
-            lock (sync) { mouseMask = mask & MouseMaskAll; mouseAtMs = nowMs; }
-        }
-
-        /// <summary>The last mouse mask, or 0 once it is stale or the sender was cleared/disconnected.</summary>
-        public int GetMouse(long nowMs)
-        {
-            lock (sync) return mouseMask != 0 && nowMs - mouseAtMs <= MouseStaleMs ? mouseMask : 0;
-        }
 
         public static bool IsValidId(int id) => id >= 0 && id < IdCount;
 
@@ -96,7 +78,7 @@ namespace GamepadEnhancer
         /// <summary>Drops every remote control at once (also used when the client disconnects).</summary>
         public void Clear()
         {
-            lock (sync) { Array.Clear(active); Array.Clear(value); Array.Clear(expiresAt); mouseMask = 0; }
+            lock (sync) { Array.Clear(active); Array.Clear(value); Array.Clear(expiresAt); }
         }
 
         public RemoteFrame Snapshot(long nowMs)

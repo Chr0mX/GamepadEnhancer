@@ -21,7 +21,7 @@ auth <token>                      first line; answers OK
 km.controller(id,value[,hold_ms]) set one control; hold_ms releases it after that many ms (0 = keep)
 km.controller_clear()             release every remotely set control
 km.controller(0|1)                accepted, no effect (input streaming is not applicable)
-km.mouse(mask)                    the sender's mouse buttons (see below); km.mouse() queries
+km.mouse_stream(0|1)              push this PC's mouse buttons to you as km.mouse(mask) lines (see below); km.mouse() queries
 km.version()  km.api_version()    identification (api version 1)
 km.echo(0|1)  km.echo()           echo commands back, or query
 ```
@@ -67,16 +67,20 @@ s.sendall(b"km.controller_clear()\n")
 - The sender's token, address and port are stored in plain text in its `settings.json`.
 - With *Send to another PC* on, **Connect** reaches the other PC instead of ViGEm; the receiver must already be connected, otherwise it answers `ERR not connected`.
 
-## Mouse buttons (`km.mouse`)
-The same connection can carry this PC's physical mouse buttons, so a remote program can use one as a trigger button (for example Axiom's aim key). There is no separate stream, port or token any more: it uses the **Send to another PC** address, port and token, with **Also send this PC's mouse buttons** ticked, and one **Connect**.
+## Mouse buttons (`km.mouse_stream`)
+The connection a client already uses for commands can also carry **this PC's physical mouse buttons back to the client**, so a program on another PC can use one as a trigger button (Axiom uses it as its aim key). There is no separate stream, port or token: the client connects once (for example Axiom's `vigem_network`) and asks for the buttons on that same socket.
 
 ```
-km.mouse(mask)    the sender's buttons: bit0 left, bit1 right, bit2 middle, bit3 side 1 (X1), bit4 side 2 (X2)
-km.mouse()        query the last mask
+km.mouse_stream(1)   subscribe: this PC pushes its mouse buttons to you (silent); km.mouse_stream(0) stops
+km.mouse()           query this PC's current buttons (answers the mask, then the prompt)
 ```
 
-- The sender sends it on every change (polled about every 4 ms) plus a keep-alive every second, and again after a reconnect. Swapped primary/secondary buttons are honored.
-- A receiver treats the mask as 0 (nothing held) when the connection closes, on `km.controller_clear()`, or after 3 seconds without any `km.mouse`.
-- A GamepadEnhancer receiver accepts and remembers the mask; it does not act on it. Axiom listens on the same protocol (Keys & HW > Remote Mouse Buttons) and engages aim while its chosen button is held.
-- To feed only Axiom, point Send to another PC at Axiom's address and port and press Connect: Axiom accepts the pad commands that also flow on the link and ignores them.
-- The old UDP stream (`AXMB` datagrams, default port 5602) is gone from both programs. Update the sender's port to the one Axiom now listens on (default 5555).
+After subscribing the server sends lines of the form `km.mouse(mask)` followed by `\r\n` (the mask is bit0 left, bit1 right, bit2 middle, bit3 side 1 (X1), bit4 side 2 (X2); swapped primary/secondary buttons are honored):
+
+- immediately, then on every change (polled about every 4 ms), then as a keep-alive every second;
+- these lines always start with `km.mouse(`, which no reply does (replies are `OK`, `ERR ...` or `<value>` + `>>> `), so a client can tell them apart from replies;
+- `km.mouse_stream` and `km.mouse()` work before the virtual pad is connected.
+
+A client should treat the mask as 0 (nothing held) when the connection closes, after about 3 seconds without a `km.mouse` line, and after a reconnect until fresh data arrives, and it must send `km.mouse_stream(1)` again after every reconnect. The server only reads the mouse while at least one client is subscribed.
+
+The old UDP stream (`AXMB` datagrams, port 5602) and the *Also send this PC's mouse buttons* sender option are gone.

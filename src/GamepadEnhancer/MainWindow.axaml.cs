@@ -502,7 +502,7 @@ namespace GamepadEnhancer
 
         private void InitializeNetworkApi()
         {
-            networkApi = new NetworkApiServer(engine.Remote, () => appSettings.NetworkApiToken, () => engine.IsConnected);
+            networkApi = new NetworkApiServer(engine.Remote, () => appSettings.NetworkApiToken, () => engine.IsConnected, MouseButtonState.ReadMask);
             networkApi.StatusChanged += text => Dispatcher.UIThread.Post(() => netStatusLabel.Text = text);
 
             suppressNetworkChange = true;
@@ -511,7 +511,6 @@ namespace GamepadEnhancer
             netPortBox.Text = appSettings.NetworkApiPort.ToString();
             netTokenBox.Text = appSettings.NetworkApiToken;
             remoteSendBox.IsChecked = appSettings.RemoteSendEnabled;
-            remoteSendMouseBox.IsChecked = appSettings.RemoteSendMouse;
             remoteHostBox.Text = appSettings.RemoteHost;
             remotePortBox.Text = appSettings.RemotePort.ToString();
             remoteTokenBox.Text = appSettings.RemoteToken;
@@ -561,7 +560,6 @@ namespace GamepadEnhancer
         private void SaveRemoteSettings()
         {
             appSettings.RemoteSendEnabled = remoteSendBox.IsChecked == true;
-            appSettings.RemoteSendMouse = remoteSendMouseBox.IsChecked == true;
             appSettings.RemoteHost = (remoteHostBox.Text ?? "").Trim();
             appSettings.RemotePort = int.TryParse(remotePortBox.Text, out int p) && p >= 1 && p <= 65535 ? p : appSettings.RemotePort;
             appSettings.RemoteToken = (remoteTokenBox.Text ?? "").Trim();
@@ -616,7 +614,7 @@ namespace GamepadEnhancer
                     SaveRemoteSettings();
                     if (string.IsNullOrEmpty(appSettings.RemoteHost) || string.IsNullOrEmpty(appSettings.RemoteToken))
                         throw new InvalidOperationException("Enter the other PC's address and token on the Network tab first.");
-                    engine.Connect(xbox360, new RemoteTarget(appSettings.RemoteHost, appSettings.RemotePort, appSettings.RemoteToken), appSettings.RemoteSendMouse);
+                    engine.Connect(xbox360, new RemoteTarget(appSettings.RemoteHost, appSettings.RemotePort, appSettings.RemoteToken));
                 }
                 else engine.Connect(xbox360);
                 SetConnectedUi(true);

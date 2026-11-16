@@ -7,12 +7,14 @@ namespace GamepadEnhancer
     internal sealed class MakcuSession
     {
         public bool Echo;
+        /// <summary>The client asked for this PC's mouse buttons to be pushed (km.mouse_stream(1)).</summary>
+        public volatile bool MouseStream;
     }
 
     /// <summary>
     /// Parses MAKCU/MAKXD-style text commands (one per line) and applies them to a <see cref="RemoteControlState"/>.
     /// Supported: km.controller(id,value[,hold_ms]), km.controller_clear(), km.controller(0|1) (accepted, no-op),
-    /// km.mouse([mask]), km.version(), km.api_version(), km.echo([0|1]). Queries answer "result\r\n>>> "; mutations are silent (echo off) and
+    /// km.mouse() (query), km.mouse_stream(0|1), km.version(), km.api_version(), km.echo([0|1]). Queries answer "result\r\n>>> "; mutations are silent (echo off) and
     /// answer nothing; anything else answers "ERR".
     /// </summary>
     internal static class MakcuCommandParser
@@ -23,7 +25,8 @@ namespace GamepadEnhancer
         public const int MaxLineLength = 256;
 
         /// <returns>The text to send back, or null when nothing should be sent.</returns>
-        public static string Handle(string line, RemoteControlState state, MakcuSession session, long nowMs)
+        /// <param name="localMouse">Returns this PC's mouse button mask (bit0 L, 1 R, 2 M, 3 X1, 4 X2) for km.mouse(); null = 0.</param>
+        public static string Handle(string line, RemoteControlState state, MakcuSession session, long nowMs, Func<int> localMouse = null)
         {
             if (line == null) return null;
             line = line.Trim();
@@ -52,10 +55,14 @@ namespace GamepadEnhancer
                     reply = null;
                     break;
                 case "km.mouse":
-                    // km.mouse(mask): the sender's physical mouse buttons (bit0 L, bit1 R, bit2 M, bit3 X1, bit4 X2). km.mouse() queries.
-                    if (parts.Length == 0) { reply = Query(state.GetMouse(nowMs).ToString(CultureInfo.InvariantCulture)); break; }
-                    if (parts.Length != 1 || !TryInt(parts[0], out int mm) || mm < 0 || mm > RemoteControlState.MouseMaskAll) return Error(line, session);
-                    state.SetMouse(mm, nowMs);
+                    // km.mouse(): query this PC's physical mouse buttons. (The client does not set it; the server pushes it, see km.mouse_stream.)
+                    if (parts.Length != 0) return Error(line, session);
+                    reply = Query(((localMouse?.Invoke() ?? 0) & MousePush.MaskAll).ToString(CultureInfo.InvariantCulture));
+                    break;
+                case "km.mouse_stream":
+                    // km.mouse_stream(1): push km.mouse(mask) lines to this client on change plus a keep-alive; (0) stops. Off by default.
+                    if (parts.Length != 1 || !TryInt(parts[0], out int ms) || (ms != 0 && ms != 1)) return Error(line, session);
+                    session.MouseStream = ms == 1;
                     reply = null;
                     break;
                 case "km.controller_clear":

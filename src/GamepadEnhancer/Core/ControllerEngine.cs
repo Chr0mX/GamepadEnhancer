@@ -137,8 +137,7 @@ namespace GamepadEnhancer
         // ── Connection ──────────────────────────────────────────────────────────
 
         /// <param name="remote">When set, the pad is sent to another PC (Network API) instead of a local ViGEm pad.</param>
-        /// <param name="sendMouse">With <paramref name="remote"/>: also send this PC's mouse buttons (km.mouse) over the same link.</param>
-        public void Connect(bool xbox360, RemoteTarget remote = null, bool sendMouse = false)
+        public void Connect(bool xbox360, RemoteTarget remote = null)
         {
             Disconnect();
             try
@@ -150,7 +149,6 @@ namespace GamepadEnhancer
                     netPad.Link.StatusChanged += text => RaiseStatus("Status: " + text);
                     if (xbox360) xbox = netPad; else ds4 = netPad;
                     netPad.Connect();
-                    if (sendMouse) netPad.StartMouse(MouseButtonState.ReadMask);
                 }
                 else
                 {
