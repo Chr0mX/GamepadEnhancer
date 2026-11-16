@@ -25,15 +25,15 @@ Three kinds of PC input are kept clearly apart, in the picker groups, in the sma
 | R2 / RT | `Mouse Left` | Mouse button |
 | L3 / left stick click | `Shift` | Keyboard |
 | R3 / right stick click | `Mouse Middle` (Mouse 3) | Mouse button |
-| D-Pad Up / Down / Left / Right | `1` / `2` / `3` / `4` | Keyboard |
+| D-Pad Up / Down / Left / Right | `4` / `F1` / `B` / `G` | Keyboard |
 | Options / Start | `Escape` | Keyboard |
 | Share / Back | `Tab` | Keyboard |
 | PS / Guide | `Home` | Keyboard |
-| Touchpad click | `G` | Keyboard |
+| Touchpad click | not bound | |
 | Left stick Up / Down / Left / Right | `W` / `S` / `A` / `D` | Keyboard |
 | Right stick Up / Down / Left / Right | Mouse movement Up / Down / Left / Right | Mouse movement |
 
-Nothing else is bound, and turbo is off everywhere.
+Nothing else is bound (the Touchpad click is left empty), and turbo is off everywhere.
 
 ### What each button does in Apex Legends
 The game only sees a controller, so what matters is the pad button; in-game PC keybinds are irrelevant. This is Apex's **default controller preset** (the app also shows it under each button):

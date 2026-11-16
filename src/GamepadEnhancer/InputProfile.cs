@@ -178,7 +178,7 @@ namespace GamepadEnhancer
         public const string FileName = "Default.json";
 
         /// <summary>Revision of the shipped default mapping; stored in settings.json once the upgrade has been applied.</summary>
-        public const int MappingVersion = 2;
+        public const int MappingVersion = 3;
 
         /// <summary>The embedded default profile (falls back to the plain property defaults only if the resource is missing).</summary>
         public static InputProfile Create()

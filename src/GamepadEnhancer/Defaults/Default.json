@@ -82,25 +82,25 @@
       "TurboHz": 12
     },
     "DPad Up": {
-      "Input": "1",
+      "Input": "4",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "DPad Down": {
-      "Input": "2",
+      "Input": "F1",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "DPad Left": {
-      "Input": "3",
+      "Input": "B",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "DPad Right": {
-      "Input": "4",
+      "Input": "G",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
@@ -112,8 +112,8 @@
       "TurboHz": 12
     },
     "Touchpad Click": {
-      "Input": "G",
-      "Kind": "Keyboard",
+      "Input": "None",
+      "Kind": "None",
       "Turbo": false,
       "TurboHz": 12
     },

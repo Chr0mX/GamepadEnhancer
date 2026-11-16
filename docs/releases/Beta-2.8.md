@@ -1,0 +1,13 @@
+## Beta 2.8
+
+### Default mapping: D-pad and Touchpad changed
+- D-Pad Up / Down / Left / Right = `4` / `F1` / `B` / `G` (was `1` / `2` / `3` / `4`).
+- Touchpad click is no longer bound (it was `G`).
+
+Everything else in the default is unchanged: Cross = Space, Circle = Ctrl, Square = R, Triangle = E, L1 = Q, R1 = Mouse 4 (side), L2 = Right Mouse Button, R2 = Left Mouse Button, L3 = Shift, R3 = Mouse 3 (middle), Options = Esc, Share = Tab, PS = Home, left stick = W / S / A / D, right stick = mouse movement. Full table: [docs/MAPPINGS.md](../MAPPINGS.md).
+
+### Upgrading
+`profiles/Default.json` is replaced once with the new default if it came from an earlier shipped default; your previous file is kept as `Default.json.bak` (or `.bak2`, ...). Your own profiles are not touched.
+
+### Known
+- Not yet run on Windows hardware; the build and unit tests run on CI.
