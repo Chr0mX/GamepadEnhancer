@@ -39,6 +39,9 @@ namespace GamepadEnhancer
         private MouseUdpSender mouseUdp;
         private bool suppressNetworkChange;
         private bool suppressInputMethodChange;
+        private MonitorPanel monitorPanel;
+        private MonitorWindow monitorWindow;
+        private bool suppressMonitorChange;
 
         private bool ready;
         private bool syncingDrift;
@@ -108,11 +111,17 @@ namespace GamepadEnhancer
             InitializeBlocking();
             InitializeNetworkApi();
             InitializeMouseUdp();
+            InitializeMonitor();
             ApplyDefaults();
             LoadProfileList();
             LoadPatternList();
 
             ready = true;
+            controllerTypeBox.SelectionChanged += ControllerTypeBox_SelectionChanged;
+            UpdateActiveControllerLabel();
+            mainTabs.SelectionChanged += (_, _) => UpdateMonitorRunning();
+            PropertyChanged += (_, e) => { if (e.Property == WindowStateProperty) UpdateMonitorRunning(); };
+            UpdateMonitorRunning();
             SizeChanged += (_, e) => UpdateResponsiveLayout(e.NewSize.Width);
             Opened += (_, _) => UpdateResponsiveLayout(Bounds.Width);
             PushSettings();
@@ -350,6 +359,8 @@ namespace GamepadEnhancer
         {
             suppressBlockChange = true;
             blockEnabledBox.IsChecked = appSettings.BlockEnabled;
+            blockKeyboardBox.IsChecked = appSettings.BlockKeyboard;
+            blockMouseBox.IsChecked = appSettings.BlockMouse;
             blockProcessesBox.Text = appSettings.BlockProcesses ?? "";
             blockHotkeyBox.ItemsSource = BlockHotkeys.Names;
             blockHotkeyBox.SelectedItem = BlockHotkeys.FromVk(appSettings.BlockHotkeyVk);
@@ -379,7 +390,10 @@ namespace GamepadEnhancer
             }
 
             bool active = appSettings.BlockEnabled && blockToggledOn && engine.IsConnected && hooks && match;
-            blockPolicy.Update(BlockSettings.From(engine.Settings, active, appSettings.BlockHotkeyVk));
+            blockPolicy.Update(BlockSettings.From(engine.Settings, active, appSettings.BlockHotkeyVk,
+                appSettings.BlockKeyboard, appSettings.BlockMouse));
+            blockRestoreButton.IsEnabled = appSettings.BlockEnabled;
+            blockRestoreButton.Content = blockToggledOn ? "Restore input now" : "Resume blocking";
 
             string text;
             if (!appSettings.BlockEnabled) text = "Input blocking is off";
@@ -387,9 +401,21 @@ namespace GamepadEnhancer
             else if (!engine.IsConnected) text = "Input blocking waits for the controller to be connected";
             else if (!blockToggledOn) text = $"Input blocking is paused ({BlockHotkeys.FromVk(appSettings.BlockHotkeyVk)} to resume)";
             else if (blockProcessList.Count == 0) text = "Add a program to block input for";
-            else if (active) text = $"Input blocked: {focused} ({BlockHotkeys.FromVk(appSettings.BlockHotkeyVk)} pauses)";
+            else if (!appSettings.BlockKeyboard && !appSettings.BlockMouse) text = "Nothing to block: both keyboard and mouse blocking are off";
+            else if (active) text = $"Input blocked ({BlockedDevicesText()}): {focused} ({BlockHotkeys.FromVk(appSettings.BlockHotkeyVk)} pauses)";
             else text = $"Input blocking is ready: waiting for {string.Join(", ", blockProcessList)}";
             if (blockStatusLabel.Text != text) blockStatusLabel.Text = text;
+        }
+
+        private string BlockedDevicesText() =>
+            appSettings.BlockKeyboard && appSettings.BlockMouse ? "keyboard and mouse" : appSettings.BlockKeyboard ? "keyboard" : "mouse";
+
+        /// <summary>Emergency release: stops swallowing input immediately (same as the hotkey); pressing it again resumes.</summary>
+        private void BlockRestore_Click(object sender, RoutedEventArgs e)
+        {
+            if (!appSettings.BlockEnabled) return;
+            blockToggledOn = !blockToggledOn;
+            RefreshBlockPolicy();
         }
 
         private void OnBlockHotkey()
@@ -402,6 +428,8 @@ namespace GamepadEnhancer
         private void SaveBlockSettings()
         {
             appSettings.BlockEnabled = blockEnabledBox.IsChecked == true;
+            appSettings.BlockKeyboard = blockKeyboardBox.IsChecked != false;
+            appSettings.BlockMouse = blockMouseBox.IsChecked != false;
             appSettings.BlockProcesses = (blockProcessesBox.Text ?? "").Trim();
             appSettings.BlockHotkeyVk = BlockHotkeys.ToVk(blockHotkeyBox.SelectedItem as string);
             blockProcessList = ProcessMatcher.ParseList(appSettings.BlockProcesses);
@@ -625,7 +653,10 @@ namespace GamepadEnhancer
 
         // ── Connection ───────────────────────────────────────────────────────────
 
-        private async void ConnectButton_Click(object sender, RoutedEventArgs e)
+        private async void ConnectButton_Click(object sender, RoutedEventArgs e) => await ConnectNowAsync();
+
+        /// <summary>Creates the virtual pad for the type chosen in the dropdown (tearing down any previous one first).</summary>
+        private async System.Threading.Tasks.Task ConnectNowAsync()
         {
             try
             {
@@ -651,6 +682,35 @@ namespace GamepadEnhancer
             }
         }
 
+        /// <summary>
+        /// Changing the output type while connected replaces the virtual pad in place: the old one is disconnected and its
+        /// ViGEm client disposed before the new one is created, so only the selected type is ever exposed. No restart needed.
+        /// </summary>
+        private async void ControllerTypeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!ready) return;
+            bool wantXbox = controllerTypeBox.SelectedItem as string == "Xbox 360";
+            if (engine.IsConnected && wantXbox != (engine.Family == PadFamily.Xbox360)) await ConnectNowAsync();
+            else UpdateActiveControllerLabel();
+        }
+
+        /// <summary>Shows which virtual controller is exposed right now (or that none is) in the header and the window title.</summary>
+        private void UpdateActiveControllerLabel()
+        {
+            string selected = PadLabels.FamilyName(controllerTypeBox.SelectedItem as string == "Xbox 360" ? PadFamily.Xbox360 : PadFamily.DualShock4);
+            if (engine.IsConnected)
+            {
+                string name = PadLabels.FamilyName(engine.Family);
+                activeControllerLabel.Text = engine.IsRemote ? $"Output: {name} (sent to the other PC)" : $"Output: {name} (ViGEm)";
+                Title = "GamepadEnhancer - " + name;
+            }
+            else
+            {
+                activeControllerLabel.Text = $"Output: none (selected: {selected})";
+                Title = "GamepadEnhancer";
+            }
+        }
+
         private void DisconnectButton_Click(object sender, RoutedEventArgs e)
         {
             engine.Disconnect();
@@ -659,10 +719,11 @@ namespace GamepadEnhancer
 
         private void SetConnectedUi(bool connected)
         {
-            controllerTypeBox.IsEnabled = !connected;
             connectButton.IsEnabled = !connected;
             disconnectButton.IsEnabled = connected;
             if (!connected) statusLabel.Text = "Status: Not connected";
+            UpdateActiveControllerLabel();
+            UpdateMonitorRunning();
         }
 
         // ── Drift / jitter slider ────────────────────────────────────────────────
@@ -1107,7 +1168,7 @@ namespace GamepadEnhancer
             profileNameBox.Text = profile.Name;
 
             string type = profile.ControllerType == "Xbox 360" ? "Xbox 360" : "PS4";
-            if (controllerTypeBox.IsEnabled) controllerTypeBox.SelectedItem = type;
+            if (!engine.IsConnected) controllerTypeBox.SelectedItem = type;   // never swap a live pad just because a profile was loaded
 
             // Early 1.1 betas stored jitter as a negative base drift; move it to the RS jitter field.
             int jitter = profile.RightStickJitter != 0 ? profile.RightStickJitter
@@ -1163,10 +1224,133 @@ namespace GamepadEnhancer
                 ? RecoilPattern.DefaultText : profile.RecoilPatternText));
         }
 
+        // ── Controller monitor ───────────────────────────────────────────────────
+
+        private static readonly string[] MonitorHzChoices = { "30", "60", "90", "120", "144" };
+        private static readonly PadView[] MonitorViews = { PadView.Final, PadView.Processed, PadView.Physical };
+
+        private static string ViewHint(PadView v) => v switch
+        {
+            PadView.Physical => "Physical: what your keyboard, mouse and network commands ask for, before any processing (turbo, drift, recoil, filtering, disengage are not applied). GamepadEnhancer does not read a physical gamepad.",
+            PadView.Processed => "Processed: after drift, recoil, right stick filtering, mouse look, turbo and disengage, before the value is rounded into a report.",
+            _ => "Final: exactly what is written to the virtual controller, including rounding, the stick oscillation and the pad's own D-pad rules. This is what the game receives."
+        };
+
+        private PadView SelectedMonitorView() =>
+            monitorViewBox.SelectedIndex >= 0 && monitorViewBox.SelectedIndex < MonitorViews.Length
+                ? MonitorViews[monitorViewBox.SelectedIndex] : PadView.Final;
+
+        private void InitializeMonitor()
+        {
+            suppressMonitorChange = true;
+            monitorViewBox.ItemsSource = MonitorViews.Select(PadLabels.ViewName).ToArray();
+            PadView saved = Enum.TryParse(appSettings.MonitorView, true, out PadView parsed) ? parsed : PadView.Final;
+            monitorViewBox.SelectedIndex = Array.IndexOf(MonitorViews, saved);
+            monitorHzBox.ItemsSource = MonitorHzChoices;
+            int hz = Math.Clamp(appSettings.MonitorRefreshHz, 30, 144);
+            monitorHzBox.SelectedItem = MonitorHzChoices.Contains(hz.ToString(CultureInfo.InvariantCulture)) ? hz.ToString(CultureInfo.InvariantCulture) : "60";
+            monitorScaleBox.Value = Math.Clamp(appSettings.MonitorScalePercent, 50, 200);
+            monitorEnabledBox.IsChecked = appSettings.MonitorEnabled;
+            monitorCompactBox.IsChecked = appSettings.MonitorCompact;
+            monitorTopmostBox.IsChecked = appSettings.MonitorAlwaysOnTop;
+            monitorOverlayBox.IsChecked = appSettings.MonitorOverlayMode;
+            suppressMonitorChange = false;
+
+            monitorPanel = new MonitorPanel(engine);
+            monitorHost.Child = monitorPanel;
+            ApplyMonitorSettings();
+        }
+
+        /// <summary>Copies the monitor controls into the saved settings and applies them to the tab and any open pop-out.</summary>
+        private void ApplyMonitorSettings()
+        {
+            appSettings.MonitorView = SelectedMonitorView().ToString();
+            appSettings.MonitorRefreshHz = int.TryParse(monitorHzBox.SelectedItem as string, out int hz) ? hz : 60;
+            appSettings.MonitorScalePercent = (int)(monitorScaleBox.Value ?? 100m);
+            appSettings.MonitorEnabled = monitorEnabledBox.IsChecked != false;
+            appSettings.MonitorCompact = monitorCompactBox.IsChecked == true;
+            appSettings.MonitorAlwaysOnTop = monitorTopmostBox.IsChecked == true;
+            appSettings.MonitorOverlayMode = monitorOverlayBox.IsChecked == true;
+
+            PadView view = SelectedMonitorView();
+            monitorPanel.View = view;
+            monitorPanel.RefreshHz = appSettings.MonitorRefreshHz;
+            monitorPanel.ScalePercent = appSettings.MonitorScalePercent;
+            monitorPanel.Compact = appSettings.MonitorCompact;
+            monitorViewHint.Text = ViewHint(view);
+            monitorPopoutButton.IsEnabled = appSettings.MonitorEnabled;
+
+            if (monitorWindow != null)
+            {
+                if (!appSettings.MonitorEnabled || monitorWindow.OverlayMode != appSettings.MonitorOverlayMode)
+                {
+                    // The frame/transparency can't change on an open window: close it (and reopen as the new kind when still enabled).
+                    bool reopen = appSettings.MonitorEnabled;
+                    monitorWindow.Close();
+                    if (reopen) OpenMonitorWindow();
+                }
+                else monitorWindow.ApplyLive(appSettings, view);
+            }
+            UpdateMonitorRunning();
+        }
+
+        private void MonitorSettings_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!ready || suppressMonitorChange) return;
+            ApplyMonitorSettings();
+            appSettings.Save();
+        }
+
+        private void MonitorSettings_Numeric(object sender, NumericUpDownValueChangedEventArgs e)
+        {
+            if (!ready || suppressMonitorChange) return;
+            ApplyMonitorSettings();
+            appSettings.Save();
+        }
+
+        private void MonitorSettings_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!ready || suppressMonitorChange) return;
+            ApplyMonitorSettings();
+            appSettings.Save();
+        }
+
+        /// <summary>The tab view only draws (and only asks the engine for snapshots) while it can be seen.</summary>
+        private void UpdateMonitorRunning()
+        {
+            if (monitorPanel == null) return;
+            bool visible = monitorTab.IsSelected && WindowState != WindowState.Minimized;
+            if (appSettings.MonitorEnabled && visible) monitorPanel.Start();
+            else monitorPanel.Stop();
+        }
+
+        private void MonitorPopout_Click(object sender, RoutedEventArgs e)
+        {
+            if (monitorWindow != null) { monitorWindow.Close(); return; }
+            OpenMonitorWindow();
+        }
+
+        private void OpenMonitorWindow()
+        {
+            var w = new MonitorWindow(engine, appSettings, SelectedMonitorView());
+            monitorWindow = w;
+            w.Closed += (_, _) =>
+            {
+                // Only clear our reference if it is still this window (a reopen may already have replaced it).
+                if (!ReferenceEquals(monitorWindow, w)) return;
+                monitorWindow = null;
+                monitorPopoutButton.Content = "Open pop-out window";
+            };
+            monitorPopoutButton.Content = "Close pop-out window";
+            w.Show();
+        }
+
         // ── Shutdown ─────────────────────────────────────────────────────────────
 
         protected override void OnClosed(EventArgs e)
         {
+            try { monitorPanel?.Stop(); } catch { }
+            try { monitorWindow?.Close(); } catch { }
             try { networkApi?.Dispose(); } catch { }
             try { mouseUdp?.Dispose(); } catch { }
             try { blockTimer?.Stop(); } catch { }

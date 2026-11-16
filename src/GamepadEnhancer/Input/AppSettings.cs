@@ -42,6 +42,24 @@ namespace GamepadEnhancer
         /// <summary>Virtual-key code of the toggle / panic hotkey (default Scroll Lock).</summary>
         public int BlockHotkeyVk { get; set; } = 0x91;
 
+        /// <summary>When blocking is on, swallow mapped keyboard keys. On by default so existing setups behave as before.</summary>
+        public bool BlockKeyboard { get; set; } = true;
+        /// <summary>When blocking is on, swallow mapped mouse buttons, wheel and (with mouse look) movement.</summary>
+        public bool BlockMouse { get; set; } = true;
+
+        /// <summary>Live controller monitor (Monitor tab and overlay window). All app-wide, not per profile.</summary>
+        public bool MonitorEnabled { get; set; } = true;
+        /// <summary>"Physical", "Processed" or "Final".</summary>
+        public string MonitorView { get; set; } = "Final";
+        /// <summary>Size of the drawn controller, percent of the base 440x300 (50..200).</summary>
+        public int MonitorScalePercent { get; set; } = 100;
+        /// <summary>UI refresh rate in Hz (30..144). Independent of the output rate.</summary>
+        public int MonitorRefreshHz { get; set; } = 60;
+        public bool MonitorCompact { get; set; }
+        public bool MonitorAlwaysOnTop { get; set; }
+        /// <summary>Overlay window without frame or background (only the controller is drawn).</summary>
+        public bool MonitorOverlayMode { get; set; }
+
         public static string NewToken()
         {
             const string alphabet = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";

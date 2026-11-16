@@ -14,7 +14,13 @@ Everything else passes through, so you can still type, use other keys, and so on
 
 Blocking is active only while all of these are true: blocking is enabled, it is toggled on, the virtual controller is connected, Input capture is **Low-Level Hooks**, and the focused program is in your list. GamepadEnhancer's own window never counts, so you can always edit settings.
 
+## Keyboard and mouse separately
+
+**Block keyboard** and **Block mouse** (both on by default, so existing setups behave as before) let you swallow only one device: keyboard-only leaves the mouse completely alone, mouse-only leaves every key alone. The mouse option covers mouse buttons, the wheel and mouse-look movement.
+
 ## Safety rules
+
+- **Restore input now** (Block & Mouse tab) stops swallowing immediately, the same as the hotkey; the button then reads **Resume blocking**.
 
 - The **toggle / panic hotkey** (default Scroll Lock) pauses and resumes blocking and is itself never blocked.
 - Input injected by other programs (SendInput, MAKCU, etc.) is never blocked.

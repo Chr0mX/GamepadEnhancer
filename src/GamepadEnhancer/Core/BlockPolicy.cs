@@ -22,8 +22,9 @@ namespace GamepadEnhancer
         /// <summary>
         /// Builds the blocked set from what the profile maps: keys bound to a pad action, mouse buttons/wheel bound to a
         /// pad action, and mouse movement when mouse-look is on. Unmapped inputs are never blocked.
+        /// <paramref name="blockKeyboard"/> / <paramref name="blockMouse"/> let either device be left alone entirely.
         /// </summary>
-        public static BlockSettings From(EngineSettings engine, bool active, int hotkeyVk)
+        public static BlockSettings From(EngineSettings engine, bool active, int hotkeyVk, bool blockKeyboard = true, bool blockMouse = true)
         {
             var keys = new HashSet<int>();
             var mouse = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -32,8 +33,8 @@ namespace GamepadEnhancer
                 foreach (BindingSetting b in engine.Bindings.Values)
                 {
                     if (b == null || string.IsNullOrWhiteSpace(b.Key) || b.Key.Equals("None", StringComparison.OrdinalIgnoreCase)) continue;
-                    if (MouseInputNames.IsMouseInput(b.Key)) mouse.Add(b.Key);
-                    else foreach (int vk in KeyNames.ToVirtualKeys(b.Key)) keys.Add(vk);
+                    if (MouseInputNames.IsMouseInput(b.Key)) { if (blockMouse) mouse.Add(b.Key); }
+                    else if (blockKeyboard) foreach (int vk in KeyNames.ToVirtualKeys(b.Key)) keys.Add(vk);
                 }
             }
             return new BlockSettings
@@ -41,7 +42,7 @@ namespace GamepadEnhancer
                 Active = active,
                 BlockedKeys = keys,
                 BlockedMouseInputs = mouse,
-                BlockMouseMove = engine != null && engine.MouseLookEnabled,
+                BlockMouseMove = blockMouse && engine != null && engine.MouseLookEnabled,
                 HotkeyVk = hotkeyVk
             };
         }

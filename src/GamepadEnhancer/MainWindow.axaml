@@ -15,7 +15,9 @@
         <TextBlock Classes="title" Text="GamepadEnhancer" VerticalAlignment="Center" Margin="0,4,18,4" />
         <ComboBox x:Name="controllerTypeBox" MinWidth="120" Margin="0,4,8,4" VerticalAlignment="Center" />
         <Button x:Name="connectButton" Classes="primary" Content="Connect" Margin="0,4,6,4" Click="ConnectButton_Click" />
-        <Button x:Name="disconnectButton" Content="Disconnect" IsEnabled="False" Margin="0,4,18,4" Click="DisconnectButton_Click" />
+        <Button x:Name="disconnectButton" Content="Disconnect" IsEnabled="False" Margin="0,4,12,4" Click="DisconnectButton_Click" />
+        <TextBlock x:Name="activeControllerLabel" Text="Output: none" VerticalAlignment="Center" FontWeight="SemiBold"
+                   Foreground="{DynamicResource AccentTextBrush}" Margin="0,4,18,4" />
 
         <TextBlock Text="Profile" VerticalAlignment="Center" Margin="0,4,8,4" />
         <ComboBox x:Name="profileComboBox" MinWidth="140" Margin="0,4,6,4" VerticalAlignment="Center" SelectionChanged="ProfileComboBox_SelectionChanged" />
@@ -124,6 +126,40 @@
         </ScrollViewer>
       </TabItem>
 
+      <!-- ─────────────── Monitor ─────────────── -->
+      <TabItem Header="Monitor" x:Name="monitorTab">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="0,12,0,12" Spacing="12">
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Controller monitor" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="A live picture of the virtual controller. Pick which stage of the pipeline to look at: what your keyboard/mouse ask for, what the app makes of it (drift, recoil, filtering, mouse look, turbo), or exactly what is sent to the virtual pad. It draws on its own timer and never delays the controller output." />
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="View" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <ComboBox x:Name="monitorViewBox" MinWidth="200" Margin="0,0,16,4" SelectionChanged="MonitorSettings_SelectionChanged" />
+                  <TextBlock Text="Size (%)" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="monitorScaleBox" Minimum="50" Maximum="200" Value="100" Increment="10" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="MonitorSettings_Numeric" />
+                  <TextBlock Text="Refresh (Hz)" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <ComboBox x:Name="monitorHzBox" MinWidth="90" Margin="0,0,0,4" SelectionChanged="MonitorSettings_SelectionChanged" />
+                </WrapPanel>
+                <WrapPanel Orientation="Horizontal">
+                  <CheckBox x:Name="monitorEnabledBox" Content="Live visualization" IsChecked="True" Margin="0,0,16,4" IsCheckedChanged="MonitorSettings_Checked" />
+                  <CheckBox x:Name="monitorCompactBox" Content="Compact" Margin="0,0,16,4" IsCheckedChanged="MonitorSettings_Checked" />
+                  <CheckBox x:Name="monitorTopmostBox" Content="Pop-out always on top" Margin="0,0,16,4" IsCheckedChanged="MonitorSettings_Checked" />
+                  <CheckBox x:Name="monitorOverlayBox" Content="Pop-out as transparent overlay" Margin="0,0,16,4" IsCheckedChanged="MonitorSettings_Checked" />
+                  <Button x:Name="monitorPopoutButton" Content="Open pop-out window" Margin="0,0,0,4" Click="MonitorPopout_Click" />
+                </WrapPanel>
+                <TextBlock x:Name="monitorViewHint" Classes="muted" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <Border x:Name="monitorHost" HorizontalAlignment="Center" />
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
       <!-- ─────────────── Block & Mouse ─────────────── -->
       <TabItem Header="Block &amp; Mouse">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
@@ -134,6 +170,11 @@
                 <TextBlock Classes="muted" TextWrapping="Wrap"
                            Text="While one of the listed programs is focused and the virtual controller is connected, the keys and mouse buttons you mapped to pad actions (and mouse movement, if mouse look is on) are swallowed so only the controller reaches the game. Unmapped input is untouched, and the toggle hotkey is never blocked. Needs the Low-Level Hooks capture method. Input injected by other tools is never blocked." />
                 <CheckBox x:Name="blockEnabledBox" Content="Block mapped input while a listed program is focused" IsCheckedChanged="BlockSettings_Changed" />
+                <WrapPanel Orientation="Horizontal">
+                  <CheckBox x:Name="blockKeyboardBox" Content="Block keyboard" IsChecked="True" Margin="0,0,16,4" IsCheckedChanged="BlockSettings_Changed" />
+                  <CheckBox x:Name="blockMouseBox" Content="Block mouse (buttons, wheel, mouse look)" IsChecked="True" Margin="0,0,16,4" IsCheckedChanged="BlockSettings_Changed" />
+                  <Button x:Name="blockRestoreButton" Content="Restore input now" Margin="0,0,0,4" Click="BlockRestore_Click" />
+                </WrapPanel>
                 <StackPanel Spacing="6">
                   <TextBlock Text="Programs (process names, separated by commas)" />
                   <TextBox x:Name="blockProcessesBox" Watermark="game.exe, other.exe" LostFocus="BlockSettings_LostFocus" />

@@ -24,6 +24,8 @@ namespace GamepadEnhancer
         void Disconnect();
         void SetAxisValue(DualShock4Axis axis, byte value);
         void SetButtonState(DualShock4Button button, bool pressed);
+        /// <summary>The PS button (and touchpad click).</summary>
+        void SetButtonState(DualShock4SpecialButton button, bool pressed);
         void SetSliderValue(DualShock4Slider slider, byte value);
         void SetDPadDirection(DualShock4DPadDirection direction);
         void SubmitReport();
@@ -49,6 +51,7 @@ namespace GamepadEnhancer
         public void Disconnect() => pad.Disconnect();
         public void SetAxisValue(DualShock4Axis axis, byte value) => pad.SetAxisValue(axis, value);
         public void SetButtonState(DualShock4Button button, bool pressed) => pad.SetButtonState(button, pressed);
+        public void SetButtonState(DualShock4SpecialButton button, bool pressed) => pad.SetButtonState(button, pressed);
         public void SetSliderValue(DualShock4Slider slider, byte value) => pad.SetSliderValue(slider, value);
         public void SetDPadDirection(DualShock4DPadDirection direction) => pad.SetDPadDirection(direction);
         public void SubmitReport() => pad.SubmitReport();

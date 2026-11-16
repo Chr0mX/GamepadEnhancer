@@ -34,13 +34,16 @@ namespace GamepadEnhancer
         public const string ActionDPadDown = "DPad Down";
         public const string ActionDPadLeft = "DPad Left";
         public const string ActionDPadRight = "DPad Right";
+        /// <summary>Xbox Guide / PlayStation PS button. Appended last so every existing action keeps its bit index.</summary>
+        public const string ActionGuidePs = "Guide / PS";
 
         public static readonly string[] BindingActions =
         {
             ActionACross, ActionBCircle, ActionXSquare, ActionYTriangle,
             ActionLbL1, ActionRbR1, ActionLtL2, ActionRtR2,
             ActionBackShare, ActionStartOptions, ActionLsL3, ActionRsR3,
-            ActionDPadUp, ActionDPadDown, ActionDPadLeft, ActionDPadRight
+            ActionDPadUp, ActionDPadDown, ActionDPadLeft, ActionDPadRight,
+            ActionGuidePs
         };
 
         private const double NormalPeriodMs = 10.0;
@@ -107,6 +110,18 @@ namespace GamepadEnhancer
 
         public bool IsConnected => running;
         public string ControllerName => useXbox ? "Xbox 360" : "PS4";
+        /// <summary>True while the pad is being sent to another PC instead of a local ViGEm pad.</summary>
+        public bool IsRemote { get; private set; }
+        public PadFamily Family => useXbox ? PadFamily.Xbox360 : PadFamily.DualShock4;
+
+        /// <summary>
+        /// Lock-free snapshots of the physical / processed / final pad state for the live monitor. The engine builds them
+        /// only while <see cref="PadMonitor.Enabled"/> is set, and never waits on a reader.
+        /// </summary>
+        public PadMonitor Snapshots { get; } = new();
+
+        // Left stick and analog trigger values as last written to the pad (-1..1, +Y up); used by the monitor's Final view.
+        private double padLx, padLy;
 
         public EngineSettings Settings
         {
@@ -149,6 +164,8 @@ namespace GamepadEnhancer
             }
 
             lock (sync) ResetState();
+            IsRemote = remote != null;
+            Snapshots.Reset(Family, true, IsRemote);
             running = true;
             thread = new Thread(Loop) { IsBackground = true, Name = "ViGEm output", Priority = ThreadPriority.Normal };
             thread.Start();
@@ -163,6 +180,8 @@ namespace GamepadEnhancer
             if (t != null && t != Thread.CurrentThread) t.Join(500);
             ReleaseController();
             lock (sync) ResetState();
+            IsRemote = false;
+            Snapshots.Reset(Family, false, false);
             lastStatus = null;
         }
 
@@ -201,6 +220,7 @@ namespace GamepadEnhancer
             recoilStepIndex = 0;
             oscHighPhase = false;
             leftWasRemote = false;
+            padLx = padLy = 0.0;
             Remote.Clear();
         }
 
@@ -449,6 +469,7 @@ namespace GamepadEnhancer
                             // The driver call happens outside the lock so mouse/keyboard hooks never wait on it.
                             IXboxPad x = xbox; IDs4Pad d = ds4;
                             if (useXbox) x?.SubmitReport(); else d?.SubmitReport();
+                            Snapshots.NoteReport();
                         }
                     }
                     catch (Exception ex)
@@ -550,15 +571,21 @@ namespace GamepadEnhancer
                 lastTickPreciseMs = nowPrecise;
 
                 // Mouse look: relative mouse movement drives the right stick on top of drift/recoil/filtering.
+                double mouseLookX = 0.0, mouseLookY = 0.0;   // this tick's mouse-look contribution (percent, engine-native Y), for the monitor
+                double processedX, processedY;               // right stick after drift/recoil/filter/mouse look, before quantization
                 if (s.MouseLookEnabled)
                 {
                     (double mx, double my) = mouseLook.Step(nowPrecise, s.MouseSensitivityX, s.MouseSensitivityY,
                         s.MouseCurve, s.MouseGameDeadZonePercent / 100.0, s.MouseReleaseMs, s.MouseInvertY);
                     if (useXbox) my = -my;   // mouse down is +Y here (PS4 convention); on Xbox +Y is up
+                    mouseLookX = mx;
+                    mouseLookY = my;
                     outX = Math.Clamp(outX + mx, -100.0, 100.0);
                     outY = Math.Clamp(outY + my, -100.0, 100.0);
                 }
                 else mouseLook.Reset();
+                processedX = outX;
+                processedY = outY;
 
                 RemoteFrame rf = Remote.Snapshot(now);
                 int mask = PressedMask(s, now) | rf.ButtonMask;
@@ -577,6 +604,9 @@ namespace GamepadEnhancer
                     ApplyXboxBindings(mask);
                     ApplyXboxRemote(rf);
                     MarkReport(rx, rsY, mask, now, rf.Signature);
+                    if (Snapshots.Enabled)
+                        PublishPad(s, now, rf, mask, mouseLookX, mouseLookY, processedX, processedY,
+                            PadStateMath.FromXboxAxis(rx), PadStateMath.FromXboxAxis(rsY));
                 }
                 else if (!useXbox && ds4 != null)
                 {
@@ -593,6 +623,9 @@ namespace GamepadEnhancer
                     ApplyDs4Bindings(mask);
                     ApplyDs4Remote(rf);
                     MarkReport(rx, rsY, mask, now, rf.Signature);
+                    if (Snapshots.Enabled)
+                        PublishPad(s, now, rf, mask, mouseLookX, mouseLookY, processedX, processedY,
+                            PadStateMath.FromDs4Axis(rx), PadStateMath.FromDs4Axis(rsY));
                 }
 
                 string ctrl = ControllerName;
@@ -669,6 +702,7 @@ namespace GamepadEnhancer
                 xbox.SetAxisValue(Xbox360Axis.RightThumbY, 0);
                 ApplyXboxBindings(mask);
                 MarkReport(0, 0, mask, now);
+                if (Snapshots.Enabled) PublishPad(s, now, RemoteFrame.None, mask, 0, 0, 0, 0, 0, 0);
             }
             else if (!useXbox && ds4 != null)
             {
@@ -676,6 +710,7 @@ namespace GamepadEnhancer
                 ds4.SetAxisValue(DualShock4Axis.RightThumbY, StickMath.Ds4Center);
                 ApplyDs4Bindings(mask);
                 MarkReport(StickMath.Ds4Center, StickMath.Ds4Center, mask, now);
+                if (Snapshots.Enabled) PublishPad(s, now, RemoteFrame.None, mask, 0, 0, 0, 0, 0, 0);
             }
         }
 
@@ -690,6 +725,34 @@ namespace GamepadEnhancer
             lastReportSig = sig;
             lastReportMs = now;
             submitPending = true;
+        }
+
+        /// <summary>Bit i is set when BindingActions[i] is physically held, ignoring turbo, disengage and remote control. Under the lock.</summary>
+        private int RawMask(EngineSettings s)
+        {
+            int mask = 0;
+            for (int i = 0; i < BindingActions.Length; i++)
+            {
+                if (s.Bindings.TryGetValue(BindingActions[i], out BindingSetting b)
+                    && !string.Equals(b.Key, "None", StringComparison.OrdinalIgnoreCase)
+                    && activeKeys.Contains(b.Key))
+                    mask |= 1 << i;
+            }
+            return mask;
+        }
+
+        /// <summary>
+        /// Hands the three views (physical / processed / final) to the monitor. Only called while a monitor is open, under
+        /// the engine lock, and only swaps references, so it cannot wait on the UI.
+        /// </summary>
+        private void PublishPad(EngineSettings s, long now, RemoteFrame rf, int mask,
+            double mouseX, double mouseY, double processedX, double processedY, double finalRightX, double finalRightY)
+        {
+            bool xb = useXbox;
+            int rawMask = RawMask(s) | rf.ButtonMask;
+            var (physical, processed, final) = PadStateMath.Build(xb, rf, rawMask, mask,
+                mouseX, mouseY, processedX, processedY, finalRightX, finalRightY, padLx, padLy);
+            Snapshots.Publish(physical, processed, final, now);
         }
 
         private void RaiseStatus(string text)
@@ -737,6 +800,7 @@ namespace GamepadEnhancer
             xbox.SetButtonState(Xbox360Button.Down, Has(m, ActionDPadDown));
             xbox.SetButtonState(Xbox360Button.Left, Has(m, ActionDPadLeft));
             xbox.SetButtonState(Xbox360Button.Right, Has(m, ActionDPadRight));
+            xbox.SetButtonState(Xbox360Button.Guide, Has(m, ActionGuidePs));
             xbox.SetSliderValue(Xbox360Slider.LeftTrigger, Has(m, ActionLtL2) ? byte.MaxValue : (byte)0);
             xbox.SetSliderValue(Xbox360Slider.RightTrigger, Has(m, ActionRtR2) ? byte.MaxValue : (byte)0);
         }
@@ -758,6 +822,7 @@ namespace GamepadEnhancer
             ds4.SetSliderValue(DualShock4Slider.LeftTrigger, Has(m, ActionLtL2) ? byte.MaxValue : (byte)0);
             ds4.SetSliderValue(DualShock4Slider.RightTrigger, Has(m, ActionRtR2) ? byte.MaxValue : (byte)0);
             ds4.SetDPadDirection(DPad(m));
+            ds4.SetButtonState(DualShock4SpecialButton.Ps, Has(m, ActionGuidePs));
         }
 
         /// <summary>Remote left stick and analog triggers (the right stick and buttons are merged in Tick). Under the lock.</summary>
@@ -767,6 +832,8 @@ namespace GamepadEnhancer
             {
                 xbox.SetAxisValue(Xbox360Axis.LeftThumbX, rf.LeftActive ? RemoteControlState.ToXboxAxis(rf.Lx) : (short)0);
                 xbox.SetAxisValue(Xbox360Axis.LeftThumbY, rf.LeftActive ? RemoteControlState.ToXboxAxisY(rf.Ly) : (short)0);
+                padLx = rf.LeftActive ? PadStateMath.FromRemoteX(rf.Lx) : 0.0;
+                padLy = rf.LeftActive ? PadStateMath.FromRemoteYUp(rf.Ly) : 0.0;
                 leftWasRemote = rf.LeftActive;
             }
             if (rf.Lt >= 0) xbox.SetSliderValue(Xbox360Slider.LeftTrigger, RemoteControlState.ToTriggerByte(rf.Lt));
@@ -779,6 +846,8 @@ namespace GamepadEnhancer
             {
                 ds4.SetAxisValue(DualShock4Axis.LeftThumbX, rf.LeftActive ? RemoteControlState.ToDs4Axis(rf.Lx) : StickMath.Ds4Center);
                 ds4.SetAxisValue(DualShock4Axis.LeftThumbY, rf.LeftActive ? RemoteControlState.ToDs4Axis(rf.Ly) : StickMath.Ds4Center);
+                padLx = rf.LeftActive ? PadStateMath.FromRemoteX(rf.Lx) : 0.0;
+                padLy = rf.LeftActive ? PadStateMath.FromRemoteYUp(rf.Ly) : 0.0;
                 leftWasRemote = rf.LeftActive;
             }
             if (rf.Lt >= 0) ds4.SetSliderValue(DualShock4Slider.LeftTrigger, RemoteControlState.ToTriggerByte(rf.Lt));

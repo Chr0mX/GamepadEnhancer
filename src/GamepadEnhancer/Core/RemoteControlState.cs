@@ -21,6 +21,9 @@ namespace GamepadEnhancer
         /// <summary>Bit i = ControllerEngine.BindingActions[i] pressed remotely.</summary>
         public int ButtonMask { get; }
 
+        /// <summary>No remote control active (triggers not driven).</summary>
+        public static RemoteFrame None => new(false, false, 0, 0, 0, 0, -1, -1, 0);
+
         public bool Any => LeftActive || RightActive || Lt >= 0 || Rt >= 0 || ButtonMask != 0;
 
         /// <summary>Cheap value that changes whenever anything in the frame changes (used by the report change detector).</summary>

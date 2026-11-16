@@ -91,6 +91,9 @@ namespace GamepadEnhancer
             if (id >= 0) value[id] = pressed ? 1 : 0;
         }
 
+        /// <summary>The network protocol has no id for the PS button, so it is not sent to the other PC.</summary>
+        public void SetButtonState(DualShock4SpecialButton b, bool pressed) { }
+
         public void SetDPadDirection(DualShock4DPadDirection d)
         {
             bool up = d == DualShock4DPadDirection.North || d == DualShock4DPadDirection.Northeast || d == DualShock4DPadDirection.Northwest;
