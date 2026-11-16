@@ -34,9 +34,6 @@ namespace GamepadEnhancer
         /// <summary>Raised (outside the lock, from the capturing thread) when the active backend fails. Switch methods to recover.</summary>
         public event Action<InputCaptureMethod, string> Faulted;
 
-        /// <summary>Number of keys + mouse buttons currently tracked as held (for diagnostics and tests).</summary>
-        public int HeldCount { get { lock (sync) return heldKeys.Count + heldButtons.Count; } }
-
         // ── Switching ────────────────────────────────────────────────────────────
 
         /// <summary>

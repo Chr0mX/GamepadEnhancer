@@ -1,20 +1,10 @@
 # GamepadEnhancer
 
-Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm and applies base stick drift, right stick filtering, a recoil pattern, and PC-key-to-controller bindings. It only reads your mouse and keyboard; it never moves them.
+Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm and applies base stick drift, right stick filtering, a recoil pattern, and PC-key-to-controller bindings. It reads your mouse and keyboard and never moves them; with the optional input blocking it can also swallow the mapped keys and buttons while a chosen game is focused (see [docs/BLOCKING.md](docs/BLOCKING.md)).
 
 **Documentation site:** https://chr0mx.github.io/GamepadEnhancer/ (overview, how it works with live labs, how it was built, reference). Source is in [`site/`](site/); it is deployed by `.github/workflows/pages.yml` (Settings > Pages > Source: GitHub Actions).
 
 **Downloads:** see [Releases](https://github.com/Chr0mX/GamepadEnhancer/releases). Release notes for each beta are in [`docs/releases/`](docs/releases/).
-
-## Beta 1.1 highlights
-
-- UI migrated from WinForms to **Avalonia UI** (same ViGEmBus integration, profiles and pattern files)
-- Responsive layout: header wraps, cards re-flow to one or two columns, no horizontal scrollbars
-- **PC to Controller** has its own tab (Controller / PC to Controller / Recoil Pattern)
-- **Right stick filtering** (separate from base drift, RS only). Slide it below zero (e.g. `-7`, `-10`); the
-  **Filter Algorithm** dropdown picks the effect: RC-Style Micro-Oscillation flips the stick value symmetrically
-  around its target on every report (`-10` on PS4: 118 and 138 around 128), hundreds of times per second on its own
-  ~2 ms thread (about 500 reports per second); Exponential Low-Pass Filter makes a soft rounded wiggle and eases changes on X and Y instead. The wiggle always goes on the axis across the drift (Y for Left/Right, X for Up/Down). Base drift is unchanged (0..100).
 
 ## Features
 
@@ -34,6 +24,12 @@ Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm
 - **Input blocking and mouse look:** while a chosen game is focused, swallow the keyboard/mouse input you mapped to pad actions so only the controller reaches the game, bind mouse buttons and the wheel to pad actions, and let mouse movement drive the right stick (off by default). See [docs/BLOCKING.md](docs/BLOCKING.md)
 - Profiles (JSON in `profiles/`) save everything above; files from the WinForms build load unchanged
 
+## Requirements
+
+- Windows 10/11
+- ViGEmBus installed on the PC that runs the app
+- .NET 8 SDK for local builds (the .NET 8 Desktop Runtime is enough to run a release)
+
 ## Install and first run
 
 1. Install **ViGEmBus** on the PC that runs GamepadEnhancer (https://github.com/nefarius/ViGEmBus/releases). Without it the virtual controller cannot be created.
@@ -41,7 +37,7 @@ Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm
 3. Install the **.NET 8 Desktop Runtime** if Windows asks for it (the release is framework-dependent).
 4. Run `GamepadEnhancer.exe`, pick Xbox 360 or PS4, and load or edit a profile.
 
-Build the zip yourself with `package.bat` (see below).
+Build the zip yourself with `package.bat` (see [Package a release zip](#package-a-release-zip)).
 
 ## MAKCU requirements
 
@@ -50,12 +46,6 @@ GamepadEnhancer does not talk to MAKCU hardware directly. It speaks the **MAKCU-
 - Enable the **Network API** on the Network tab on the PC with ViGEmBus, set a port and a token, and allow that port through the firewall.
 - The sender connects to that address and port, sends `auth <token>` first, then the commands. Full protocol: [docs/NETWORK_API.md](docs/NETWORK_API.md).
 - Both PCs must be on the same network. The token is stored in plain text in `settings.json`; use it only on networks you trust.
-
-## Requirements
-
-- Windows 10/11
-- ViGEmBus installed on the PC that runs the app
-- .NET 8 SDK for local builds (the .NET 8 Desktop Runtime is enough to run a release)
 
 ## Run locally
 
@@ -78,6 +68,35 @@ dotnet publish .\src\GamepadEnhancer\GamepadEnhancer.csproj -c Release -r win-x6
 ```
 
 This publishes a win-x64 build and writes `artifacts\GamepadEnhancer-win-x64.zip`. GitHub Actions does the same on every push (`ci.yml`) and creates a release from the manual `build.yml` workflow.
+
+## Tests
+
+```powershell
+dotnet test .\GamepadEnhancer.sln -c Release
+```
+
+The pure logic (input block policy, mouse look, process matching, key names) is covered by xUnit tests in `tests/GamepadEnhancer.Tests`; CI (`ci.yml`) builds, tests and publishes on every push.
+
+## Project layout
+
+| Path | What is in it |
+|---|---|
+| `src/GamepadEnhancer/Core` | Controller engine, stick maths, recoil patterns, block policy, mouse look |
+| `src/GamepadEnhancer/Input` | Low-level hooks, Raw Input, input state, settings, foreground window |
+| `src/GamepadEnhancer/Network` | Network API server, remote link, MAKCU command parser, mouse UDP sender |
+| `src/GamepadEnhancer/Views`, `MainWindow.axaml` | Avalonia UI |
+| `src/GamepadEnhancer/Defaults/Default.json` | Profile shipped inside the app |
+| `tests/GamepadEnhancer.Tests` | Unit tests |
+| `docs/`, `site/` | Markdown docs, release notes, documentation site |
+
+## Documentation
+
+- [docs/AIM_TRIGGER.md](docs/AIM_TRIGGER.md): aim trigger, fire, filtering algorithms and Filter Button/Mode
+- [docs/CENTER_RADIUS.md](docs/CENTER_RADIUS.md): Center Radius modes
+- [docs/INPUT_CAPTURE.md](docs/INPUT_CAPTURE.md): Low-Level Hooks vs Raw Input
+- [docs/NETWORK_API.md](docs/NETWORK_API.md): Network API and mouse button UDP stream
+- [docs/BLOCKING.md](docs/BLOCKING.md): input blocking and mouse look
+- [docs/releases/](docs/releases/): release notes
 
 ## Origin
 

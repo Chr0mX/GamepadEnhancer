@@ -37,7 +37,6 @@ namespace GamepadEnhancer
         }
 
         public bool IsRunning => listener != null;
-        public bool HasClient => authedClient;
         public int Port { get; private set; }
 
         /// <summary>Raised on a thread-pool thread whenever the listening/client status changes.</summary>

@@ -126,8 +126,6 @@ namespace GamepadEnhancer
         private string startError;
         private volatile bool stopping;
         private WndProc windowProc;   // kept alive for the lifetime of the window
-        private long eventCount;
-        private long syntheticCount;
 
         /// <param name="movementOnly">true: a mouse-only source that reports relative movement (for mouse-look) and nothing else;
         /// it never reports faults to the receiver (see <see cref="Failed"/>) so it cannot disturb the active key/button method.</param>
@@ -142,11 +140,6 @@ namespace GamepadEnhancer
 
         public InputCaptureMethod Method => InputCaptureMethod.RawInput;
 
-        /// <summary>WM_INPUT events processed.</summary>
-        public long EventCount => Interlocked.Read(ref eventCount);
-
-        /// <summary>Events whose device handle was NULL, i.e. synthetic input (SendInput) that Raw Input did deliver.</summary>
-        public long SyntheticEventCount => Interlocked.Read(ref syntheticCount);
 
         public bool Start(out string error)
         {
@@ -301,11 +294,7 @@ namespace GamepadEnhancer
             {
                 uint copied = GetRawInputData(hRawInput, RID_INPUT, buffer, ref size, headerSize);
                 if (copied == uint.MaxValue || copied == 0) return;
-                if (RawInputParser.Route(new ReadOnlySpan<byte>(buffer, 0, (int)copied), IntPtr.Size, Method, receiver, out bool synthetic, movementOnly))
-                {
-                    Interlocked.Increment(ref eventCount);
-                    if (synthetic) Interlocked.Increment(ref syntheticCount);
-                }
+                RawInputParser.Route(new ReadOnlySpan<byte>(buffer, 0, (int)copied), IntPtr.Size, Method, receiver, out _, movementOnly);
             }
             finally { ArrayPool<byte>.Shared.Return(buffer); }
         }

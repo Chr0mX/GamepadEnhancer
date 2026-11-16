@@ -44,8 +44,6 @@ namespace GamepadEnhancer
         };
 
         private const double NormalPeriodMs = 10.0;
-        /// <summary>Fast loop while filtering is active: ~500 reports/s (each flip of RC-style is still one report).</summary>
-        private const double JitterPeriodMs = 2.0;   // default of EngineSettings.FilterPeriodMs
         /// <summary>An unchanged report is re-sent at least this often so the virtual pad never looks idle/stale.</summary>
         private const long HeartbeatMs = 250;
 
