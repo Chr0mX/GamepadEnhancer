@@ -10,7 +10,7 @@ Only inputs that are *mapped*:
 - mouse buttons (`Mouse Left/Right/Middle/X1/X2`) and wheel notches (`Wheel Up/Down`) bound to a pad action,
 - mouse movement, when **Mouse look** is on.
 
-Everything else passes through, so you can still type, use other keys, and so on. The "disengage" keys (Tab, E, ...) and the aim/fire/filter trigger buttons are **not** blocked unless you also bind them to a pad action.
+Everything else passes through, so you can still type, use other keys, and so on. Keys and buttons you did not bind to a pad action are never blocked.
 
 Blocking is active only while all of these are true: blocking is enabled, it is toggled on, the virtual controller is connected, Input capture is **Low-Level Hooks**, and the focused program is in your list. GamepadEnhancer's own window never counts, so you can always edit settings.
 
@@ -30,7 +30,7 @@ Blocking is active only while all of these are true: blocking is enabled, it is 
 
 ## Mouse look
 
-Mouse movement is read with Raw Input (relative counts), so it works with either capture method. The output is added to the right stick on top of drift, filtering and recoil:
+Mouse movement is read with Raw Input (relative counts), so it works with either capture method. The output drives the right stick, and a right stick value set over the Network API replaces it while set:
 
 - **Sensitivity X/Y**: percent of stick per (mouse count per millisecond). A higher number reaches full tilt with a slower mouse.
 - **Curve**: 1 = linear; above 1 gives finer control at low speed.

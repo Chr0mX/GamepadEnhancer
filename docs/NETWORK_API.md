@@ -3,7 +3,7 @@
 Lets another computer drive the virtual controller with MAKCU/MAKXD-style text commands over TCP. It works in two directions with the same app:
 
 - **Receiver** (the PC with ViGEmBus and the game): turn on the **Network** tab, press **Connect** for the controller, give the other PC the address, port and token.
-- **Sender** (optional, the PC with your mouse and keyboard): run this same app, on the **Network** tab turn on **Send to another PC**, enter the receiver's address, port and token, then press **Connect**. The sender runs your drift, recoil and filtering settings and relays the result. It does not need ViGEmBus.
+- **Sender** (optional, the PC with your mouse and keyboard): run this same app, on the **Network** tab turn on **Send to another PC**, enter the receiver's address, port and token, then press **Connect**. The sender relays your key bindings and mouse look. It does not need ViGEmBus.
 
 Any MAKCU client that can open a TCP socket and send text lines can also talk to the receiver.
 
@@ -43,7 +43,7 @@ The MAKCU docs give sticks and triggers as ids 10 to 15. The button ids 0 to 9 a
 Stick **+Y is down on every controller type** (the MAKXD convention); the app flips it for Xbox 360, where the raw Y axis counts up.
 
 ### How it merges with the local settings
-- A remotely set **right stick** replaces the drift, recoil and filtering for that tick (set X and Y together; an unset axis counts as neutral). When the remote releases it, the local behavior resumes.
+- A remotely set **right stick** replaces the mouse-look value for that tick (set X and Y together; an unset axis counts as neutral). When the remote releases it, mouse look (if on) resumes. This is how Axiom drives aiming and recoil.
 - **Buttons** are OR-ed with the local key bindings. **Triggers** set remotely override the local digital trigger bindings.
 - The **left stick** is only driven while a remote value is set.
 

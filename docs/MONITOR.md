@@ -29,9 +29,9 @@ A live picture of the virtual controller: an Xbox-style pad or a DualShock 4, dr
 
 | View | Meaning |
 |---|---|
-| Physical input | What your keyboard, mouse and network commands ask for, before any processing: bound keys held (no turbo, no disengage), the mouse-look stick, remote controls. GamepadEnhancer does not read a physical gamepad, so there is no physical-pad connection status. |
-| Processed input | After drift, recoil, right stick filtering, mouse look, turbo and disengage, before rounding into a report. |
-| Final output | Exactly what is written to the virtual pad: rounding, the oscillation wiggle, the DualShock 4 hat rules. This is what the game receives. |
+| Physical input | What your keyboard, mouse and network commands ask for, before any processing: bound keys held (no turbo), the mouse-look stick, remote controls. GamepadEnhancer does not read a physical gamepad, so there is no physical-pad connection status. |
+| Processed input | After mouse look and turbo, before rounding into a report. |
+| Final output | Exactly what is written to the virtual pad: rounding and the DualShock 4 hat rules. This is what the game receives. |
 
 Sticks show position (the knob eases back to centre in about 45 ms; moving away from centre is never delayed), triggers fill with their analog value and show a percentage, and pressed buttons light up. Readouts show the connection (ViGEm, or "sending to the other PC"), stick and trigger values, the output rate in reports per second, and the last button presses of the chosen view.
 

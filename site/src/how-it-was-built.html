@@ -9,12 +9,14 @@
     <div class="container prose">
       <section id="timeline" class="section-head">
         <h2>Timeline</h2>
+        <div class="callout"><span class="callout-title">History</span><p>This page tells how the app got here. Base drift, recoil patterns and stick filtering described below were later <strong>removed</strong>: Axiom now drives the sticks over the Network API and this app is the pad host.</p></div>
         <ol class="timeline">
           <li><span class="when">April 2026</span><h3>Version 1: WinForms</h3><p>One 1,886-line <code>MainForm</code>. A right-stick <em>jitter</em> to counter recoil, a base drift, key bindings and turbo. It worked, but the logic and the UI were tangled together.</p></li>
           <li><span class="when">June 2026</span><h3>Recoil replaces jitter</h3><p>The jitter idea was reworked into recoil patterns: a list of stick positions played while you fire.</p></li>
           <li><span class="when">August 2026</span><h3>Dark mode and flat UI</h3><p>Two pull requests gave the WinForms app a dark theme and a flat look, which also showed how hard the form was to scale.</p></li>
           <li><span class="when">October 2026</span><h3>Beta 1.1: Avalonia</h3><p>The UI was rewritten in Avalonia 11 with proper scaling, a dedicated tab for PC to controller, and settings preserved. Negative filtering values were introduced: a fast, invisible wiggle of the reported value.</p></li>
           <li><span class="when">October - November 2026</span><h3>Betas 1.2 to 2.2</h3><p>Aim then fire triggers, Hold or Toggle, Circle preset and Loop, two filter algorithms, a Filter rate, an Input capture dropdown with Raw Input, a lag fix, Down/Up/Left/Right pull directions and a shipped default profile. The table below lists the headline of each.</p></li>
+          <li><span class="when">November 2026</span><h3>Pad host: Monitor, Network API, drift and recoil removed</h3><p>A live controller monitor, Xbox 360 / PS4 switching, input blocking and a Network API that also pushes your mouse buttons back. With Axiom driving the sticks, base drift, recoil patterns and stick filtering were removed.</p></li>
         </ol>
         <div class="table-wrap"><table>
           <thead><tr><th>Release</th><th>Headline change</th></tr></thead>
@@ -33,12 +35,12 @@
         <h2>The stack</h2>
         <div class="grid cols-3">
           <article class="card"><h3>C# on .NET 8</h3><p>One project, <code>GamepadEnhancer</code>, Windows only because of the hooks, Raw Input and the driver.</p></article>
-          <article class="card"><h3>Avalonia 11.2.3</h3><p>Cross-platform UI with real layout and scaling. Custom dark theme, a recoil preview control and dialogs.</p></article>
+          <article class="card"><h3>Avalonia 11.2.3</h3><p>Cross-platform UI with real layout and scaling. Custom dark theme, a live controller monitor and dialogs.</p></article>
           <article class="card"><h3>Nefarius.ViGEm.Client</h3><p>Version 1.21.256, the managed client for the ViGEmBus driver. <code>AutoSubmitReport</code> is off; the engine submits.</p></article>
         </div>
         <div class="grid cols-3">
           <article class="card"><h3>Win32 P/Invoke</h3><p>Hooks, Raw Input, <code>GetAsyncKeyState</code>, thread priority and timer resolution.</p></article>
-          <article class="card"><h3>JSON on disk</h3><p>Profiles, patterns and <code>settings.json</code> sit next to the exe so everything stays portable.</p></article>
+          <article class="card"><h3>JSON on disk</h3><p>Profiles and <code>settings.json</code> sit next to the exe so everything stays portable.</p></article>
           <article class="card"><h3>GitHub Actions</h3><p>One workflow builds on Windows and publishes a zip to a release.</p></article>
         </div>
       </section>
@@ -47,7 +49,7 @@
         <h2>Testing without a driver</h2>
         <p>Most of the work was done in a Linux sandbox where the Windows driver, the real input hooks and the NuGet feed were all unavailable. The answer was to keep the interesting logic free of those things and test it directly.</p>
         <ul>
-          <li><strong>Pure logic first.</strong> Percent to axis, pull directions, lifting, the filter maths and pattern parsing live in plain classes with no UI or driver types.</li>
+          <li><strong>Pure logic first.</strong> Percent to axis, mouse look, the block policy and snapshot building live in plain classes with no UI or driver types.</li>
           <li><strong>A stub controller.</strong> The engine tests compile the real engine source against a small stub that records every axis and button write and every <code>SubmitReport()</code>. Tests then assert exact values, such as DS4 Y = 160 for 25 percent Down, or X 116 to 140 for RC -12.</li>
           <li><strong>Scratch projects.</strong> Separate throwaway projects covered the engine, the capture manager, performance and the circle preset, so the repository stays clean.</li>
           <li><strong>The UI is verified on Windows CI.</strong> The sandbox could not compile Avalonia, so each push was built by GitHub Actions on Windows; builds 78 to 94 all passed.</li>

@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GamepadEnhancer - a virtual controller driven by your mouse and keyboard</title>
-  <meta name="description" content="A Windows app that creates a virtual Xbox 360 or PS4 controller with ViGEm and drives its right stick from mouse and keyboard state: base drift, recoil patterns and stick filtering. How it works and how it was built.">
+  <meta name="description" content="A Windows app that creates a virtual Xbox 360 or PS4 controller with ViGEm, maps keys and mouse buttons to it, and lets other programs such as Axiom drive its sticks over the Network API.">
   <meta property="og:title" content="GamepadEnhancer - a virtual controller driven by your mouse and keyboard">
-  <meta property="og:description" content="A Windows app that creates a virtual Xbox 360 or PS4 controller with ViGEm and drives its right stick from mouse and keyboard state: base drift, recoil patterns and stick filtering. How it works and how it was built.">
+  <meta property="og:description" content="A Windows app that creates a virtual Xbox 360 or PS4 controller with ViGEm, maps keys and mouse buttons to it, and lets other programs such as Axiom drive its sticks over the Network API.">
   <meta property="og:type" content="website">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <script>
@@ -45,8 +45,8 @@
       <div class="container hero-grid">
         <div>
           <span class="eyebrow">Windows &middot; .NET 8 &middot; Avalonia &middot; ViGEmBus</span>
-          <h1>A virtual controller that follows your <span class="accent">mouse and keyboard</span></h1>
-          <p class="lead">GamepadEnhancer creates a virtual Xbox 360 or PS4 controller and drives its <strong>right stick</strong> from what your mouse and keyboard are doing: a steady drift, a recoil pattern that plays while you fire, and fast stick filtering. Keys can also press controller buttons.</p>
+          <h1>A virtual controller you can drive from <span class="accent">keys, mouse and the network</span></h1>
+          <p class="lead">GamepadEnhancer creates a virtual Xbox 360 or PS4 controller. Keys, mouse buttons and the wheel press its buttons, mouse movement can drive the <strong>right stick</strong>, and another program such as Axiom can drive every stick, trigger and button over the <strong>Network API</strong>.</p>
           <div class="cta-row">
             <a class="button" href="https://github.com/Chr0mX/GamepadEnhancer/releases/latest">Download the latest release</a>
             <a class="button ghost" href="how-it-works.html">See how it works</a>
@@ -54,17 +54,17 @@
           </div>
           <div class="stat-row" aria-label="At a glance">
             <div class="stat"><b>2</b><span>virtual pads: Xbox 360, DS4</span></div>
-            <div class="stat"><b>up to 500/s</b><span>stick reports while filtering</span></div>
+            <div class="stat"><b>1</b><span>connection for commands and mouse buttons</span></div>
             <div class="stat"><b>2</b><span>ways to read input</span></div>
-            <div class="stat"><b>16</b><span>key-to-button bindings</span></div>
+            <div class="stat"><b>17</b><span>key-to-button bindings</span></div>
           </div>
         </div>
         <div class="diagram" role="img" aria-label="Your mouse and keyboard feed the app, which sends a virtual controller to the game">
           <svg viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg">
             <defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path class="arrowhead" d="M0,0 L8,4 L0,8 z"/></marker></defs>
-            <rect class="box" x="10" y="14" width="170" height="54" rx="10"/><text class="label" x="95" y="37" text-anchor="middle">Mouse &amp; keyboard</text><text class="sub" x="95" y="55" text-anchor="middle">clicks, wheel, keys</text>
+            <rect class="box" x="10" y="14" width="170" height="54" rx="10"/><text class="label" x="95" y="37" text-anchor="middle">Mouse &amp; keyboard</text><text class="sub" x="95" y="55" text-anchor="middle">clicks, wheel, keys, network</text>
             <path class="arrow" d="M95 68 V104"/>
-            <rect class="box accent" x="10" y="104" width="170" height="64" rx="10"/><text class="label" x="95" y="130" text-anchor="middle">GamepadEnhancer</text><text class="sub" x="95" y="148" text-anchor="middle">drift &middot; recoil &middot; filtering</text>
+            <rect class="box accent" x="10" y="104" width="170" height="64" rx="10"/><text class="label" x="95" y="130" text-anchor="middle">GamepadEnhancer</text><text class="sub" x="95" y="148" text-anchor="middle">bindings &middot; mouse look &middot; network</text>
             <path class="arrow" d="M180 136 H238"/>
             <rect class="box" x="238" y="104" width="172" height="64" rx="10"/><text class="label" x="324" y="130" text-anchor="middle">ViGEmBus driver</text><text class="sub" x="324" y="148" text-anchor="middle">virtual Xbox 360 / DS4</text>
             <path class="arrow" d="M324 168 V212"/>
@@ -79,11 +79,11 @@
     <div class="container">
       <section class="section-head" aria-labelledby="what">
         <span class="eyebrow">What it does</span>
-        <h2 id="what">Six things, one virtual stick</h2>
+        <h2 id="what">Six things, one virtual pad</h2>
         <div class="grid cols-3">
-          <article class="card"><h3>Base drift</h3><p>Hold the right stick a set percent away from center in a straight line: <strong>Down, Up, Left or Right</strong>. One slider, 0 to 100.</p></article>
-          <article class="card"><h3>Recoil pattern</h3><p>A list of stick positions that plays while you fire. <strong>Aim, then fire</strong>: Right click aims (hold or toggle), Left click plays the pattern. Start delay, loop, center radius and a Circle preset.</p></article>
-          <article class="card"><h3>Stick filtering</h3><p>A fast symmetric <strong>micro-oscillation</strong> or an <strong>exponential low-pass</strong> with a soft wiggle, on the axis across your drift. Gated by a button and Hold or Toggle.</p></article>
+          <article class="card"><h3>Network API</h3><p>Let another program on your network drive the sticks, triggers and buttons with MAKCU-style commands over TCP. Token protected and off by default.</p></article>
+          <article class="card"><h3>Mouse look</h3><p>Turn mouse movement into right-stick movement, with sensitivity, response curve, game dead zone and release time.</p></article>
+          <article class="card"><h3>Live monitor</h3><p>See the pad as it is sent: physical input, processed input or the final report, as an Xbox or DualShock 4 picture.</p></article>
           <article class="card"><h3>Keys to buttons</h3><p>Bind keyboard keys to 16 controller actions, with optional <strong>turbo</strong> (rapid fire) from 1 to 30 Hz.</p></article>
           <article class="card"><h3>Two input readers</h3><p>Windows <strong>low-level hooks</strong> or <strong>Raw Input</strong> with background capture. One at a time, with held keys released when you switch.</p></article>
           <article class="card"><h3>Profiles</h3><p>Save everything as JSON profiles. A <strong>Default.json</strong> ships inside the app and is the starting point on a fresh install.</p></article>
@@ -106,9 +106,9 @@
         <span class="eyebrow">Good to know</span>
         <h2 id="know">Three things worth reading first</h2>
         <div class="callout"><span class="callout-title">It does not move your mouse</span>
-          <p>The app only <em>reads</em> your mouse and keyboard. Its output is a virtual <strong>controller</strong>: stick values and buttons sent through ViGEm. Nothing is injected into the mouse or keyboard, so the cursor never moves from this app. A game turns stick deflection into camera <em>speed</em>, so a pattern drawn as stick positions is not the shape the view traces.</p></div>
+          <p>The app only <em>reads</em> your mouse and keyboard. Its output is a virtual <strong>controller</strong>: stick values and buttons sent through ViGEm. Nothing is injected into the mouse or keyboard, so the cursor never moves from this app. A game turns stick deflection into camera <em>speed</em>, not into a position.</p></div>
         <div class="callout warn"><span class="callout-title">Games that run as administrator</span>
-          <p>Windows hides mouse and keyboard events from a normal app while an elevated window is in front. If your game runs as administrator, run this app as administrator too, or the aim, fire and filter buttons will not trigger.</p></div>
+          <p>Windows hides mouse and keyboard events from a normal app while an elevated window is in front. If your game runs as administrator, run this app as administrator too, or your bound keys and mouse buttons will not register.</p></div>
         <div class="callout danger"><span class="callout-title">Check the game's rules</span>
           <p>Tools that shape controller input can break the terms of service or anti-cheat rules of online games, and accounts have been banned for it. This project is documented for learning and single-player or private use. You are responsible for how you use it.</p></div>
       </section>
@@ -117,7 +117,7 @@
         <span class="eyebrow">Explore</span>
         <h2 id="pages">The rest of this site</h2>
         <div class="grid cols-3">
-          <a class="card" href="how-it-works.html" style="text-decoration:none;color:inherit"><h3>How it works &rarr;</h3><p class="muted">The architecture, the per-tick output pipeline, recoil and filtering maths, and two live labs you can play with.</p></a>
+          <a class="card" href="how-it-works.html" style="text-decoration:none;color:inherit"><h3>How it works &rarr;</h3><p class="muted">The architecture, the per-tick output pipeline, the Network API and how input is captured.</p></a>
           <a class="card" href="how-it-was-built.html" style="text-decoration:none;color:inherit"><h3>How it was built &rarr;</h3><p class="muted">From a 1,886-line WinForms form to an Avalonia app with a headless engine. Testing without a driver, CI releases, and what went wrong.</p></a>
           <a class="card" href="reference.html" style="text-decoration:none;color:inherit"><h3>Reference &rarr;</h3><p class="muted">Every setting, the profile file, files and folders, key lists, troubleshooting and the release history.</p></a>
         </div>
