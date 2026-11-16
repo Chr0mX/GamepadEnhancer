@@ -4,6 +4,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GamepadEnhancer", "src\GamepadEnhancer\GamepadEnhancer.csproj", "{9F8D12D7-8B8C-4E4A-9A86-6D9A9A4F1C11}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GamepadEnhancer.Tests", "tests\GamepadEnhancer.Tests\GamepadEnhancer.Tests.csproj", "{3B7C5A62-6E2B-4B7A-9C0B-7D3E4F5A6B71}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,6 +16,10 @@ Global
 		{9F8D12D7-8B8C-4E4A-9A86-6D9A9A4F1C11}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F8D12D7-8B8C-4E4A-9A86-6D9A9A4F1C11}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F8D12D7-8B8C-4E4A-9A86-6D9A9A4F1C11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B7C5A62-6E2B-4B7A-9C0B-7D3E4F5A6B71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B7C5A62-6E2B-4B7A-9C0B-7D3E4F5A6B71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B7C5A62-6E2B-4B7A-9C0B-7D3E4F5A6B71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B7C5A62-6E2B-4B7A-9C0B-7D3E4F5A6B71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

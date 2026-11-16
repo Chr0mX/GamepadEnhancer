@@ -50,6 +50,18 @@ namespace GamepadEnhancer
         public RecoilStep[] RecoilSteps { get; init; } = Array.Empty<RecoilStep>();
         public bool WheelDisengageEnabled { get; init; } = true;
         public int DisengageMs { get; init; } = 500;
+        /// <summary>Mouse movement drives the right stick (see <see cref="MouseLook"/>). Off by default.</summary>
+        public bool MouseLookEnabled { get; init; }
+        /// <summary>Percent of stick per (count/ms) horizontally / vertically.</summary>
+        public double MouseSensitivityX { get; init; } = 8.0;
+        public double MouseSensitivityY { get; init; } = 8.0;
+        /// <summary>Response exponent: 1 = linear, above 1 = finer at low speed.</summary>
+        public double MouseCurve { get; init; } = 1.0;
+        /// <summary>The game's inner dead zone in percent (0..50); mouse output starts just past it.</summary>
+        public int MouseGameDeadZonePercent { get; init; }
+        /// <summary>How long the last mouse output is held with no movement before the stick recenters.</summary>
+        public int MouseReleaseMs { get; init; } = 30;
+        public bool MouseInvertY { get; init; }
         public HashSet<string> DisableKeys { get; init; } = new(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, BindingSetting> Bindings { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     }
