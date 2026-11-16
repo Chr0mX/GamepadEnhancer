@@ -53,6 +53,9 @@ namespace GamepadEnhancer
         private readonly HashSet<string> activeKeys = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, long> turboHeldSinceMs = new(StringComparer.OrdinalIgnoreCase);
         private readonly Stopwatch clock = Stopwatch.StartNew();
+        private readonly MouseLook mouseLook = new();
+        private readonly Dictionary<string, long> wheelPulseUntilMs = new(StringComparer.OrdinalIgnoreCase);
+        private const long WheelPulseMs = 60;
 
         private ViGEmClient client;
         private IXboxPad xbox;
@@ -94,6 +97,12 @@ namespace GamepadEnhancer
         private bool oscHighPhase;
         private string lastStatus;
         private bool leftWasRemote;
+
+        /// <summary>
+        /// Optional probe: true if the physical mouse input with this name ("Mouse Left", ...) is currently being swallowed by
+        /// the input blocker. A swallowed button never updates GetAsyncKeyState, so the stuck-button safety net skips it.
+        /// </summary>
+        public volatile Func<string, bool> BlockedInputProbe;
 
         /// <summary>Controls set over the network (see NetworkApiServer); cleared whenever the pad disconnects.</summary>
         public RemoteControlState Remote { get; } = new();
@@ -185,6 +194,8 @@ namespace GamepadEnhancer
             submitPending = false;
             disengaged = false;
             turboHeldSinceMs.Clear();
+            wheelPulseUntilMs.Clear();
+            mouseLook.Reset();
             recoilTriggerDown = false;
             aimLatched = false;
             jitterLatched = false;
@@ -216,6 +227,9 @@ namespace GamepadEnhancer
             {
                 EngineSettings s = settings;
                 SyncTriggerSettings(s);
+
+                // Mouse buttons can be bound to pad actions like keys ("Mouse Left", "Mouse X1", ...).
+                if (isDown) activeKeys.Add(button); else activeKeys.Remove(button);
 
                 // Left click is the fire button.
                 if (string.Equals(button, "Mouse Left", StringComparison.OrdinalIgnoreCase))
@@ -283,13 +297,37 @@ namespace GamepadEnhancer
             else if (!want && recoilTriggerDown) DeactivateRecoil();
         }
 
-        public void OnWheel()
+        public void OnWheel(int direction)
         {
             lock (sync)
             {
                 EngineSettings s = settings;
                 if (s.WheelDisengageEnabled) Engage(s, "mouse wheel");
+
+                // A wheel notch has no "up": it acts as a short press of "Wheel Up" / "Wheel Down" for bindings.
+                if (direction != 0)
+                {
+                    string name = direction > 0 ? MouseInputNames.WheelUp : MouseInputNames.WheelDown;
+                    activeKeys.Add(name);
+                    wheelPulseUntilMs[name] = NowMs() + WheelPulseMs;
+                }
             }
+        }
+
+        /// <summary>Relative mouse movement (counts); only used when mouse-look is enabled.</summary>
+        public void OnMouseMove(int dx, int dy)
+        {
+            if (settings.MouseLookEnabled) mouseLook.Accumulate(dx, dy);
+        }
+
+        private void ExpireWheelPulses(long now)
+        {
+            if (wheelPulseUntilMs.Count == 0) return;
+            List<string> done = null;
+            foreach (var pair in wheelPulseUntilMs)
+                if (now >= pair.Value) (done ??= new List<string>()).Add(pair.Key);
+            if (done == null) return;
+            foreach (string name in done) { wheelPulseUntilMs.Remove(name); activeKeys.Remove(name); }
         }
 
         /// <summary>Changing the trigger button or mode clears any latched/held state (called under the lock).</summary>
@@ -339,21 +377,27 @@ namespace GamepadEnhancer
         /// Safety net: if the hook ever misses a button-up (e.g. Windows dropped the hook), release the fire button
         /// (and the aim button in Hold mode) once the physical button has been seen up for several consecutive ticks.
         /// </summary>
+        private bool PhysicalPollable(string button)
+        {
+            Func<string, bool> probe = BlockedInputProbe;
+            return probe == null || !probe(button);
+        }
+
         private void PollStuckButtons(EngineSettings s, long now)
         {
-            if (fireDown && MouseState.TryIsDown("Mouse Left", out bool leftDown))
+            if (fireDown && PhysicalPollable("Mouse Left") && MouseState.TryIsDown("Mouse Left", out bool leftDown))
             {
                 if (leftDown) fireUpPolls = 0;
                 else if (now - fireChangedMs >= 30 && ++fireUpPolls >= 3) fireDown = false;
             }
 
-            if (jitterLatched && !s.JitterToggleMode && UsesJitterGate(s) && MouseState.TryIsDown(s.JitterTriggerKey, out bool jitDown))
+            if (jitterLatched && !s.JitterToggleMode && UsesJitterGate(s) && PhysicalPollable(s.JitterTriggerKey) && MouseState.TryIsDown(s.JitterTriggerKey, out bool jitDown))
             {
                 if (jitDown) jitterUpPolls = 0;
                 else if (now - jitterChangedMs >= 30 && ++jitterUpPolls >= 3) jitterLatched = false;
             }
 
-            if (aimLatched && !s.RecoilToggleMode && UsesAimGate(s) && MouseState.TryIsDown(s.RecoilTriggerKey, out bool aimDown))
+            if (aimLatched && !s.RecoilToggleMode && UsesAimGate(s) && PhysicalPollable(s.RecoilTriggerKey) && MouseState.TryIsDown(s.RecoilTriggerKey, out bool aimDown))
             {
                 if (aimDown) aimUpPolls = 0;
                 else if (now - aimChangedMs >= 30 && ++aimUpPolls >= 3) aimLatched = false;
@@ -438,6 +482,7 @@ namespace GamepadEnhancer
             {
                 long now = NowMs();
                 if (disengaged && now >= disengagedUntilMs) disengaged = false;
+                ExpireWheelPulses(now);
 
                 SyncTriggerSettings(s);
                 if (aimLatched && s.RecoilToggleMode && !s.RecoilEnabled) aimLatched = false; // toggled-on aim doesn't survive disabling recoil

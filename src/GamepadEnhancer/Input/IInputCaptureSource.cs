@@ -21,7 +21,10 @@ namespace GamepadEnhancer
         /// <param name="device">Source device handle (IntPtr.Zero when unknown or synthetic).</param>
         void KeyChanged(InputCaptureMethod source, int vk, bool isDown, System.IntPtr device);
         void MouseButtonChanged(InputCaptureMethod source, MouseButton button, bool isDown, System.IntPtr device);
-        void WheelScrolled(InputCaptureMethod source);
+        /// <param name="direction">Positive = up, negative = down, 0 = unknown.</param>
+        void WheelScrolled(InputCaptureMethod source, int direction);
+        /// <summary>Relative mouse movement (counts). Only the movement-only Raw Input source reports this.</summary>
+        void MouseMoved(InputCaptureMethod source, int dx, int dy);
         /// <summary>A device was unplugged: anything it was holding is released.</summary>
         void DeviceRemoved(InputCaptureMethod source, System.IntPtr device);
         /// <summary>The backend failed while running.</summary>

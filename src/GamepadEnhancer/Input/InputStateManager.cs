@@ -170,13 +170,20 @@ namespace GamepadEnhancer
             }
         }
 
-        public void WheelScrolled(InputCaptureMethod source)
+        public void WheelScrolled(InputCaptureMethod source, int direction)
         {
             lock (sync)
             {
                 if (acceptedMethod != source) return;
-                sink.OnWheel();
+                sink.OnWheel(direction);
             }
+        }
+
+        /// <summary>Movement comes from its own Raw Input source, independent of the active key/button method, and needs no held state.</summary>
+        public void MouseMoved(InputCaptureMethod source, int dx, int dy)
+        {
+            if (disposed) return;
+            sink.OnMouseMove(dx, dy);
         }
 
         public void DeviceRemoved(InputCaptureMethod source, IntPtr device)

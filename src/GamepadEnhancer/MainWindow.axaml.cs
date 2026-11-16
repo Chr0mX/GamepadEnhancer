@@ -27,6 +27,7 @@ namespace GamepadEnhancer
         private readonly RecoilPreview recoilPreview = new();
         private readonly ControllerEngine engine = new();
         private InputStateManager inputManager;
+        private readonly BlockPolicy blockPolicy = new();
         private AppSettings appSettings;
         private NetworkApiServer networkApi;
         private MouseUdpSender mouseUdp;
@@ -166,6 +167,7 @@ namespace GamepadEnhancer
             keys.AddRange(Enumerable.Range(0, 10).Select(i => i.ToString(CultureInfo.InvariantCulture)));
             for (char c = 'A'; c <= 'Z'; c++) keys.Add(c.ToString());
             for (int i = 1; i <= 12; i++) keys.Add("F" + i.ToString(CultureInfo.InvariantCulture));
+            keys.AddRange(MouseInputNames.All);   // mouse buttons and wheel can be bound to pad actions too
             return keys.ToArray();
         }
 
@@ -248,7 +250,8 @@ namespace GamepadEnhancer
             inputManager = new InputStateManager(engine, (method, receiver) =>
                 method == InputCaptureMethod.RawInput
                     ? new RawInputService(receiver)
-                    : new LowLevelHookCapture(receiver));
+                    : new LowLevelHookCapture(receiver, blockPolicy));
+            engine.BlockedInputProbe = name => blockPolicy.Settings.Active && blockPolicy.Settings.BlockedMouseInputs.Contains(name);
             inputManager.Faulted += (method, message) => Dispatcher.UIThread.Post(() => OnCaptureFaulted(method, message));
 
             inputMethodBox.ItemsSource = InputCaptureMethods.Labels;

@@ -11,7 +11,7 @@ namespace GamepadEnhancer
         RawInput
     }
 
-    public enum MouseButton { Left, Right, Middle }
+    public enum MouseButton { Left, Right, Middle, X1, X2 }
 
     public static class InputCaptureMethods
     {
@@ -34,6 +34,8 @@ namespace GamepadEnhancer
         {
             MouseButton.Right => "Mouse Right",
             MouseButton.Middle => "Mouse Middle",
+            MouseButton.X1 => "Mouse X1",
+            MouseButton.X2 => "Mouse X2",
             _ => "Mouse Left"
         };
     }

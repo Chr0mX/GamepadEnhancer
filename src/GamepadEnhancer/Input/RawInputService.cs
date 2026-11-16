@@ -18,7 +18,10 @@ namespace GamepadEnhancer
         private const ushort RI_MOUSE_LEFT_BUTTON_DOWN = 0x0001, RI_MOUSE_LEFT_BUTTON_UP = 0x0002;
         private const ushort RI_MOUSE_RIGHT_BUTTON_DOWN = 0x0004, RI_MOUSE_RIGHT_BUTTON_UP = 0x0008;
         private const ushort RI_MOUSE_MIDDLE_BUTTON_DOWN = 0x0010, RI_MOUSE_MIDDLE_BUTTON_UP = 0x0020;
+        private const ushort RI_MOUSE_BUTTON_4_DOWN = 0x0040, RI_MOUSE_BUTTON_4_UP = 0x0080;
+        private const ushort RI_MOUSE_BUTTON_5_DOWN = 0x0100, RI_MOUSE_BUTTON_5_UP = 0x0200;
         private const ushort RI_MOUSE_WHEEL = 0x0400;
+        private const ushort MOUSE_MOVE_ABSOLUTE = 0x0001;
         private const ushort RI_KEY_BREAK = 0x0001, RI_KEY_E0 = 0x0002;
 
         public static int HeaderSize(int pointerSize) => 8 + 2 * pointerSize;
@@ -27,7 +30,8 @@ namespace GamepadEnhancer
         /// Reads one RAWINPUT buffer and reports it to <paramref name="receiver"/>.
         /// <paramref name="synthetic"/> is true when hDevice is NULL, which is how Windows labels input injected with SendInput.
         /// </summary>
-        public static bool Route(ReadOnlySpan<byte> buffer, int pointerSize, InputCaptureMethod method, IInputEventReceiver receiver, out bool synthetic)
+        /// <param name="movementOnly">true: report only relative mouse movement (the mouse-look source); false: report keys, buttons and wheel, never movement.</param>
+        public static bool Route(ReadOnlySpan<byte> buffer, int pointerSize, InputCaptureMethod method, IInputEventReceiver receiver, out bool synthetic, bool movementOnly = false)
         {
             synthetic = false;
             int header = HeaderSize(pointerSize);
@@ -41,6 +45,7 @@ namespace GamepadEnhancer
 
             if (type == TypeKeyboard)
             {
+                if (movementOnly) return true;
                 if (data.Length < 10) return false;
                 ushort makeCode = BitConverter.ToUInt16(data.Slice(0, 2));
                 ushort flags = BitConverter.ToUInt16(data.Slice(2, 2));
@@ -53,14 +58,33 @@ namespace GamepadEnhancer
             if (type == TypeMouse)
             {
                 if (data.Length < 8) return false;
+                if (movementOnly)
+                {
+                    // RAWMOUSE: usFlags(0) ... lLastX(12) lLastY(16). Absolute devices (touch, remote desktop) are skipped.
+                    if (data.Length < 20) return false;
+                    ushort moveFlags = BitConverter.ToUInt16(data.Slice(0, 2));
+                    if ((moveFlags & MOUSE_MOVE_ABSOLUTE) != 0) return true;
+                    int dx = BitConverter.ToInt32(data.Slice(12, 4));
+                    int dy = BitConverter.ToInt32(data.Slice(16, 4));
+                    if (dx != 0 || dy != 0) receiver.MouseMoved(method, dx, dy);
+                    return true;
+                }
                 ushort buttons = BitConverter.ToUInt16(data.Slice(4, 2));
                 if ((buttons & RI_MOUSE_LEFT_BUTTON_DOWN) != 0) receiver.MouseButtonChanged(method, MouseButton.Left, true, device);
                 if ((buttons & RI_MOUSE_RIGHT_BUTTON_DOWN) != 0) receiver.MouseButtonChanged(method, MouseButton.Right, true, device);
                 if ((buttons & RI_MOUSE_MIDDLE_BUTTON_DOWN) != 0) receiver.MouseButtonChanged(method, MouseButton.Middle, true, device);
-                if ((buttons & RI_MOUSE_WHEEL) != 0) receiver.WheelScrolled(method);
+                if ((buttons & RI_MOUSE_BUTTON_4_DOWN) != 0) receiver.MouseButtonChanged(method, MouseButton.X1, true, device);
+                if ((buttons & RI_MOUSE_BUTTON_5_DOWN) != 0) receiver.MouseButtonChanged(method, MouseButton.X2, true, device);
+                if ((buttons & RI_MOUSE_WHEEL) != 0)
+                {
+                    short wheelDelta = data.Length >= 8 ? BitConverter.ToInt16(data.Slice(6, 2)) : (short)0;
+                    receiver.WheelScrolled(method, wheelDelta > 0 ? 1 : wheelDelta < 0 ? -1 : 0);
+                }
                 if ((buttons & RI_MOUSE_LEFT_BUTTON_UP) != 0) receiver.MouseButtonChanged(method, MouseButton.Left, false, device);
                 if ((buttons & RI_MOUSE_RIGHT_BUTTON_UP) != 0) receiver.MouseButtonChanged(method, MouseButton.Right, false, device);
                 if ((buttons & RI_MOUSE_MIDDLE_BUTTON_UP) != 0) receiver.MouseButtonChanged(method, MouseButton.Middle, false, device);
+                if ((buttons & RI_MOUSE_BUTTON_4_UP) != 0) receiver.MouseButtonChanged(method, MouseButton.X1, false, device);
+                if ((buttons & RI_MOUSE_BUTTON_5_UP) != 0) receiver.MouseButtonChanged(method, MouseButton.X2, false, device);
                 return true;
             }
 
@@ -95,6 +119,7 @@ namespace GamepadEnhancer
         private const uint RegistrationFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY;
 
         private readonly IInputEventReceiver receiver;
+        private readonly bool movementOnly;
         private readonly ManualResetEventSlim ready = new(false);
         private Thread thread;
         private IntPtr hwnd;
@@ -104,7 +129,16 @@ namespace GamepadEnhancer
         private long eventCount;
         private long syntheticCount;
 
-        public RawInputService(IInputEventReceiver receiver) => this.receiver = receiver;
+        /// <param name="movementOnly">true: a mouse-only source that reports relative movement (for mouse-look) and nothing else;
+        /// it never reports faults to the receiver (see <see cref="Failed"/>) so it cannot disturb the active key/button method.</param>
+        public RawInputService(IInputEventReceiver receiver, bool movementOnly = false)
+        {
+            this.receiver = receiver;
+            this.movementOnly = movementOnly;
+        }
+
+        /// <summary>Movement-only source: raised (from the window thread) if the message loop dies after start.</summary>
+        public event Action<string> Failed;
 
         public InputCaptureMethod Method => InputCaptureMethod.RawInput;
 
@@ -179,11 +213,13 @@ namespace GamepadEnhancer
                     0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, instance, IntPtr.Zero);
                 if (hwnd == IntPtr.Zero) throw new InvalidOperationException("CreateWindowEx failed (" + Marshal.GetLastWin32Error() + ").");
 
-                var devices = new[]
+                var deviceList = new System.Collections.Generic.List<RAWINPUTDEVICE>
                 {
-                    new RAWINPUTDEVICE { usUsagePage = UsagePageGeneric, usUsage = UsageMouse, dwFlags = RegistrationFlags, hwndTarget = hwnd },
-                    new RAWINPUTDEVICE { usUsagePage = UsagePageGeneric, usUsage = UsageKeyboard, dwFlags = RegistrationFlags, hwndTarget = hwnd }
+                    new RAWINPUTDEVICE { usUsagePage = UsagePageGeneric, usUsage = UsageMouse, dwFlags = RegistrationFlags, hwndTarget = hwnd }
                 };
+                if (!movementOnly)
+                    deviceList.Add(new RAWINPUTDEVICE { usUsagePage = UsagePageGeneric, usUsage = UsageKeyboard, dwFlags = RegistrationFlags, hwndTarget = hwnd });
+                RAWINPUTDEVICE[] devices = deviceList.ToArray();
                 if (!RegisterRawInputDevices(devices, (uint)devices.Length, (uint)Marshal.SizeOf<RAWINPUTDEVICE>()))
                     throw new InvalidOperationException("RegisterRawInputDevices failed (" + Marshal.GetLastWin32Error() + ").");
                 devicesRegistered = true;
@@ -195,23 +231,25 @@ namespace GamepadEnhancer
                     TranslateMessage(ref msg);
                     DispatchMessage(ref msg);
                 }
-                if (!stopping) receiver.CaptureFaulted(Method, "The Raw Input message loop ended unexpectedly.");
+                if (!stopping) ReportFault("The Raw Input message loop ended unexpectedly.");
             }
             catch (Exception ex)
             {
                 if (!loopStarted) startError = ex.Message;
-                else if (!stopping) receiver.CaptureFaulted(Method, ex.Message);
+                else if (!stopping) ReportFault(ex.Message);
             }
             finally
             {
                 if (devicesRegistered)
                 {
                     // RIDEV_REMOVE requires a NULL target window.
-                    var remove = new[]
+                    var removeList = new System.Collections.Generic.List<RAWINPUTDEVICE>
                     {
-                        new RAWINPUTDEVICE { usUsagePage = UsagePageGeneric, usUsage = UsageMouse, dwFlags = RIDEV_REMOVE, hwndTarget = IntPtr.Zero },
-                        new RAWINPUTDEVICE { usUsagePage = UsagePageGeneric, usUsage = UsageKeyboard, dwFlags = RIDEV_REMOVE, hwndTarget = IntPtr.Zero }
+                        new RAWINPUTDEVICE { usUsagePage = UsagePageGeneric, usUsage = UsageMouse, dwFlags = RIDEV_REMOVE, hwndTarget = IntPtr.Zero }
                     };
+                    if (!movementOnly)
+                        removeList.Add(new RAWINPUTDEVICE { usUsagePage = UsagePageGeneric, usUsage = UsageKeyboard, dwFlags = RIDEV_REMOVE, hwndTarget = IntPtr.Zero });
+                    RAWINPUTDEVICE[] remove = removeList.ToArray();
                     RegisterRawInputDevices(remove, (uint)remove.Length, (uint)Marshal.SizeOf<RAWINPUTDEVICE>());
                 }
                 IntPtr h = hwnd;
@@ -220,6 +258,12 @@ namespace GamepadEnhancer
                 if (classRegistered) UnregisterClass(className, instance);
                 ready.Set();   // never leave Start() waiting
             }
+        }
+
+        private void ReportFault(string message)
+        {
+            if (movementOnly) { try { Failed?.Invoke(message); } catch { } }
+            else receiver.CaptureFaulted(Method, message);
         }
 
         private IntPtr WindowProc(IntPtr h, uint msg, IntPtr wParam, IntPtr lParam)
@@ -231,7 +275,7 @@ namespace GamepadEnhancer
                     break;   // fall through to DefWindowProc so the system can clean up the RAWINPUT data
 
                 case WM_INPUT_DEVICE_CHANGE:
-                    if (wParam.ToInt64() == GIDC_REMOVAL && !stopping) receiver.DeviceRemoved(Method, lParam);
+                    if (wParam.ToInt64() == GIDC_REMOVAL && !stopping && !movementOnly) receiver.DeviceRemoved(Method, lParam);
                     return IntPtr.Zero;
 
                 case WM_CLOSE:
@@ -257,7 +301,7 @@ namespace GamepadEnhancer
             {
                 uint copied = GetRawInputData(hRawInput, RID_INPUT, buffer, ref size, headerSize);
                 if (copied == uint.MaxValue || copied == 0) return;
-                if (RawInputParser.Route(new ReadOnlySpan<byte>(buffer, 0, (int)copied), IntPtr.Size, Method, receiver, out bool synthetic))
+                if (RawInputParser.Route(new ReadOnlySpan<byte>(buffer, 0, (int)copied), IntPtr.Size, Method, receiver, out bool synthetic, movementOnly))
                 {
                     Interlocked.Increment(ref eventCount);
                     if (synthetic) Interlocked.Increment(ref syntheticCount);
