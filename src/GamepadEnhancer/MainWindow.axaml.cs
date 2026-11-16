@@ -36,7 +36,6 @@ namespace GamepadEnhancer
         private bool suppressBlockChange;
         private AppSettings appSettings;
         private NetworkApiServer networkApi;
-        private MouseUdpSender mouseUdp;
         private bool suppressNetworkChange;
         private bool suppressInputMethodChange;
         private MonitorPanel monitorPanel;
@@ -110,7 +109,6 @@ namespace GamepadEnhancer
             InitializeInputHook();
             InitializeBlocking();
             InitializeNetworkApi();
-            InitializeMouseUdp();
             InitializeMonitor();
             ApplyDefaults();
             LoadProfileList();
@@ -513,6 +511,7 @@ namespace GamepadEnhancer
             netPortBox.Text = appSettings.NetworkApiPort.ToString();
             netTokenBox.Text = appSettings.NetworkApiToken;
             remoteSendBox.IsChecked = appSettings.RemoteSendEnabled;
+            remoteSendMouseBox.IsChecked = appSettings.RemoteSendMouse;
             remoteHostBox.Text = appSettings.RemoteHost;
             remotePortBox.Text = appSettings.RemotePort.ToString();
             remoteTokenBox.Text = appSettings.RemoteToken;
@@ -562,6 +561,7 @@ namespace GamepadEnhancer
         private void SaveRemoteSettings()
         {
             appSettings.RemoteSendEnabled = remoteSendBox.IsChecked == true;
+            appSettings.RemoteSendMouse = remoteSendMouseBox.IsChecked == true;
             appSettings.RemoteHost = (remoteHostBox.Text ?? "").Trim();
             appSettings.RemotePort = int.TryParse(remotePortBox.Text, out int p) && p >= 1 && p <= 65535 ? p : appSettings.RemotePort;
             appSettings.RemoteToken = (remoteTokenBox.Text ?? "").Trim();
@@ -579,57 +579,6 @@ namespace GamepadEnhancer
         {
             if (!ready || suppressNetworkChange) return;
             SaveRemoteSettings();
-        }
-
-        // ── Mouse button UDP sender ──────────────────────────────────────────────
-
-        private void InitializeMouseUdp()
-        {
-            mouseUdp = new MouseUdpSender();
-            mouseUdp.StatusChanged += text => Dispatcher.UIThread.Post(() => mouseUdpStatusLabel.Text = text);
-
-            suppressNetworkChange = true;
-            mouseUdpEnabledBox.IsChecked = appSettings.MouseUdpEnabled;
-            mouseUdpHostBox.Text = appSettings.MouseUdpHost;
-            mouseUdpPortBox.Text = appSettings.MouseUdpPort.ToString();
-            mouseUdpTokenBox.Text = appSettings.MouseUdpToken;
-            suppressNetworkChange = false;
-            ApplyMouseUdp();
-        }
-
-        /// <summary>Reads the mouse-button UDP card into app settings, saves, and (re)starts or stops the sender.</summary>
-        private void ApplyMouseUdp()
-        {
-            if (mouseUdp == null) return;
-            bool enable = mouseUdpEnabledBox.IsChecked == true;
-            appSettings.MouseUdpEnabled = enable;
-            appSettings.MouseUdpHost = (mouseUdpHostBox.Text ?? "").Trim();
-            appSettings.MouseUdpPort = int.TryParse(mouseUdpPortBox.Text, out int p) && p >= 1 && p <= 65535 ? p : appSettings.MouseUdpPort;
-            appSettings.MouseUdpToken = (mouseUdpTokenBox.Text ?? "").Trim();
-            mouseUdpPortBox.Text = appSettings.MouseUdpPort.ToString();
-            appSettings.Save();
-
-            try
-            {
-                if (enable) mouseUdp.Start(appSettings.MouseUdpHost, appSettings.MouseUdpPort, appSettings.MouseUdpToken);
-                else { mouseUdp.Stop(); mouseUdpStatusLabel.Text = "Mouse button sender is off"; }
-            }
-            catch (Exception ex)
-            {
-                mouseUdpStatusLabel.Text = "Mouse button sender could not start: " + ex.Message;
-            }
-        }
-
-        private void MouseUdpSettings_Changed(object sender, RoutedEventArgs e)
-        {
-            if (!ready || suppressNetworkChange) return;
-            ApplyMouseUdp();
-        }
-
-        private void MouseUdpSettings_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (!ready || suppressNetworkChange) return;
-            ApplyMouseUdp();
         }
 
         private void NetShowToken_Changed(object sender, RoutedEventArgs e) =>
@@ -667,7 +616,7 @@ namespace GamepadEnhancer
                     SaveRemoteSettings();
                     if (string.IsNullOrEmpty(appSettings.RemoteHost) || string.IsNullOrEmpty(appSettings.RemoteToken))
                         throw new InvalidOperationException("Enter the other PC's address and token on the Network tab first.");
-                    engine.Connect(xbox360, new RemoteTarget(appSettings.RemoteHost, appSettings.RemotePort, appSettings.RemoteToken));
+                    engine.Connect(xbox360, new RemoteTarget(appSettings.RemoteHost, appSettings.RemotePort, appSettings.RemoteToken), appSettings.RemoteSendMouse);
                 }
                 else engine.Connect(xbox360);
                 SetConnectedUi(true);
@@ -1352,7 +1301,6 @@ namespace GamepadEnhancer
             try { monitorPanel?.Stop(); } catch { }
             try { monitorWindow?.Close(); } catch { }
             try { networkApi?.Dispose(); } catch { }
-            try { mouseUdp?.Dispose(); } catch { }
             try { blockTimer?.Stop(); } catch { }
             blockPolicy.Update(BlockSettings.Off);
             try { mouseMoveSource?.Dispose(); } catch { }

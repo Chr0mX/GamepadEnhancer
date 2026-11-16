@@ -262,3 +262,44 @@ namespace GamepadEnhancer.Tests
         }
     }
 }
+
+namespace GamepadEnhancer.Tests
+{
+    public class MouseCommandTests
+    {
+        private static string Run(string line, RemoteControlState state, long now = 0) =>
+            MakcuCommandParser.Handle(line, state, new MakcuSession(), now);
+
+        [Fact]
+        public void MouseMaskIsStoredAndQueried()
+        {
+            var s = new RemoteControlState();
+            Assert.Null(Run("km.mouse(5)", s, 100));
+            Assert.Equal(5, s.GetMouse(100));
+            Assert.StartsWith("5", Run("km.mouse()", s, 100));
+        }
+
+        [Fact]
+        public void BadMasksAreRejected()
+        {
+            var s = new RemoteControlState();
+            Assert.Equal("ERR", Run("km.mouse(32)", s));
+            Assert.Equal("ERR", Run("km.mouse(-1)", s));
+            Assert.Equal("ERR", Run("km.mouse(a)", s));
+            Assert.Equal("ERR", Run("km.mouse(1,2)", s));
+            Assert.Equal(0, s.GetMouse(0));
+        }
+
+        [Fact]
+        public void MaskGoesStaleAndClearsWithTheClient()
+        {
+            var s = new RemoteControlState();
+            s.SetMouse(1, 1000);
+            Assert.Equal(1, s.GetMouse(1000 + RemoteControlState.MouseStaleMs));
+            Assert.Equal(0, s.GetMouse(1000 + RemoteControlState.MouseStaleMs + 1));
+            s.SetMouse(2, 5000);
+            s.Clear();
+            Assert.Equal(0, s.GetMouse(5000));
+        }
+    }
+}

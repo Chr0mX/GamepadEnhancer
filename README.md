@@ -20,7 +20,7 @@ Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm
 - Mouse wheel / selected keys temporarily neutralize the stick
 - **Starting settings:** the default profile ships inside the app (`src/GamepadEnhancer/Defaults/Default.json`: PS4, Base drift 32% Down, filtering -10 with Exponential Low-Pass on Right click Hold, recoil off, wheel disengage 500 ms with Tab and E). On first run it is also written to `profiles/Default.json`; the app starts with `profiles/Default.json` when it exists and loads (so whatever you save as "Default" is what you get on launch), otherwise with the shipped one. Older profile files that lack a field still load with the original behavior (no drift or filtering added).
 - **Network API:** accept MAKCU-style text commands (`km.controller(id,value[,hold_ms])`, `km.controller_clear()`) over TCP from another computer and play them on the virtual pad, with a token and off by default; the same app can also **send** its pad to another PC. See [docs/NETWORK_API.md](docs/NETWORK_API.md)
-- **Mouse button UDP stream:** send this PC's mouse buttons over UDP to another PC that wants a remote trigger button (off by default). See [docs/NETWORK_API.md](docs/NETWORK_API.md)
+- **Mouse buttons over the same link:** with Send to another PC, tick *Also send this PC's mouse buttons* and they travel as `km.mouse(mask)` on the same connection (one address, port and token), for example to give Axiom a remote trigger button. See [docs/NETWORK_API.md](docs/NETWORK_API.md)
 - **Input blocking and mouse look:** while a chosen game is focused, swallow the keyboard/mouse input you mapped to pad actions so only the controller reaches the game, bind mouse buttons and the wheel to pad actions, and let mouse movement drive the right stick (off by default). See [docs/BLOCKING.md](docs/BLOCKING.md)
 - **Live controller monitor:** an Xbox 360 or DualShock 4 picture of the pad, with a view of the physical input, the processed input, or the final output sent to ViGEm; sticks, analog triggers, button history, pop-out window (always on top or transparent overlay). See [docs/MONITOR.md](docs/MONITOR.md)
 - **Switch the output type while connected** (Xbox 360 / PS4) without restarting; a **Guide / PS** button action
@@ -85,7 +85,7 @@ The pure logic (input block policy, mouse look, process matching, key names) is 
 |---|---|
 | `src/GamepadEnhancer/Core` | Controller engine, stick maths, recoil patterns, block policy, mouse look |
 | `src/GamepadEnhancer/Input` | Low-level hooks, Raw Input, input state, settings, foreground window |
-| `src/GamepadEnhancer/Network` | Network API server, remote link, MAKCU command parser, mouse UDP sender |
+| `src/GamepadEnhancer/Network` | Network API server, remote link, MAKCU command parser |
 | `src/GamepadEnhancer/Views`, `MainWindow.axaml` | Avalonia UI (controller monitor in `ControllerView` / `MonitorPanel` / `MonitorWindow`) |
 | `src/GamepadEnhancer/Defaults/Default.json` | Profile shipped inside the app |
 | `tests/GamepadEnhancer.Tests` | Unit tests |
@@ -96,7 +96,7 @@ The pure logic (input block policy, mouse look, process matching, key names) is 
 - [docs/AIM_TRIGGER.md](docs/AIM_TRIGGER.md): aim trigger, fire, filtering algorithms and Filter Button/Mode
 - [docs/CENTER_RADIUS.md](docs/CENTER_RADIUS.md): Center Radius modes
 - [docs/INPUT_CAPTURE.md](docs/INPUT_CAPTURE.md): Low-Level Hooks vs Raw Input
-- [docs/NETWORK_API.md](docs/NETWORK_API.md): Network API and mouse button UDP stream
+- [docs/NETWORK_API.md](docs/NETWORK_API.md): Network API and `km.mouse` mouse buttons
 - [docs/BLOCKING.md](docs/BLOCKING.md): input blocking and mouse look
 - [docs/MONITOR.md](docs/MONITOR.md): controller monitor and output types
 - [docs/releases/](docs/releases/): release notes

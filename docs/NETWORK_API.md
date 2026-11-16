@@ -21,6 +21,7 @@ auth <token>                      first line; answers OK
 km.controller(id,value[,hold_ms]) set one control; hold_ms releases it after that many ms (0 = keep)
 km.controller_clear()             release every remotely set control
 km.controller(0|1)                accepted, no effect (input streaming is not applicable)
+km.mouse(mask)                    the sender's mouse buttons (see below); km.mouse() queries
 km.version()  km.api_version()    identification (api version 1)
 km.echo(0|1)  km.echo()           echo commands back, or query
 ```
@@ -66,17 +67,16 @@ s.sendall(b"km.controller_clear()\n")
 - The sender's token, address and port are stored in plain text in its `settings.json`.
 - With *Send to another PC* on, **Connect** reaches the other PC instead of ViGEm; the receiver must already be connected, otherwise it answers `ERR not connected`.
 
-## Mouse button UDP stream
-The **Network** tab can also stream this PC's physical mouse buttons over **UDP** to another computer, so a receiver there can use a button as a remote trigger. It is off by default and independent of the TCP Network API. It polls the buttons (left, right, middle, side 1, side 2; swapped primary/secondary buttons are honored) about every 4 ms.
+## Mouse buttons (`km.mouse`)
+The same connection can carry this PC's physical mouse buttons, so a remote program can use one as a trigger button (for example Axiom's aim key). There is no separate stream, port or token any more: it uses the **Send to another PC** address, port and token, with **Also send this PC's mouse buttons** ticked, and one **Connect**.
 
-Each datagram is 12 bytes, little-endian:
+```
+km.mouse(mask)    the sender's buttons: bit0 left, bit1 right, bit2 middle, bit3 side 1 (X1), bit4 side 2 (X2)
+km.mouse()        query the last mask
+```
 
-| Offset | Size | Field |
-|---|---|---|
-| 0 | 4 | Magic `AXMB` (kept as-is so existing receivers, such as the Axiom aim tool, keep working) |
-| 4 | 1 | Version = 1 |
-| 5 | 1 | Button mask: bit0 left, bit1 right, bit2 middle, bit3 side 1 (X1), bit4 side 2 (X2) |
-| 6 | 2 | Sequence number (wraps at 65535) |
-| 8 | 4 | Token tag: first 4 bytes of SHA-256 of the token (UTF-8); all zero when no token is set |
-
-A packet is sent immediately when the mask changes, and a heartbeat every 100 ms. The receiver should treat more than about 500 ms without a valid packet as "all buttons released". The token tag only guards against accidental or stray packets, it is not strong security. Default port: 5602.
+- The sender sends it on every change (polled about every 4 ms) plus a keep-alive every second, and again after a reconnect. Swapped primary/secondary buttons are honored.
+- A receiver treats the mask as 0 (nothing held) when the connection closes, on `km.controller_clear()`, or after 3 seconds without any `km.mouse`.
+- A GamepadEnhancer receiver accepts and remembers the mask; it does not act on it. Axiom listens on the same protocol (Keys & HW > Remote Mouse Buttons) and engages aim while its chosen button is held.
+- To feed only Axiom, point Send to another PC at Axiom's address and port and press Connect: Axiom accepts the pad commands that also flow on the link and ignores them.
+- The old UDP stream (`AXMB` datagrams, default port 5602) is gone from both programs. Update the sender's port to the one Axiom now listens on (default 5555).

@@ -12,7 +12,7 @@ namespace GamepadEnhancer
     /// <summary>
     /// Parses MAKCU/MAKXD-style text commands (one per line) and applies them to a <see cref="RemoteControlState"/>.
     /// Supported: km.controller(id,value[,hold_ms]), km.controller_clear(), km.controller(0|1) (accepted, no-op),
-    /// km.version(), km.api_version(), km.echo([0|1]). Queries answer "result\r\n>>> "; mutations are silent (echo off) and
+    /// km.mouse([mask]), km.version(), km.api_version(), km.echo([0|1]). Queries answer "result\r\n>>> "; mutations are silent (echo off) and
     /// answer nothing; anything else answers "ERR".
     /// </summary>
     internal static class MakcuCommandParser
@@ -49,6 +49,13 @@ namespace GamepadEnhancer
                     if (parts.Length == 0) { reply = Query(session.Echo ? "1" : "0"); break; }
                     if (parts.Length != 1 || !TryInt(parts[0], out int e) || (e != 0 && e != 1)) return Error(line, session);
                     session.Echo = e == 1;
+                    reply = null;
+                    break;
+                case "km.mouse":
+                    // km.mouse(mask): the sender's physical mouse buttons (bit0 L, bit1 R, bit2 M, bit3 X1, bit4 X2). km.mouse() queries.
+                    if (parts.Length == 0) { reply = Query(state.GetMouse(nowMs).ToString(CultureInfo.InvariantCulture)); break; }
+                    if (parts.Length != 1 || !TryInt(parts[0], out int mm) || mm < 0 || mm > RemoteControlState.MouseMaskAll) return Error(line, session);
+                    state.SetMouse(mm, nowMs);
                     reply = null;
                     break;
                 case "km.controller_clear":

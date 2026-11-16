@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using Nefarius.ViGEm.Client.Targets.DualShock4;
 using Nefarius.ViGEm.Client.Targets.Xbox360;
 
@@ -21,12 +22,13 @@ namespace GamepadEnhancer
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private long lastSendMs;
         private volatile bool resendAll = true;
+        private volatile bool resendMouse = true;
 
         public NetworkPad(RemoteTarget target, bool xbox)
         {
             this.xbox = xbox;
             link = new RemoteLink(target);
-            link.Reconnected += () => resendAll = true;
+            link.Reconnected += () => { resendAll = true; resendMouse = true; };
             Array.Fill(sent, int.MinValue);
             // neutral starting state: sticks centred, triggers and buttons released
         }
@@ -34,7 +36,64 @@ namespace GamepadEnhancer
         public RemoteLink Link => link;
 
         public void Connect() => link.Open();
-        public void Disconnect() => link.Dispose();
+
+        public void Disconnect()
+        {
+            StopMouse();
+            link.Dispose();
+        }
+
+        // ── Mouse buttons (km.mouse) over the same link ──
+        private const int MousePollMs = 4;
+        private const long MouseKeepAliveMs = 1000;
+        private Thread mouseThread;
+        private volatile bool mouseRunning;
+
+        /// <summary>
+        /// Sends this PC's physical mouse buttons to the other side as km.mouse(mask): on every change, plus a keep-alive
+        /// every second, and again after a reconnect. Runs beside the pad on the same connection.
+        /// </summary>
+        public void StartMouse(Func<byte> readMask)
+        {
+            StopMouse();
+            mouseRunning = true;
+            mouseThread = new Thread(() => MouseLoop(readMask)) { IsBackground = true, Name = "Mouse buttons sender" };
+            mouseThread.Start();
+        }
+
+        private void StopMouse()
+        {
+            mouseRunning = false;
+            Thread t = mouseThread;
+            mouseThread = null;
+            if (t != null && t != Thread.CurrentThread) t.Join(500);
+        }
+
+        private void MouseLoop(Func<byte> readMask)
+        {
+            int last = -1;
+            long lastSend = 0;
+            var clock = Stopwatch.StartNew();
+            while (mouseRunning)
+            {
+                try
+                {
+                    int mask = readMask();
+                    long now = clock.ElapsedMilliseconds;
+                    if (resendMouse || mask != last || now - lastSend >= MouseKeepAliveMs)
+                    {
+                        if (link.TrySend("km.mouse(" + mask + ")\n"))
+                        {
+                            last = mask;
+                            lastSend = now;
+                            resendMouse = false;
+                        }
+                    }
+                }
+                catch { /* keep going; the link reports its own problems */ }
+                Thread.Sleep(MousePollMs);
+            }
+        }
 
         // ── Xbox 360 ──
         public void SetAxisValue(Xbox360Axis axis, short v)

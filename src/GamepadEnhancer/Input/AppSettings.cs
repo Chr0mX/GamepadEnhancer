@@ -28,12 +28,8 @@ namespace GamepadEnhancer
         /// <summary>Token of the other PC's Network API (stored in plain text in settings.json, like the receiver's own token).</summary>
         public string RemoteToken { get; set; } = "";
 
-        /// <summary>Mouse button UDP sender: streams this PC's mouse buttons to another PC. Off by default.</summary>
-        public bool MouseUdpEnabled { get; set; }
-        public string MouseUdpHost { get; set; } = "";
-        public int MouseUdpPort { get; set; } = 5602;
-        /// <summary>Optional shared tag secret (plain text in settings.json); must match the receiver's token.</summary>
-        public string MouseUdpToken { get; set; } = "";
+        /// <summary>With Send to another PC: also send this PC's mouse buttons (km.mouse) over the same connection.</summary>
+        public bool RemoteSendMouse { get; set; }
 
         /// <summary>Input blocking: swallow the mapped physical keyboard/mouse input while a chosen game is focused. Off by default.</summary>
         public bool BlockEnabled { get; set; }

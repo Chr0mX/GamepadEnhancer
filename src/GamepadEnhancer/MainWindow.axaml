@@ -249,8 +249,9 @@
               <StackPanel Spacing="10">
                 <TextBlock Classes="h" Text="Send to another PC" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Run this app on the PC with your mouse and keyboard and let the other PC (the one with ViGEmBus and the game) create the virtual controller. Turn this on, enter that PC's address and token from its Network tab, then press Connect. No ViGEmBus is needed on this PC." />
+                           Text="Run this app on the PC with your mouse and keyboard and let the other PC (the one with ViGEmBus and the game) create the virtual controller. Turn this on, enter that PC's address and token from its Network tab, then press Connect. No ViGEmBus is needed on this PC. The same connection can carry your mouse buttons (km.mouse): tick the box below, and point the address at any program that speaks this API, such as Axiom." />
                 <CheckBox x:Name="remoteSendBox" Content="Send the controller to another PC instead of creating it here" IsCheckedChanged="RemoteSettings_Changed" />
+                <CheckBox x:Name="remoteSendMouseBox" Content="Also send this PC's mouse buttons (for a remote trigger button, e.g. Axiom)" IsCheckedChanged="RemoteSettings_Changed" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="Address" VerticalAlignment="Center" />
                   <TextBox x:Name="remoteHostBox" Width="180" Watermark="192.168.1.20" LostFocus="RemoteSettings_LostFocus" />
@@ -261,25 +262,6 @@
                   <TextBlock Text="Token" VerticalAlignment="Center" />
                   <TextBox x:Name="remoteTokenBox" Width="260" PasswordChar="*" LostFocus="RemoteSettings_LostFocus" />
                 </StackPanel>
-              </StackPanel>
-            </Border>
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Send mouse buttons (UDP)" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Stream this PC's physical mouse buttons (left, right, middle, side 1 and 2) over UDP to another PC (for example an aim-assist tool that wants a remote trigger button). Enter that PC's address and the UDP port it listens on. The token is optional but must match the receiver's if set. It only guards against accidental packets, it is not strong security." />
-                <CheckBox x:Name="mouseUdpEnabledBox" Content="Send mouse buttons to another PC" IsCheckedChanged="MouseUdpSettings_Changed" />
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="Address" VerticalAlignment="Center" />
-                  <TextBox x:Name="mouseUdpHostBox" Width="180" Watermark="192.168.1.30" LostFocus="MouseUdpSettings_LostFocus" />
-                  <TextBlock Text="Port" VerticalAlignment="Center" />
-                  <TextBox x:Name="mouseUdpPortBox" Width="80" Text="5602" LostFocus="MouseUdpSettings_LostFocus" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="Token" VerticalAlignment="Center" />
-                  <TextBox x:Name="mouseUdpTokenBox" Width="260" PasswordChar="*" LostFocus="MouseUdpSettings_LostFocus" />
-                </StackPanel>
-                <TextBlock x:Name="mouseUdpStatusLabel" Classes="muted" Text="Mouse button sender is off" TextWrapping="Wrap" />
               </StackPanel>
             </Border>
           </StackPanel>

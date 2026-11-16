@@ -22,5 +22,18 @@ namespace GamepadEnhancer
 
         internal static bool IsDown(int vk) =>
             OperatingSystem.IsWindows() && (GetAsyncKeyState(vk) & 0x8000) != 0;
+
+        /// <summary>Physical button mask for the Network API's km.mouse: bit0 left, bit1 right, bit2 middle, bit3 X1, bit4 X2.</summary>
+        internal static byte ReadMask()
+        {
+            bool swapped = IsSwapped();
+            byte mask = 0;
+            if (IsDown(ResolveVk(VkLeft, swapped))) mask |= 0x01;
+            if (IsDown(ResolveVk(VkRight, swapped))) mask |= 0x02;
+            if (IsDown(VkMiddle)) mask |= 0x04;
+            if (IsDown(VkX1)) mask |= 0x08;
+            if (IsDown(VkX2)) mask |= 0x10;
+            return mask;
+        }
     }
 }

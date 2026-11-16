@@ -14,6 +14,7 @@ namespace GamepadEnhancer
     {
         private readonly RemoteTarget target;
         private readonly object sync = new();
+        private readonly object sendLock = new();   // the pad and the mouse thread both send; one whole write at a time
         private TcpClient client;
         private volatile bool connected;
         private volatile bool disposed;
@@ -63,8 +64,9 @@ namespace GamepadEnhancer
                 byte[] data = Encoding.UTF8.GetBytes(text);
                 TcpClient c;
                 lock (sync) c = client;
-                c?.GetStream().Write(data, 0, data.Length);
-                return c != null;
+                if (c == null) return false;
+                lock (sendLock) c.GetStream().Write(data, 0, data.Length);
+                return true;
             }
             catch
             {
