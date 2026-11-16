@@ -36,6 +36,15 @@ namespace GamepadEnhancer
         /// <summary>"Lift" (new dead-zone lift, default), "Shake" or "Circle" (old centered wobble). See docs/CENTER_RADIUS.md.</summary>
         public string RecoilCenterRadiusMode { get; set; } = "Lift";
         public string RecoilPatternText { get; set; } = "0:0:100|0:18:80|2:32:80|4:44:80|5:50:100";
+        /// <summary>Mouse movement drives the right stick (needs Raw Input; works with either capture method). Off by default.</summary>
+        public bool MouseLookEnabled { get; set; }
+        public double MouseSensitivityX { get; set; } = 8.0;
+        public double MouseSensitivityY { get; set; } = 8.0;
+        public double MouseCurve { get; set; } = 1.0;
+        /// <summary>The game's inner dead zone in percent (0..50).</summary>
+        public int MouseGameDeadZonePercent { get; set; }
+        public int MouseReleaseMs { get; set; } = 30;
+        public bool MouseInvertY { get; set; }
         public List<string> DisableKeys { get; set; } = new();
         public Dictionary<string, string> KeyBindings { get; set; } = new();
         public Dictionary<string, bool> TurboEnabled { get; set; } = new();

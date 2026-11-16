@@ -551,6 +551,17 @@ namespace GamepadEnhancer
                 else lowPass.Reset();
                 lastTickPreciseMs = nowPrecise;
 
+                // Mouse look: relative mouse movement drives the right stick on top of drift/recoil/filtering.
+                if (s.MouseLookEnabled)
+                {
+                    (double mx, double my) = mouseLook.Step(nowPrecise, s.MouseSensitivityX, s.MouseSensitivityY,
+                        s.MouseCurve, s.MouseGameDeadZonePercent / 100.0, s.MouseReleaseMs, s.MouseInvertY);
+                    if (useXbox) my = -my;   // mouse down is +Y here (PS4 convention); on Xbox +Y is up
+                    outX = Math.Clamp(outX + mx, -100.0, 100.0);
+                    outY = Math.Clamp(outY + my, -100.0, 100.0);
+                }
+                else mouseLook.Reset();
+
                 RemoteFrame rf = Remote.Snapshot(now);
                 int mask = PressedMask(s, now) | rf.ButtonMask;
                 if (useXbox && xbox != null)

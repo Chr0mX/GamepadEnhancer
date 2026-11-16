@@ -27,6 +27,7 @@ namespace GamepadEnhancer
         private readonly RecoilPreview recoilPreview = new();
         private readonly ControllerEngine engine = new();
         private InputStateManager inputManager;
+        private RawInputService mouseMoveSource;
         private readonly BlockPolicy blockPolicy = new();
         private AppSettings appSettings;
         private NetworkApiServer networkApi;
@@ -235,11 +236,41 @@ namespace GamepadEnhancer
                 RecoilSteps = recoilSteps.Select(s => new RecoilStep { X = s.X, Y = s.Y, IntervalMs = s.IntervalMs }).ToArray(),
                 WheelDisengageEnabled = wheelDisengageEnabled,
                 DisengageMs = (int)(scrollDisengageBox.Value ?? 0),
+                MouseLookEnabled = mouseLookBox.IsChecked == true,
+                MouseSensitivityX = (double)(mouseSensXBox.Value ?? 8m),
+                MouseSensitivityY = (double)(mouseSensYBox.Value ?? 8m),
+                MouseCurve = (double)(mouseCurveBox.Value ?? 1m),
+                MouseGameDeadZonePercent = (int)(mouseDeadZoneBox.Value ?? 0m),
+                MouseReleaseMs = (int)(mouseReleaseBox.Value ?? 30m),
+                MouseInvertY = mouseInvertYBox.IsChecked == true,
                 DisableKeys = new HashSet<string>(
                     disableKeyChecks.Where(p => p.Value.IsChecked == true).Select(p => p.Key),
                     StringComparer.OrdinalIgnoreCase),
                 Bindings = bindings
             };
+
+            UpdateMouseMoveSource(mouseLookBox.IsChecked == true);
+        }
+
+        /// <summary>Starts or stops the movement-only Raw Input source that feeds mouse-look.</summary>
+        private void UpdateMouseMoveSource(bool wanted)
+        {
+            if (wanted && mouseMoveSource == null && inputManager != null)
+            {
+                var source = new RawInputService(inputManager, movementOnly: true);
+                source.Failed += message => Dispatcher.UIThread.Post(() => statusLabel.Text = "Status: Mouse look stopped - " + message);
+                if (source.Start(out string error)) mouseMoveSource = source;
+                else
+                {
+                    source.Dispose();
+                    statusLabel.Text = "Status: Mouse look unavailable - " + error;
+                }
+            }
+            else if (!wanted && mouseMoveSource != null)
+            {
+                try { mouseMoveSource.Dispose(); } catch { }
+                mouseMoveSource = null;
+            }
         }
 
         // ── Input hooks ──────────────────────────────────────────────────────────
@@ -875,6 +906,13 @@ namespace GamepadEnhancer
                 BasePullDirection = PullDirections.Normalize(pullDirectionBox.SelectedItem as string),
                 ScrollDisengageMs = (int)(scrollDisengageBox.Value ?? 0),
                 WheelDisengageEnabled = wheelDisengageEnabled,
+                MouseLookEnabled = mouseLookBox.IsChecked == true,
+                MouseSensitivityX = (double)(mouseSensXBox.Value ?? 8m),
+                MouseSensitivityY = (double)(mouseSensYBox.Value ?? 8m),
+                MouseCurve = (double)(mouseCurveBox.Value ?? 1m),
+                MouseGameDeadZonePercent = (int)(mouseDeadZoneBox.Value ?? 0m),
+                MouseReleaseMs = (int)(mouseReleaseBox.Value ?? 30m),
+                MouseInvertY = mouseInvertYBox.IsChecked == true,
                 RecoilEnabled = recoilEnabledCheckBox.IsChecked == true,
                 RecoilLoop = recoilLoopCheckBox.IsChecked == true,
                 RecoilTriggerKey = TriggerToStored(recoilTriggerKeyBox.SelectedItem as string),
@@ -945,6 +983,14 @@ namespace GamepadEnhancer
             scrollDisengageBox.Value = Math.Clamp(profile.ScrollDisengageMs, 0, 5000);
             SetWheelDisengage(profile.WheelDisengageEnabled);
 
+            mouseLookBox.IsChecked = profile.MouseLookEnabled;
+            mouseSensXBox.Value = (decimal)Math.Clamp(profile.MouseSensitivityX, 0.5, 100.0);
+            mouseSensYBox.Value = (decimal)Math.Clamp(profile.MouseSensitivityY, 0.5, 100.0);
+            mouseCurveBox.Value = (decimal)Math.Clamp(profile.MouseCurve, 0.5, 4.0);
+            mouseDeadZoneBox.Value = Math.Clamp(profile.MouseGameDeadZonePercent, 0, 50);
+            mouseReleaseBox.Value = Math.Clamp(profile.MouseReleaseMs, 0, 500);
+            mouseInvertYBox.IsChecked = profile.MouseInvertY;
+
             foreach (var pair in disableKeyChecks)
                 pair.Value.IsChecked = profile.DisableKeys?.Any(k => string.Equals(k, pair.Key, StringComparison.OrdinalIgnoreCase)) == true;
 
@@ -979,6 +1025,7 @@ namespace GamepadEnhancer
         {
             try { networkApi?.Dispose(); } catch { }
             try { mouseUdp?.Dispose(); } catch { }
+            try { mouseMoveSource?.Dispose(); } catch { }
             try { inputManager?.Dispose(); } catch { }
             engine.Dispose();
             base.OnClosed(e);

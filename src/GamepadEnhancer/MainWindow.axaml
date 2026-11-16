@@ -12,7 +12,7 @@
     <!-- Header: wraps instead of scrolling when the window is narrow -->
     <Border DockPanel.Dock="Top" Classes="card" Margin="12,12,12,6">
       <WrapPanel Orientation="Horizontal">
-        <TextBlock Classes="title" Text="ViGEm Recoil Pattern" VerticalAlignment="Center" Margin="0,4,18,4" />
+        <TextBlock Classes="title" Text="GamepadEnhancer" VerticalAlignment="Center" Margin="0,4,18,4" />
         <ComboBox x:Name="controllerTypeBox" MinWidth="120" Margin="0,4,8,4" VerticalAlignment="Center" />
         <Button x:Name="connectButton" Classes="primary" Content="Connect" Margin="0,4,6,4" Click="ConnectButton_Click" />
         <Button x:Name="disconnectButton" Content="Disconnect" IsEnabled="False" Margin="0,4,18,4" Click="DisconnectButton_Click" />
@@ -118,6 +118,39 @@
                 <TextBlock Classes="muted"
                            Text="Bind keyboard keys to virtual controller actions, then optionally enable Turbo (rapid fire) per action with a custom Hz rate." />
                 <UniformGrid x:Name="bindingsGrid" Columns="2" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ─────────────── Block & Mouse ─────────────── -->
+      <TabItem Header="Block &amp; Mouse">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="0,12,0,12" Spacing="12">
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Mouse look (mouse to right stick)" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Mouse movement drives the right stick, on top of drift, filtering and recoil. Movement is read with Raw Input, so it works with either input capture method. Mouse buttons and the wheel can be bound to pad actions on the PC to Controller tab. Sensitivity is percent of stick per (mouse count per millisecond): higher = a slower mouse reaches full tilt." />
+                <CheckBox x:Name="mouseLookBox" Content="Mouse movement drives the right stick" IsCheckedChanged="AnySettingChangedChecked" />
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="Sensitivity X" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseSensXBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <TextBlock Text="Sensitivity Y" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseSensYBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <TextBlock Text="Curve" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseCurveBox" Minimum="0.5" Maximum="4" Value="1" Increment="0.1" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                </WrapPanel>
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="Game dead zone (%)" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseDeadZoneBox" Minimum="0" Maximum="50" Value="0" Increment="1" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <TextBlock Text="Release (ms)" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="mouseReleaseBox" Minimum="0" Maximum="500" Value="30" Increment="5" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <CheckBox x:Name="mouseInvertYBox" Content="Invert Y" Margin="0,0,0,4" IsCheckedChanged="AnySettingChangedChecked" />
+                </WrapPanel>
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Game dead zone: set this to the game's own inner stick dead zone so small mouse moves still register. Release: how long the last stick value is held with no movement before the stick recenters." />
               </StackPanel>
             </Border>
           </StackPanel>
