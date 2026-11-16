@@ -66,44 +66,11 @@ namespace GamepadEnhancer
         private volatile EngineSettings settings = EngineSettings.Default;
 
         private bool useXbox;
-        private bool disengaged;
-        private long disengagedUntilMs;
-        private bool recoilTriggerDown;
-        private long recoilStartAtMs;
-        private bool jitterLatched;    // RS filtering button held (Hold) or toggled on (Toggle)
-        private long jitterChangedMs;
-        private int jitterUpPolls;
         private ulong lastReportSig = ulong.MaxValue;   // last report actually sent (axes + buttons)
         private long lastReportMs = -1_000_000;
         private bool submitPending;                      // set by Tick, executed by Loop after the lock is released
-        private readonly LowPassFilter lowPass = new();
-        private double lastTickPreciseMs;
-        private string appliedAlgorithm;
-        private string appliedJitterKey;
-        private bool appliedJitterToggle;
-        private bool aimLatched;      // aim button held (Hold) or toggled on (Toggle)
-        private bool fireDown;         // left mouse button (fire) physically down
-        private long aimChangedMs;
-        private long fireChangedMs;
-        private int aimUpPolls;
-        private int fireUpPolls;
-        private (int X, int Y)[] wobble = Array.Empty<(int, int)>();
-        private string wobbleKey;
-        private int wobbleIndex;
-        private long wobbleNextMs;
-        private string appliedTrigger;
-        private bool appliedToggle;
-        private int recoilStepIndex;
-        private long nextRecoilStepMs;
-        private bool oscHighPhase;
         private string lastStatus;
         private bool leftWasRemote;
-
-        /// <summary>
-        /// Optional probe: true if the physical mouse input with this name ("Mouse Left", ...) is currently being swallowed by
-        /// the input blocker. A swallowed button never updates GetAsyncKeyState, so the stuck-button safety net skips it.
-        /// </summary>
-        public volatile Func<string, bool> BlockedInputProbe;
 
         /// <summary>Controls set over the network (see NetworkApiServer); cleared whenever the pad disconnects.</summary>
         public RemoteControlState Remote { get; } = new();
@@ -195,30 +162,14 @@ namespace GamepadEnhancer
             client = null;
         }
 
-        /// <summary>Clears low-pass state and the oscillation phase (algorithm switch, gate change, disengage, reconnect).</summary>
-        private void ResetFilterState()
-        {
-            lowPass.Reset();
-            oscHighPhase = false;
-            lastTickPreciseMs = 0;
-        }
-
         private void ResetState()
         {
-            ResetFilterState();
             lastReportSig = ulong.MaxValue;   // force the next tick to send a report
             lastReportMs = -1_000_000;
             submitPending = false;
-            disengaged = false;
             turboHeldSinceMs.Clear();
             wheelPulseUntilMs.Clear();
             mouseLook.Reset();
-            recoilTriggerDown = false;
-            aimLatched = false;
-            jitterLatched = false;
-            fireDown = false;
-            recoilStepIndex = 0;
-            oscHighPhase = false;
             leftWasRemote = false;
             padLx = padLy = 0.0;
             Remote.Clear();
@@ -233,95 +184,23 @@ namespace GamepadEnhancer
             lock (sync)
             {
                 if (isDown) activeKeys.Add(name); else activeKeys.Remove(name);
-                EngineSettings s = settings;
-                if (isDown && s.DisableKeys.Contains(name)) Engage(s, $"key {name}");
             }
         }
 
-        /// <summary>Mouse button event; <paramref name="button"/> is "Mouse Left", "Mouse Right" or "Mouse Middle".</summary>
+        /// <summary>Mouse button event; <paramref name="button"/> is "Mouse Left", "Mouse Right", "Mouse Middle", "Mouse X1" or "Mouse X2".</summary>
         public void OnMouseButton(string button, bool isDown)
         {
+            // Mouse buttons can be bound to pad actions like keys ("Mouse Left", "Mouse X1", ...).
             lock (sync)
             {
-                EngineSettings s = settings;
-                SyncTriggerSettings(s);
-
-                // Mouse buttons can be bound to pad actions like keys ("Mouse Left", "Mouse X1", ...).
                 if (isDown) activeKeys.Add(button); else activeKeys.Remove(button);
-
-                // Left click is the fire button.
-                if (string.Equals(button, "Mouse Left", StringComparison.OrdinalIgnoreCase))
-                {
-                    fireDown = isDown;
-                    fireChangedMs = NowMs();
-                    fireUpPolls = 0;
-                }
-
-                // The aim button (right click, middle click) sets the aim state: Hold = while pressed, Toggle = flips per press.
-                if (UsesAimGate(s) && string.Equals(s.RecoilTriggerKey, button, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (s.RecoilToggleMode)
-                    {
-                        if (isDown) { aimLatched = !aimLatched; aimChangedMs = NowMs(); }
-                    }
-                    else
-                    {
-                        aimLatched = isDown;
-                        aimChangedMs = NowMs();
-                        aimUpPolls = 0;
-                    }
-                }
-
-                // Right stick filtering has its own button + mode, independent of aim/fire.
-                if (UsesJitterGate(s) && string.Equals(s.JitterTriggerKey, button, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (s.JitterToggleMode)
-                    {
-                        if (isDown) { jitterLatched = !jitterLatched; jitterChangedMs = NowMs(); }
-                    }
-                    else
-                    {
-                        jitterLatched = isDown;
-                        jitterChangedMs = NowMs();
-                        jitterUpPolls = 0;
-                    }
-                }
-
-                Reevaluate(s);
             }
-        }
-
-        private static bool UsesJitterGate(EngineSettings s)
-            => string.Equals(s.JitterTriggerKey, "Mouse Left", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(s.JitterTriggerKey, "Mouse Right", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(s.JitterTriggerKey, "Mouse Middle", StringComparison.OrdinalIgnoreCase);
-
-        /// <summary>RS filtering is on when no button is chosen ("None") or when its button state says so.</summary>
-        private bool JitterGateOpen(EngineSettings s) => !UsesJitterGate(s) || jitterLatched;
-
-        /// <summary>
-        /// The aim gate only applies when the Aim Trigger is Right or Middle. Off = no aim needed (fires on left click
-        /// alone); Left = the aim button is the fire button itself, so there is no separate gate.
-        /// </summary>
-        private static bool UsesAimGate(EngineSettings s)
-            => string.Equals(s.RecoilTriggerKey, "Mouse Right", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(s.RecoilTriggerKey, "Mouse Middle", StringComparison.OrdinalIgnoreCase);
-
-        /// <summary>The pattern runs while the fire button is down AND the aim gate is open. Called under the lock.</summary>
-        private void Reevaluate(EngineSettings s)
-        {
-            bool want = fireDown && (!UsesAimGate(s) || aimLatched);
-            if (want && !recoilTriggerDown) ActivateRecoil(s);
-            else if (!want && recoilTriggerDown) DeactivateRecoil();
         }
 
         public void OnWheel(int direction)
         {
             lock (sync)
             {
-                EngineSettings s = settings;
-                if (s.WheelDisengageEnabled) Engage(s, "mouse wheel");
-
                 // A wheel notch has no "up": it acts as a short press of "Wheel Up" / "Wheel Down" for bindings.
                 if (direction != 0)
                 {
@@ -348,106 +227,9 @@ namespace GamepadEnhancer
             foreach (string name in done) { wheelPulseUntilMs.Remove(name); activeKeys.Remove(name); }
         }
 
-        /// <summary>Changing the trigger button or mode clears any latched/held state (called under the lock).</summary>
-        private void SyncTriggerSettings(EngineSettings s)
-        {
-            if (!string.Equals(appliedAlgorithm, s.JitterAlgorithm, StringComparison.OrdinalIgnoreCase))
-            {
-                appliedAlgorithm = s.JitterAlgorithm;
-                ResetFilterState();
-            }
-
-            if (!string.Equals(appliedJitterKey, s.JitterTriggerKey, StringComparison.OrdinalIgnoreCase) || appliedJitterToggle != s.JitterToggleMode)
-            {
-                appliedJitterKey = s.JitterTriggerKey;
-                appliedJitterToggle = s.JitterToggleMode;
-                jitterLatched = false;
-            }
-
-            if (string.Equals(appliedTrigger, s.RecoilTriggerKey, StringComparison.OrdinalIgnoreCase) && appliedToggle == s.RecoilToggleMode)
-                return;
-            appliedTrigger = s.RecoilTriggerKey;
-            appliedToggle = s.RecoilToggleMode;
-            aimLatched = false;
-            DeactivateRecoil();
-            Reevaluate(s);
-        }
-
-        private void ActivateRecoil(EngineSettings s)
-        {
-            long now = NowMs();
-            recoilTriggerDown = true;
-            recoilStepIndex = 0;
-            wobbleIndex = 0;
-            wobbleNextMs = 0;
-            recoilStartAtMs = now + Math.Max(0, s.RecoilStartDelayMs);
-            if (s.RecoilSteps.Length > 0)
-                nextRecoilStepMs = recoilStartAtMs + (long)Math.Round(s.RecoilSteps[0].IntervalMs);
-        }
-
-        private void DeactivateRecoil()
-        {
-            recoilTriggerDown = false;
-            recoilStepIndex = 0;
-        }
-
-        /// <summary>
-        /// Safety net: if the hook ever misses a button-up (e.g. Windows dropped the hook), release the fire button
-        /// (and the aim button in Hold mode) once the physical button has been seen up for several consecutive ticks.
-        /// </summary>
-        private bool PhysicalPollable(string button)
-        {
-            Func<string, bool> probe = BlockedInputProbe;
-            return probe == null || !probe(button);
-        }
-
-        private void PollStuckButtons(EngineSettings s, long now)
-        {
-            if (fireDown && PhysicalPollable("Mouse Left") && MouseState.TryIsDown("Mouse Left", out bool leftDown))
-            {
-                if (leftDown) fireUpPolls = 0;
-                else if (now - fireChangedMs >= 30 && ++fireUpPolls >= 3) fireDown = false;
-            }
-
-            if (jitterLatched && !s.JitterToggleMode && UsesJitterGate(s) && PhysicalPollable(s.JitterTriggerKey) && MouseState.TryIsDown(s.JitterTriggerKey, out bool jitDown))
-            {
-                if (jitDown) jitterUpPolls = 0;
-                else if (now - jitterChangedMs >= 30 && ++jitterUpPolls >= 3) jitterLatched = false;
-            }
-
-            if (aimLatched && !s.RecoilToggleMode && UsesAimGate(s) && PhysicalPollable(s.RecoilTriggerKey) && MouseState.TryIsDown(s.RecoilTriggerKey, out bool aimDown))
-            {
-                if (aimDown) aimUpPolls = 0;
-                else if (now - aimChangedMs >= 30 && ++aimUpPolls >= 3) aimLatched = false;
-            }
-        }
-
-        private void Engage(EngineSettings s, string source)
-        {
-            if (s.DisengageMs <= 0) { disengaged = false; return; }
-            disengaged = true;
-            disengagedUntilMs = NowMs() + s.DisengageMs;
-            RaiseStatus($"Status: Temporarily disabled by {source}");
-        }
-
         private long NowMs() => clock.ElapsedMilliseconds;
 
         // ── Output thread ───────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Output period while filtering: the chosen rate, but for the low-pass wiggle never slower than 1/8 of its wave
-        /// (so a small N, whose wave is only 16 ms x N long, is still sampled properly).
-        /// </summary>
-        private static double FastPeriodMs(EngineSettings s)
-        {
-            double period = Math.Clamp(s.FilterPeriodMs, 1, 50);
-            if (string.Equals(s.JitterAlgorithm, "LowPass", StringComparison.OrdinalIgnoreCase))
-            {
-                double wave = StickMath.SoftWigglePeriodMs(s.JitterValue);
-                if (wave > 0) period = Math.Min(period, Math.Max(1.0, wave / 8.0));
-            }
-            return period;
-        }
 
         private void Loop()
         {
@@ -459,10 +241,9 @@ namespace GamepadEnhancer
                 double next = clock.Elapsed.TotalMilliseconds;
                 while (running)
                 {
-                    bool jitterActive;
                     try
                     {
-                        jitterActive = Tick();
+                        Tick();
                         if (submitPending)
                         {
                             submitPending = false;
@@ -479,7 +260,7 @@ namespace GamepadEnhancer
                         break;
                     }
 
-                    next += jitterActive ? FastPeriodMs(settings) : NormalPeriodMs;
+                    next += NormalPeriodMs;
                     double now = clock.Elapsed.TotalMilliseconds;
                     if (next < now - 50) next = now; // don't try to catch up after a stall
 
@@ -493,86 +274,22 @@ namespace GamepadEnhancer
             }
         }
 
-        /// <summary>Builds and submits one report. Returns true while jitter mode is active.</summary>
-        private bool Tick()
+        /// <summary>
+        /// Builds one report: key/mouse/wheel bindings (turbo) and remote buttons; the right stick is mouse look (when on),
+        /// replaced by the remote right stick while the network client drives it; the left stick and triggers come from the
+        /// network client only. Drift, filtering and recoil are Axiom's job now and no longer exist here.
+        /// </summary>
+        private void Tick()
         {
             EngineSettings s = settings;
             lock (sync)
             {
                 long now = NowMs();
-                if (disengaged && now >= disengagedUntilMs) disengaged = false;
                 ExpireWheelPulses(now);
 
-                SyncTriggerSettings(s);
-                if (aimLatched && s.RecoilToggleMode && !s.RecoilEnabled) aimLatched = false; // toggled-on aim doesn't survive disabling recoil
-                PollStuckButtons(s, now);
-                Reevaluate(s);
-
-                if (disengaged)
-                {
-                    ResetFilterState();
-                    SubmitNeutral();
-                    RaiseStatus("Status: Temporarily disabled");
-                    return false;
-                }
-
-                // Base drift: identical to the original app.
-                // Base drift: Down / Up / Left / Right each pull straight along one axis from the center.
-                (int percentX, int percentY) = GetBasePull(s, s.DriftValue);
-                // Right stick filtering (separate from drift/recoil): the gate comes from Filter Button + Hold/Toggle.
-                bool filterGate = JitterGateOpen(s);
-                bool lowPassMode = string.Equals(s.JitterAlgorithm, "LowPass", StringComparison.OrdinalIgnoreCase);
-                int jitterAmp = filterGate && !lowPassMode ? StickMath.JitterAmplitude(s.JitterValue) : 0; // oscillation (Y only)
-                double tauMs = filterGate && lowPassMode ? StickMath.SmoothingTauMs(s.JitterValue) : 0.0;  // low-pass (X and Y)
-
-                bool recoilActive = false;
-                if (s.RecoilEnabled && recoilTriggerDown && s.RecoilSteps.Length > 0 && now >= recoilStartAtMs)
-                {
-                    int guard = 0;
-                    while (now >= nextRecoilStepMs && guard++ < s.RecoilSteps.Length * 2)
-                    {
-                        if (recoilStepIndex >= s.RecoilSteps.Length - 1)
-                        {
-                            if (!s.RecoilLoop) break;   // hold the last step (original behavior)
-                            recoilStepIndex = 0;        // Loop: start again from step 1
-                        }
-                        else recoilStepIndex++;
-                        long stepMs = (long)Math.Round(s.RecoilSteps[recoilStepIndex].IntervalMs);
-                        nextRecoilStepMs = now + (s.RecoilLoop ? Math.Max(1L, stepMs) : stepMs);
-                    }
-                    RecoilStep step = s.RecoilSteps[Math.Min(recoilStepIndex, s.RecoilSteps.Length - 1)];
-                    percentX = StickMath.ClampPercent(step.X);
-                    percentY = StickMath.ClampPercent(step.Y);
-                    ApplyCenterRadius(s, now, ref percentX, ref percentY);
-                    recoilActive = true;
-                }
-
-                if (jitterAmp > 0) oscHighPhase = !oscHighPhase; else oscHighPhase = false;
-
-                // Exponential low-pass on the final target (X and Y, in percent); state is cleared whenever it is off.
-                // The filtering wiggle always shakes the axis PERPENDICULAR to the drift: Left/Right drift on X so the wiggle is on Y;
-                // Up/Down drift on Y so the wiggle is on X.
-                bool wiggleOnX = PullDirections.IsVertical(s.PullDirection);
-                double outX = percentX, outY = percentY;
                 double nowPrecise = clock.Elapsed.TotalMilliseconds;
-                if (tauMs > 0)
-                {
-                    double dtMs = lastTickPreciseMs > 0 ? Math.Clamp(nowPrecise - lastTickPreciseMs, 0.0, 100.0) : 0.0;
-                    // Soft wiggle: a symmetric square wave on the wiggle axis that the same filter rounds (not applied on the
-                    // seeding tick, so the filter starts exactly on the target). Changes on X and Y are smoothed by the same filter.
-                    double wiggle = 0.0;
-                    if (lowPass.Seeded)
-                        wiggle = StickMath.SoftWiggleDrivePercent(s.JitterValue, wiggleOnX ? percentX : percentY)
-                               * StickMath.SquareWave(nowPrecise, StickMath.SoftWigglePeriodMs(s.JitterValue));
-                    (outX, outY) = lowPass.Step(percentX + (wiggleOnX ? wiggle : 0.0), percentY + (wiggleOnX ? 0.0 : wiggle),
-                        StickMath.LowPassAlpha(tauMs, dtMs));
-                }
-                else lowPass.Reset();
-                lastTickPreciseMs = nowPrecise;
-
-                // Mouse look: relative mouse movement drives the right stick on top of drift/recoil/filtering.
-                double mouseLookX = 0.0, mouseLookY = 0.0;   // this tick's mouse-look contribution (percent, engine-native Y), for the monitor
-                double processedX, processedY;               // right stick after drift/recoil/filter/mouse look, before quantization
+                double outX = 0.0, outY = 0.0;               // right stick percent, engine-native Y (+down on PS4, +up on Xbox)
+                double mouseLookX = 0.0, mouseLookY = 0.0;   // mouse-look contribution, for the monitor's Physical view
                 if (s.MouseLookEnabled)
                 {
                     (double mx, double my) = mouseLook.Step(nowPrecise, s.MouseSensitivityX, s.MouseSensitivityY,
@@ -580,12 +297,11 @@ namespace GamepadEnhancer
                     if (useXbox) my = -my;   // mouse down is +Y here (PS4 convention); on Xbox +Y is up
                     mouseLookX = mx;
                     mouseLookY = my;
-                    outX = Math.Clamp(outX + mx, -100.0, 100.0);
-                    outY = Math.Clamp(outY + my, -100.0, 100.0);
+                    outX = Math.Clamp(mx, -100.0, 100.0);
+                    outY = Math.Clamp(my, -100.0, 100.0);
                 }
                 else mouseLook.Reset();
-                processedX = outX;
-                processedY = outY;
+                double processedX = outX, processedY = outY;
 
                 RemoteFrame rf = Remote.Snapshot(now);
                 int mask = PressedMask(s, now) | rf.ButtonMask;
@@ -593,11 +309,6 @@ namespace GamepadEnhancer
                 {
                     short rx = StickMath.PercentToXboxAxis(outX);
                     short rsY = StickMath.PercentToXboxAxis(outY);
-                    if (jitterAmp > 0)
-                    {
-                        if (wiggleOnX) rx = StickMath.XboxOscillateY(rx, jitterAmp, oscHighPhase);   // helper is axis-agnostic
-                        else rsY = StickMath.XboxOscillateY(rsY, jitterAmp, oscHighPhase);
-                    }
                     if (rf.RightActive) { rx = RemoteControlState.ToXboxAxis(rf.Rx); rsY = RemoteControlState.ToXboxAxisY(rf.Ry); }
                     xbox.SetAxisValue(Xbox360Axis.RightThumbX, rx);
                     xbox.SetAxisValue(Xbox360Axis.RightThumbY, rsY);
@@ -612,11 +323,6 @@ namespace GamepadEnhancer
                 {
                     byte rx = StickMath.PercentToDs4Axis(outX);
                     byte rsY = StickMath.PercentToDs4Axis(outY);
-                    if (jitterAmp > 0)
-                    {
-                        if (wiggleOnX) rx = StickMath.Ds4OscillateY(rx, jitterAmp, oscHighPhase);    // helper is axis-agnostic
-                        else rsY = StickMath.Ds4OscillateY(rsY, jitterAmp, oscHighPhase);
-                    }
                     if (rf.RightActive) { rx = RemoteControlState.ToDs4Axis(rf.Rx); rsY = RemoteControlState.ToDs4Axis(rf.Ry); }
                     ds4.SetAxisValue(DualShock4Axis.RightThumbX, rx);
                     ds4.SetAxisValue(DualShock4Axis.RightThumbY, rsY);
@@ -628,89 +334,7 @@ namespace GamepadEnhancer
                             PadStateMath.FromDs4Axis(rx), PadStateMath.FromDs4Axis(rsY));
                 }
 
-                string ctrl = ControllerName;
-                string key = UsesAimGate(s)
-                    ? $"{s.RecoilTriggerKey} ({(s.RecoilToggleMode ? "toggle" : "hold")}) + Mouse Left"
-                    : "Mouse Left";
-                if (recoilActive)
-                    RaiseStatus($"Status: {ctrl} - recoil step {recoilStepIndex + 1}/{s.RecoilSteps.Length} on {key}");
-                else if (jitterAmp > 0)
-                    RaiseStatus($"Status: {ctrl} connected - RS oscillation +/-{jitterAmp} active");
-                else if (tauMs > 0)
-                    RaiseStatus($"Status: {ctrl} connected - RS low-pass {tauMs:0} ms, soft wiggle +/-{StickMath.JitterAmplitude(s.JitterValue)} active");
-                else
-                    RaiseStatus($"Status: {ctrl} connected - base drift active");
-
-                return jitterAmp > 0 || tauMs > 0;   // oscillation and the low-pass wiggle both need the fast loop
-            }
-        }
-
-        /// <summary>
-        /// Center Radius: "Lift" (new) pushes small non-zero steps out to the radius;
-        /// "Shake" / "Circle" (old) add a centered wobble of that radius around the step.
-        /// </summary>
-        private void ApplyCenterRadius(EngineSettings s, long now, ref int percentX, ref int percentY)
-        {
-            string mode = s.RecoilCenterRadiusMode;
-            if (string.Equals(mode, "Shake", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(mode, "Circle", StringComparison.OrdinalIgnoreCase))
-            {
-                string key = mode + ":" + s.RecoilCenterRadius;
-                if (key != wobbleKey) { wobbleKey = key; wobble = WobblePattern.Build(mode, s.RecoilCenterRadius); wobbleIndex = 0; }
-                if (wobble.Length == 0) return;
-
-                if (wobbleNextMs == 0) wobbleNextMs = now + WobblePattern.StepIntervalMs;
-                while (now >= wobbleNextMs)
-                {
-                    wobbleIndex++;
-                    wobbleNextMs += WobblePattern.StepIntervalMs;
-                    if (now - wobbleNextMs > 100) wobbleNextMs = now + WobblePattern.StepIntervalMs; // after a stall
-                }
-                var w = wobble[wobbleIndex % wobble.Length];
-                percentX = StickMath.ClampPercent(percentX + w.X);
-                percentY = StickMath.ClampPercent(percentY + w.Y);
-            }
-            else
-            {
-                (percentX, percentY) = StickMath.ApplyCenterRadius(percentX, percentY, s.RecoilCenterRadius);
-            }
-        }
-
-        /// <summary>
-        /// Base drift vector: one straight axis, the plain sign of the drift percent on every controller type
-        /// (negative = left / up, positive = right / down), exactly the same form for all four directions:
-        ///   Left (-d, 0)   Right (d, 0)   Up (0, -d)   Down (0, d)
-        /// Note: Y is the controller's native Y, so "Down" points down on PS4 (positive Y = down) but up on Xbox 360 (positive Y = up).
-        /// </summary>
-        private static (int X, int Y) GetBasePull(EngineSettings s, int d) => PullDirections.Normalize(s.PullDirection) switch
-        {
-            "Up" => (0, -d),
-            "Left" => (-d, 0),
-            "Right" => (d, 0),
-            _ => (0, d)   // Down (and the old "Center")
-        };
-
-        /// <summary>Sets a neutral stick (buttons still applied) and marks a report; the driver call happens in Loop.</summary>
-        private void SubmitNeutral()
-        {
-            EngineSettings s = settings;
-            long now = NowMs();
-            int mask = PressedMask(s, now);
-            if (useXbox && xbox != null)
-            {
-                xbox.SetAxisValue(Xbox360Axis.RightThumbX, 0);
-                xbox.SetAxisValue(Xbox360Axis.RightThumbY, 0);
-                ApplyXboxBindings(mask);
-                MarkReport(0, 0, mask, now);
-                if (Snapshots.Enabled) PublishPad(s, now, RemoteFrame.None, mask, 0, 0, 0, 0, 0, 0);
-            }
-            else if (!useXbox && ds4 != null)
-            {
-                ds4.SetAxisValue(DualShock4Axis.RightThumbX, StickMath.Ds4Center);
-                ds4.SetAxisValue(DualShock4Axis.RightThumbY, StickMath.Ds4Center);
-                ApplyDs4Bindings(mask);
-                MarkReport(StickMath.Ds4Center, StickMath.Ds4Center, mask, now);
-                if (Snapshots.Enabled) PublishPad(s, now, RemoteFrame.None, mask, 0, 0, 0, 0, 0, 0);
+                RaiseStatus($"Status: {ControllerName} connected");
             }
         }
 
@@ -727,7 +351,7 @@ namespace GamepadEnhancer
             submitPending = true;
         }
 
-        /// <summary>Bit i is set when BindingActions[i] is physically held, ignoring turbo, disengage and remote control. Under the lock.</summary>
+        /// <summary>Bit i is set when BindingActions[i] is physically held, ignoring turbo and remote control. Under the lock.</summary>
         private int RawMask(EngineSettings s)
         {
             int mask = 0;
@@ -890,27 +514,6 @@ namespace GamepadEnhancer
             }
             double cycleMs = 1000.0 / Math.Max(1, b.TurboHz);
             return ((nowMs - since) % cycleMs) < (cycleMs / 2.0);
-        }
-
-        private static class MouseState
-        {
-            /// <summary>Physical state of the trigger button (accounts for swapped primary/secondary buttons).</summary>
-            internal static bool TryIsDown(string trigger, out bool down)
-            {
-                down = false;
-                if (!OperatingSystem.IsWindows()) return false;
-                bool swapped = MouseButtonState.IsSwapped();
-                int vk;
-                switch (trigger)
-                {
-                    case "Mouse Left": vk = MouseButtonState.ResolveVk(MouseButtonState.VkLeft, swapped); break;
-                    case "Mouse Right": vk = MouseButtonState.ResolveVk(MouseButtonState.VkRight, swapped); break;
-                    case "Mouse Middle": vk = MouseButtonState.VkMiddle; break;
-                    default: return false;
-                }
-                down = MouseButtonState.IsDown(vk);
-                return true;
-            }
         }
 
         private static class NativeTime

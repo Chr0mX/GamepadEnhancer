@@ -36,79 +36,11 @@
     <!-- Status bar -->
     <Border DockPanel.Dock="Bottom" Classes="card" Margin="12,6,12,12" Padding="12,8">
       <StackPanel Spacing="2">
-        <TextBlock x:Name="valueLabel" FontWeight="SemiBold" TextWrapping="Wrap" Text="Base downward drift: 0%" />
         <TextBlock x:Name="statusLabel" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource AccentTextBrush}" Text="Status: Not connected" />
       </StackPanel>
     </Border>
 
     <TabControl x:Name="mainTabs" Margin="12,0,12,0">
-
-      <!-- ─────────────── Controller ─────────────── -->
-      <TabItem Header="Controller">
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-          <Grid x:Name="controllerGrid" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*" Margin="0,12,0,12">
-
-            <Border x:Name="driftCard" Classes="card" VerticalAlignment="Stretch" Margin="0,0,6,12">
-              <StackPanel Spacing="8">
-                <TextBlock Classes="h" Text="Base drift" />
-                <TextBlock Text="Centered / neutral" HorizontalAlignment="Center" />
-                <Slider x:Name="driftSlider" Orientation="Vertical" IsDirectionReversed="True"
-                        Minimum="0" Maximum="100" Value="0" TickFrequency="10" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Height="190" HorizontalAlignment="Center"
-                        ValueChanged="DriftSlider_ValueChanged" />
-                <TextBlock x:Name="driftMoreLabel" Text="More downward drift" HorizontalAlignment="Center" />
-                <Button Content="Reset" HorizontalAlignment="Center" MinWidth="90" HorizontalContentAlignment="Center" Click="ResetButton_Click" />
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="Pull direction" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <ComboBox x:Name="pullDirectionBox" MinWidth="130" Margin="0,0,0,4" SelectionChanged="PullDirectionBox_SelectionChanged" />
-                </WrapPanel>
-              </StackPanel>
-            </Border>
-
-            <Border x:Name="disengageCard" Classes="card" VerticalAlignment="Top" Margin="6,0,0,12" Grid.Column="1">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Disengage / disable" />
-                <ToggleButton x:Name="wheelDisengageToggle" IsChecked="True" Content="Wheel disengage: ON"
-                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="WheelDisengageToggle_Click" />
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="Disable duration (ms)" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="scrollDisengageBox" Minimum="0" Maximum="5000" Value="500" Increment="50"
-                                 FormatString="0" MinWidth="130" Margin="0,0,0,4" ValueChanged="AnySettingChangedNumeric" />
-                </WrapPanel>
-                <WrapPanel x:Name="disableKeysPanel" Orientation="Horizontal" />
-                <TextBlock Classes="muted" Text="Press any checked key to temporarily neutralize the stick while looting." />
-              </StackPanel>
-            </Border>
-
-            <Border x:Name="jitterCard" Classes="card" VerticalAlignment="Stretch" Margin="6,0,6,12">
-              <StackPanel Spacing="8">
-                <TextBlock Classes="h" Text="Right stick filtering" />
-                <TextBlock Text="Off / neutral" HorizontalAlignment="Center" />
-                <Slider x:Name="jitterSlider" Orientation="Vertical"
-                        Minimum="-50" Maximum="0" Value="0" TickFrequency="5" TickPlacement="BottomRight"
-                        IsSnapToTickEnabled="False" Height="190" HorizontalAlignment="Center"
-                        ValueChanged="JitterSlider_ValueChanged" />
-                <TextBlock x:Name="jitterMoreLabel" Text="More jitter" HorizontalAlignment="Center" />
-                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                  <NumericUpDown x:Name="jitterBox" Minimum="-50" Maximum="0" Value="0" Increment="1"
-                                 FormatString="0" MinWidth="110" Margin="0,0,6,4" ValueChanged="JitterBox_ValueChanged" />
-                  <Button Content="Reset" MinWidth="80" HorizontalContentAlignment="Center" Margin="0,0,0,4" Click="JitterResetButton_Click" />
-                </WrapPanel>
-                <TextBlock Text="Filter Algorithm" Margin="0,6,0,0" />
-                <ComboBox x:Name="jitterAlgorithmBox" HorizontalAlignment="Stretch" SelectionChanged="JitterAlgorithmBox_SelectionChanged" />
-                <TextBlock Text="Filter Button" />
-                <ComboBox x:Name="jitterButtonBox" HorizontalAlignment="Stretch" SelectionChanged="AnySettingChanged" />
-                <TextBlock Text="Filter Mode" />
-                <ComboBox x:Name="jitterModeBox" HorizontalAlignment="Stretch" SelectionChanged="AnySettingChanged" />
-                <TextBlock Text="Filter rate" />
-                <ComboBox x:Name="jitterRateBox" HorizontalAlignment="Stretch" SelectionChanged="AnySettingChanged" />
-                <TextBlock x:Name="jitterNoteText" Classes="muted" FontSize="12" HorizontalAlignment="Center" TextAlignment="Center" />
-              </StackPanel>
-            </Border>
-
-          </Grid>
-        </ScrollViewer>
-      </TabItem>
 
       <!-- ─────────────── PC to Controller ─────────────── -->
       <TabItem Header="PC to Controller">
@@ -134,7 +66,7 @@
               <StackPanel Spacing="10">
                 <TextBlock Classes="h" Text="Controller monitor" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="A live picture of the virtual controller. Pick which stage of the pipeline to look at: what your keyboard/mouse ask for, what the app makes of it (drift, recoil, filtering, mouse look, turbo), or exactly what is sent to the virtual pad. It draws on its own timer and never delays the controller output." />
+                           Text="A live picture of the virtual controller. Pick which stage of the pipeline to look at: what your keyboard/mouse ask for, what the app makes of it (mouse look, turbo, remote commands), or exactly what is sent to the virtual pad. It draws on its own timer and never delays the controller output." />
                 <WrapPanel Orientation="Horizontal">
                   <TextBlock Text="View" VerticalAlignment="Center" Margin="0,0,10,4" />
                   <ComboBox x:Name="monitorViewBox" MinWidth="200" Margin="0,0,16,4" SelectionChanged="MonitorSettings_SelectionChanged" />
@@ -195,7 +127,7 @@
               <StackPanel Spacing="10">
                 <TextBlock Classes="h" Text="Mouse look (mouse to right stick)" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Mouse movement drives the right stick, on top of drift, filtering and recoil. Movement is read with Raw Input, so it works with either input capture method. Mouse buttons and the wheel can be bound to pad actions on the PC to Controller tab. Sensitivity is percent of stick per (mouse count per millisecond): higher = a slower mouse reaches full tilt." />
+                           Text="Mouse movement drives the right stick (a stick value sent over the Network API replaces it while set). Movement is read with Raw Input, so it works with either input capture method. Mouse buttons and the wheel can be bound to pad actions on the PC to Controller tab. Sensitivity is percent of stick per (mouse count per millisecond): higher = a slower mouse reaches full tilt." />
                 <CheckBox x:Name="mouseLookBox" Content="Mouse movement drives the right stick" IsCheckedChanged="AnySettingChangedChecked" />
                 <WrapPanel Orientation="Horizontal">
                   <TextBlock Text="Sensitivity X" VerticalAlignment="Center" Margin="0,0,10,4" />
@@ -263,89 +195,6 @@
                 </StackPanel>
               </StackPanel>
             </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-
-      <!-- ─────────────── Recoil Pattern ─────────────── -->
-      <TabItem Header="Recoil Pattern">
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-          <StackPanel Margin="0,12,0,12" Spacing="12">
-
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Recoil Pattern" />
-                <WrapPanel Orientation="Horizontal">
-                  <CheckBox x:Name="recoilEnabledCheckBox" Content="Enabled" Margin="0,0,16,4" IsCheckedChanged="AnySettingChangedChecked" />
-                  <CheckBox x:Name="recoilLoopCheckBox" Content="Loop pattern while firing" Margin="0,0,16,4" IsCheckedChanged="AnySettingChangedChecked" />
-                  <TextBlock Text="Aim Trigger Key:" VerticalAlignment="Center" Margin="0,0,8,4" />
-                  <ComboBox x:Name="recoilTriggerKeyBox" MinWidth="110" Margin="0,0,16,4" SelectionChanged="AnySettingChanged" />
-                  <TextBlock Text="Trigger Mode:" VerticalAlignment="Center" Margin="0,0,8,4" />
-                  <ComboBox x:Name="recoilTriggerModeBox" MinWidth="110" Margin="0,0,16,4" SelectionChanged="AnySettingChanged" />
-                </WrapPanel>
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="Start Delay (ms):" VerticalAlignment="Center" Margin="0,0,8,4" />
-                  <NumericUpDown x:Name="recoilStartDelayBox" Minimum="0" Maximum="5000" Value="0" Increment="10"
-                                 FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <TextBlock Text="Center Radius (%):" VerticalAlignment="Center" Margin="0,0,8,4" />
-                  <NumericUpDown x:Name="recoilCenterRadiusBox" Minimum="0" Maximum="100" Value="0" Increment="1"
-                                 FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <TextBlock Text="Center Radius Mode:" VerticalAlignment="Center" Margin="0,0,8,4" />
-                  <ComboBox x:Name="recoilRadiusModeBox" MinWidth="200" Margin="0,0,16,4" SelectionChanged="AnySettingChanged" />
-                </WrapPanel>
-                <TextBlock Classes="muted"
-                           Text="Aim, then fire: the Aim Trigger Key is your aim button (Right or Middle click) and Trigger Mode says how it counts (Hold = only while pressed, Toggle = press once to switch aiming on, again to switch off). The pattern then plays only while Left click is held. Off = no aim needed, Left click alone fires. Left = Left click is both. Start Delay waits before the first step. Center Radius Mode: New lifts small non-zero steps out to at least that % of stick travel; Old adds a centered Shake or Circle wobble of that radius (max 45). See docs/CENTER_RADIUS.md." />
-
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="Pattern:" VerticalAlignment="Center" Margin="0,0,8,4" />
-                  <ComboBox x:Name="recoilPatternComboBox" MinWidth="160" Margin="0,0,6,4" SelectionChanged="RecoilPatternComboBox_SelectionChanged" />
-                  <TextBox x:Name="patternNameBox" MinWidth="160" Watermark="Pattern name" Margin="0,0,6,4" />
-                  <Button Content="Save" Margin="0,0,6,4" Click="SavePatternButton_Click" />
-                  <Button Content="Load" Margin="0,0,6,4" Click="LoadPatternButton_Click" />
-                  <Button Content="Delete" Margin="0,0,6,4" Click="DeletePatternButton_Click" />
-                  <Button Content="Open Folder" Margin="0,0,6,4" Click="OpenPatternFolderButton_Click" />
-                </WrapPanel>
-                <TextBlock Classes="muted" Text="Patterns are .config files in the 'patterns' folder (X,Y,delay per line)." />
-              </StackPanel>
-            </Border>
-
-            <UniformGrid x:Name="recoilEditorGrid" Columns="2">
-              <Border Classes="card" Margin="0,0,6,0">
-                <StackPanel Spacing="10">
-                  <TextBlock Classes="h" Text="Steps" />
-                  <DataGrid x:Name="recoilStepsGrid" AutoGenerateColumns="False" CanUserSortColumns="False"
-                            CanUserReorderColumns="False" HeadersVisibility="Column" Height="240"
-                            CellEditEnded="RecoilStepsGrid_CellEditEnded">
-                    <DataGrid.Columns>
-                      <DataGridTextColumn Header="X" Binding="{Binding X}" Width="*" />
-                      <DataGridTextColumn Header="Y" Binding="{Binding Y}" Width="*" />
-                      <DataGridTextColumn Header="ms" Binding="{Binding IntervalMs}" Width="*" />
-                    </DataGrid.Columns>
-                  </DataGrid>
-                  <WrapPanel Orientation="Horizontal">
-                    <Button Content="Add Step" Margin="0,0,6,6" Click="AddRecoilStepButton_Click" />
-                    <Button Content="Remove" Margin="0,0,6,6" Click="RemoveRecoilStepButton_Click" />
-                    <Button Content="Clear" Margin="0,0,6,6" Click="ClearRecoilButton_Click" />
-                    <Button Content="Vertical" Margin="0,0,6,6" Click="VerticalPresetButton_Click" />
-                    <Button Content="Circle" Margin="0,0,6,6" Click="CirclePresetButton_Click" />
-                  </WrapPanel>
-                </StackPanel>
-              </Border>
-              <Border Classes="card" Margin="6,0,0,0">
-                <StackPanel Spacing="10">
-                  <TextBlock Classes="h" Text="Preview" />
-                  <Border x:Name="previewHost" />
-                </StackPanel>
-              </Border>
-            </UniformGrid>
-
-            <Border Classes="card">
-              <StackPanel Spacing="8">
-                <TextBlock Text="Pattern text (x:y:ms|x:y:ms|...)" />
-                <TextBox x:Name="recoilPatternTextBox" AcceptsReturn="False" TextWrapping="Wrap" TextChanged="RecoilPatternTextBox_TextChanged" />
-              </StackPanel>
-            </Border>
-
           </StackPanel>
         </ScrollViewer>
       </TabItem>

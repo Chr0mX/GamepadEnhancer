@@ -66,7 +66,7 @@ namespace GamepadEnhancer.Tests
         [Fact]
         public void BuildGivesDifferentValuesForEachStage()
         {
-            // PS4: engine-native +Y is down. Drift pulls the right stick down by 32 %, the final report rounds it.
+            // PS4: engine-native +Y is down. A 32 % downward right stick (e.g. mouse look) is rounded in the final report.
             byte ry = StickMath.PercentToDs4Axis(32.0);
             var (physical, processed, final) = PadStateMath.Build(
                 xbox: false, RemoteFrame.None,

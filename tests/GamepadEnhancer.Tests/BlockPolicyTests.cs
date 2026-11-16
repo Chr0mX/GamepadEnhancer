@@ -114,7 +114,6 @@ namespace GamepadEnhancer.Tests
             var engine = new EngineSettings
             {
                 MouseLookEnabled = true,
-                DisableKeys = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase) { "Tab" },
                 Bindings = new Dictionary<string, BindingSetting>(System.StringComparer.OrdinalIgnoreCase)
                 {
                     ["A / Cross"] = new BindingSetting { Key = "Space" },
@@ -129,7 +128,7 @@ namespace GamepadEnhancer.Tests
             Assert.True(s.BlockMouseMove);
             Assert.Contains(0x20, s.BlockedKeys);
             Assert.Contains(0xA0, s.BlockedKeys);           // left shift as the hook reports it
-            Assert.DoesNotContain(0x09, s.BlockedKeys);     // Tab is only a disengage key, not mapped to the pad
+            Assert.DoesNotContain(0x09, s.BlockedKeys);     // Tab is not bound to a pad action
             Assert.Contains("Mouse Left", s.BlockedMouseInputs);
             Assert.Contains("Mouse Right", s.BlockedMouseInputs);
             Assert.Equal(0x91, s.HotkeyVk);
