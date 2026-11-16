@@ -14,6 +14,8 @@
   <ItemGroup>
     <!-- The default profile ships inside the app (read-only); profiles/Default.json is seeded from it on first run. -->
     <EmbeddedResource Include="Defaults\Default.json" LogicalName="GamepadEnhancer.Default.json" />
+    <!-- The built-in Apex layout (keyboard + mouse, PS4 pad); always loaded from here, never from profiles/. -->
+    <EmbeddedResource Include="Defaults\Apex.json" LogicalName="GamepadEnhancer.Apex.json" />
   </ItemGroup>
 
   <ItemGroup>

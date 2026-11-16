@@ -142,8 +142,7 @@ namespace GamepadEnhancer
         {
             int i = Array.IndexOf(ControllerEngine.BindingActions, actionName);
             if (i < 0) return actionName;
-            if (InputChoices.IsStickAction(actionName)) return PadLabels.For(PadFamily.DualShock4, i);
-            return $"{PadLabels.For(PadFamily.DualShock4, i)}  ·  Xbox {PadLabels.For(PadFamily.Xbox360, i)}";
+            return PadLabels.For(PadFamily.DualShock4, i);
         }
 
         private Control CreateBindingSelector(string actionName)
@@ -648,19 +647,30 @@ namespace GamepadEnhancer
         // ── Profiles ─────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Startup state: profiles/Default.json if it loads, otherwise the default profile shipped inside the app
-        /// (see <see cref="DefaultProfile"/>), applied like a loaded profile.
+        /// Startup state: the built-in Apex profile (see <see cref="DefaultProfile"/>), applied like a loaded profile.
         /// </summary>
         private void ApplyDefaults()
         {
-            ApplyProfile(DefaultProfile.LoadStartupProfile(profilesDirectory));
+            ApplyProfile(DefaultProfile.CreateApex());
+        }
+
+        /// <summary>The Apex toggle: on = the built-in Apex layout, off = the editable Default profile (profiles/Default.json).</summary>
+        private void ApexToggle_Click(object sender, RoutedEventArgs e)
+        {
+            bool apex = apexToggle.IsChecked == true;
+            InputProfile profile = apex ? DefaultProfile.CreateApex() : DefaultProfile.LoadDefaultFile(profilesDirectory);
+            ApplyProfile(profile);
+            LoadProfileList(profile.Name);
+            statusLabel.Text = apex ? "Status: Apex layout loaded" : "Status: Default PS4 profile loaded";
         }
 
         private void LoadProfileList(string selectedName = null)
         {
-            string[] names = Directory.EnumerateFiles(profilesDirectory, "*.json")
+            // "Apex" is built in (not a file), so it is always listed first and any stray Apex.json is hidden.
+            string[] names = new[] { DefaultProfile.ApexName }.Concat(Directory.EnumerateFiles(profilesDirectory, "*.json")
                 .Select(Path.GetFileNameWithoutExtension)
-                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToArray();
+                .Where(n => !DefaultProfile.IsApexName(n))
+                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)).ToArray();
             profileComboBox.ItemsSource = names;
             if (!string.IsNullOrWhiteSpace(selectedName))
             {
@@ -699,6 +709,7 @@ namespace GamepadEnhancer
         {
             string name = (profileNameBox.Text ?? string.Empty).Trim();
             if (name.Length == 0) { await Dialogs.ShowMessageAsync(this, "Profiles", "Enter a profile name first."); return; }
+            if (DefaultProfile.IsApexName(name)) { await Dialogs.ShowMessageAsync(this, "Profiles", "Apex is built in and cannot be overwritten. Save your changes under another name."); return; }
 
             File.WriteAllText(GetProfilePath(name), JsonSerializer.Serialize(BuildProfileFromUi(name), ProfileJson));
             LoadProfileList(name);
@@ -758,7 +769,7 @@ namespace GamepadEnhancer
 
             string baseName = SafeName(profile.Name, "Imported");
             string name = baseName;
-            for (int i = 1; File.Exists(GetProfilePath(name)); i++) name = baseName + "_" + i;
+            for (int i = 1; File.Exists(GetProfilePath(name)) || DefaultProfile.IsApexName(name); i++) name = baseName + "_" + i;
             profile.Name = name;
             File.WriteAllText(GetProfilePath(name), JsonSerializer.Serialize(profile, ProfileJson));
             LoadProfileList(name);
@@ -780,10 +791,11 @@ namespace GamepadEnhancer
             string name = (profileNameBox.Text ?? string.Empty).Trim();
             if (name.Length == 0) { await Dialogs.ShowMessageAsync(this, "Profiles", "Choose or type a profile name."); return; }
             string path = GetProfilePath(name);
-            if (!File.Exists(path)) { await Dialogs.ShowMessageAsync(this, "Profiles", "That profile does not exist yet."); return; }
+            bool apex = DefaultProfile.IsApexName(name);
+            if (!apex && !File.Exists(path)) { await Dialogs.ShowMessageAsync(this, "Profiles", "That profile does not exist yet."); return; }
 
             InputProfile profile;
-            try { profile = JsonSerializer.Deserialize<InputProfile>(File.ReadAllText(path)); }
+            try { profile = apex ? DefaultProfile.CreateApex() : JsonSerializer.Deserialize<InputProfile>(File.ReadAllText(path)); }
             catch { profile = null; }
             if (profile == null) { await Dialogs.ShowMessageAsync(this, "Profiles", "Failed to read that profile."); return; }
 
@@ -795,6 +807,7 @@ namespace GamepadEnhancer
         {
             string name = (profileNameBox.Text ?? string.Empty).Trim();
             if (name.Length == 0) { await Dialogs.ShowMessageAsync(this, "Profiles", "Choose a profile to delete."); return; }
+            if (DefaultProfile.IsApexName(name)) { await Dialogs.ShowMessageAsync(this, "Profiles", "Apex is built in and cannot be deleted."); return; }
             string path = GetProfilePath(name);
             if (File.Exists(path)) File.Delete(path);
             LoadProfileList();
@@ -804,6 +817,7 @@ namespace GamepadEnhancer
         private void ApplyProfile(InputProfile profile)
         {
             profileNameBox.Text = profile.Name;
+            apexToggle.IsChecked = DefaultProfile.IsApexName(profile.Name);
 
             string type = profile.ControllerType == "Xbox 360" ? "Xbox 360" : "PS4";
             if (!engine.IsConnected) controllerTypeBox.SelectedItem = type;   // never swap a live pad just because a profile was loaded

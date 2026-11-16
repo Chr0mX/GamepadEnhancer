@@ -167,25 +167,38 @@ namespace GamepadEnhancer
     }
 
     /// <summary>
-    /// The default profile is a JSON file shipped inside the app (<c>Defaults/Default.json</c>, embedded): the keyboard + mouse
-    /// layout documented in docs/MAPPINGS.md. On first run it is written to <c>profiles/Default.json</c>, and the app starts
-    /// with <c>profiles/Default.json</c> when it exists and is valid, otherwise with the embedded one. When the shipped mapping
-    /// changes (<see cref="MappingVersion"/>), an existing <c>Default.json</c> is replaced once and the old file is kept as a backup.
+    /// Two profiles ship inside the app as embedded resources: <b>Default</b> (<c>Defaults/Default.json</c>: a PS4 pad with
+    /// nothing bound, to be remapped) and <b>Apex</b> (<c>Defaults/Apex.json</c>: the keyboard + mouse layout in
+    /// docs/MAPPINGS.md). Default is written to <c>profiles/Default.json</c> on first run and is an ordinary, editable
+    /// profile; Apex is built in: it is always read from the app, never from <c>profiles/</c>, and cannot be overwritten.
+    /// The app starts on Apex. When the shipped default changes (<see cref="MappingVersion"/>), an existing
+    /// <c>Default.json</c> is replaced once and the old file is kept as a backup.
     /// </summary>
     internal static class DefaultProfile
     {
         public const string ResourceName = "GamepadEnhancer.Default.json";
+        public const string ApexResourceName = "GamepadEnhancer.Apex.json";
         public const string FileName = "Default.json";
+        public const string ApexName = "Apex";
 
-        /// <summary>Revision of the shipped default mapping; stored in settings.json once the upgrade has been applied.</summary>
-        public const int MappingVersion = 3;
+        /// <summary>Revision of the shipped default profile; stored in settings.json once the upgrade has been applied.</summary>
+        public const int MappingVersion = 4;
 
-        /// <summary>The embedded default profile (falls back to the plain property defaults only if the resource is missing).</summary>
-        public static InputProfile Create()
+        /// <summary>True for the built-in profile's name (case-insensitive, ignoring surrounding spaces).</summary>
+        public static bool IsApexName(string name) =>
+            string.Equals((name ?? string.Empty).Trim(), ApexName, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>The embedded Default profile: PS4, nothing bound.</summary>
+        public static InputProfile Create() => Load(ResourceName, new InputProfile { Name = "Default" });
+
+        /// <summary>The embedded Apex profile (falls back to an empty one named Apex only if the resource is missing).</summary>
+        public static InputProfile CreateApex() => Load(ApexResourceName, new InputProfile { Name = ApexName });
+
+        private static InputProfile Load(string resource, InputProfile fallback)
         {
             try
             {
-                using Stream stream = typeof(DefaultProfile).Assembly.GetManifestResourceStream(ResourceName);
+                using Stream stream = typeof(DefaultProfile).Assembly.GetManifestResourceStream(resource);
                 if (stream != null)
                 {
                     InputProfile profile = JsonSerializer.Deserialize<InputProfile>(stream);
@@ -193,7 +206,7 @@ namespace GamepadEnhancer
                 }
             }
             catch { }
-            return new InputProfile { Name = "Default" };
+            return fallback;
         }
 
         public static bool ShouldUpgradeDefault(int storedVersion) => storedVersion < MappingVersion;
@@ -257,8 +270,8 @@ namespace GamepadEnhancer
         private static void WriteDefault(string path) =>
             File.WriteAllText(path, JsonSerializer.Serialize(Create(), new JsonSerializerOptions { WriteIndented = true }));
 
-        /// <summary>The profile the app starts with: profiles/Default.json if it loads, otherwise the embedded default.</summary>
-        public static InputProfile LoadStartupProfile(string profilesDirectory)
+        /// <summary>profiles/Default.json (the user's editable copy) if it loads, otherwise the embedded Default.</summary>
+        public static InputProfile LoadDefaultFile(string profilesDirectory)
         {
             try
             {

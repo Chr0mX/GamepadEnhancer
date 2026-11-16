@@ -43,9 +43,10 @@ namespace GamepadEnhancer.Tests
         }
 
         [Fact]
-        public void ShippedDefaultIsExactlyTheRequestedMapping()
+        public void BuiltInApexIsExactlyTheRequestedMapping()
         {
-            InputProfile d = DefaultProfile.Create();
+            InputProfile d = DefaultProfile.CreateApex();
+            Assert.Equal("Apex", d.Name);
             Assert.Equal("PS4", d.ControllerType);
             Assert.True(d.MouseLookEnabled);     // right stick = mouse movement
             var warnings = new List<string>();
@@ -60,14 +61,39 @@ namespace GamepadEnhancer.Tests
         }
 
         [Fact]
-        public void ShippedKindsMatchTheInputs()
+        public void ApexKindsMatchTheInputs()
         {
-            InputProfile d = DefaultProfile.Create();
+            InputProfile d = DefaultProfile.CreateApex();
             Assert.Equal("MouseButton", d.Mappings["RB / R1"].Kind);
             Assert.Equal("MouseButton", d.Mappings["RS / R3"].Kind);
             Assert.Equal("Keyboard", d.Mappings["A / Cross"].Kind);
             Assert.Equal("Keyboard", d.Mappings["Left Stick Up"].Kind);
         }
+
+        [Fact]
+        public void ShippedDefaultIsAnEmptyPs4ToBeRemapped()
+        {
+            InputProfile d = DefaultProfile.Create();
+            Assert.Equal("Default", d.Name);
+            Assert.Equal("PS4", d.ControllerType);
+            Assert.False(d.MouseLookEnabled);
+            var warnings = new List<string>();
+            var map = ProfileMappings.Resolve(d, warnings);
+            Assert.Empty(warnings);
+            Assert.Equal(ControllerEngine.BindingActions.Length, map.Count);
+            Assert.All(map.Values, e => { Assert.Equal("None", e.Input); Assert.False(e.Turbo); });
+        }
+
+        [Theory]
+        [InlineData("Apex", true)]
+        [InlineData("apex", true)]
+        [InlineData("  APEX ", true)]
+        [InlineData("Apex2", false)]
+        [InlineData("Default", false)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        public void ApexNameIsReserved(string name, bool expected) =>
+            Assert.Equal(expected, DefaultProfile.IsApexName(name));
 
         [Fact]
         public void LeftStickDefaultsAreKeyboardOnly()
@@ -300,7 +326,9 @@ namespace GamepadEnhancer.Tests
 
                 Assert.True(DefaultProfile.PrepareStartup(dir, 0));
                 Assert.Equal("{\"Name\":\"Mine\"}", System.IO.File.ReadAllText(System.IO.Path.Combine(dir, "Default.json.bak")));
-                Assert.Contains("\"Space\"", System.IO.File.ReadAllText(path));
+                string written = System.IO.File.ReadAllText(path);
+                Assert.Contains("\"Name\": \"Default\"", written);
+                Assert.DoesNotContain("\"Space\"", written);    // the shipped Default is empty; Apex lives inside the app
 
                 System.IO.File.WriteAllText(path, "{\"Name\":\"EditedAgain\"}");
                 Assert.False(DefaultProfile.PrepareStartup(dir, DefaultProfile.MappingVersion));   // already upgraded: left alone

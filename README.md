@@ -11,7 +11,7 @@ Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm
 - Choose **Xbox 360** or **PS4** virtual controller
 - Bind **PC keyboard keys** to virtual controller inputs, with optional per-action **turbo** (1-30 Hz)
 - **Input capture** dropdown: Low-Level Hooks (default) or Raw Input (background capture with `RIDEV_INPUTSINK`); one active at a time, held inputs are released when switching; saved in `settings.json`. See [docs/INPUT_CAPTURE.md](docs/INPUT_CAPTURE.md)
-- **Starting settings:** the default profile is a PS4 keyboard + mouse layout (WASD = left stick, mouse movement = right stick, Space = Cross, mouse buttons on R1 / L2 / R2 / R3, ...). It ships inside the app (`src/GamepadEnhancer/Defaults/Default.json`), is written to `profiles/Default.json` on first run, and replaces an older `Default.json` once after an upgrade (the old one is kept as `Default.json.bak`). Full table and file format: [docs/MAPPINGS.md](docs/MAPPINGS.md). Older profile files, including ones with drift, filtering, recoil or disengage fields, load fine.
+- **Two built-in profiles:** **Apex** (the app starts on it: a PS4 keyboard + mouse layout with WASD = left stick, mouse movement = right stick, Space = Cross, mouse buttons on R1 / L2 / R2 / R3, ...; built in, cannot be overwritten) and **Default** (a PS4 pad with nothing bound, to remap yourself; saved as `profiles/Default.json`). The **Apex** toggle on the top bar switches between them. Upgrading replaces an older `profiles/Default.json` once (the old one is kept as `Default.json.bak`). Full table and file format: [docs/MAPPINGS.md](docs/MAPPINGS.md). Older profile files, including ones with drift, filtering, recoil or disengage fields, load fine.
 - **Network API:** accept MAKCU-style text commands (`km.controller(id,value[,hold_ms])`, `km.controller_clear()`) over TCP from another computer and play them on the virtual pad, with a token and off by default; the same app can also **send** its pad to another PC. See [docs/NETWORK_API.md](docs/NETWORK_API.md)
 - **Mouse buttons over the same link:** a client that subscribes with `km.mouse_stream(1)` gets this PC's mouse buttons pushed back as `km.mouse(mask)` on the connection it already uses for commands (one address, port and token), for example to give Axiom a remote aim button. See [docs/NETWORK_API.md](docs/NETWORK_API.md)
 - **Input blocking and mouse look:** while a chosen game is focused, swallow the keyboard/mouse input you mapped to pad actions so only the controller reaches the game, bind mouse buttons and the wheel to pad actions, and let mouse movement drive the right stick (off by default). See [docs/BLOCKING.md](docs/BLOCKING.md)
@@ -81,7 +81,7 @@ The pure logic (input block policy, mouse look, process matching, key names) is 
 | `src/GamepadEnhancer/Input` | Low-level hooks, Raw Input, input state, settings, foreground window |
 | `src/GamepadEnhancer/Network` | Network API server, remote link, MAKCU command parser |
 | `src/GamepadEnhancer/Views`, `MainWindow.axaml` | Avalonia UI (controller monitor in `ControllerView` / `MonitorPanel` / `MonitorWindow`) |
-| `src/GamepadEnhancer/Defaults/Default.json` | Profile shipped inside the app |
+| `src/GamepadEnhancer/Defaults/` | `Default.json` (empty PS4) and `Apex.json` (built-in layout), shipped inside the app |
 | `tests/GamepadEnhancer.Tests` | Unit tests |
 | `docs/`, `site/` | Markdown docs, release notes, documentation site |
 

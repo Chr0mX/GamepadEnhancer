@@ -1,6 +1,6 @@
 # Input mappings and profiles
 
-A profile maps **PC input to a virtual PS4 / Xbox 360 pad**. The default profile is a keyboard + mouse layout for a PS4 pad. Every pad action has its own stored name, so a profile written for one pad type works for the other (L1 is LB, Share is Back, Options is Start, PS is Guide; the Touchpad has no Xbox equivalent and is ignored there).
+A profile maps **PC input to a virtual PS4 / Xbox 360 pad**. Two profiles ship inside the app: **Default** (a PS4 pad with nothing bound, editable and saved as `profiles/Default.json`, to remap yourself) and **Apex** (built in: the keyboard + mouse layout below). The app starts on Apex; the **Apex** toggle on the top bar switches between the two. Apex cannot be overwritten or deleted: change it, then save under another name. Every pad action has its own stored name, so a profile written for one pad type works for the other (L1 is LB, Share is Back, Options is Start, PS is Guide; the Touchpad has no Xbox equivalent and is ignored there).
 
 Three kinds of PC input are kept clearly apart, in the picker groups, in the small tag next to each picker, and in the file:
 
@@ -11,7 +11,7 @@ Three kinds of PC input are kept clearly apart, in the picker groups, in the sma
 | **Mouse wheel** | `Wheel Up`, `Wheel Down` (one notch = one press) | Any button (not the left-stick directions) |
 | **Mouse movement** | Moving the mouse | The **right stick**, not a binding: turn on *Mouse movement drives the right stick* |
 
-## Default mapping
+## Apex mapping (built in)
 
 | Pad action (PS4 / Xbox) | Input | Kind |
 |---|---|---|
@@ -105,4 +105,4 @@ On the top bar, next to the profile box:
 
 ## The shipped default and upgrades
 
-`Default.json` ships inside the app and is written to `profiles/Default.json` on first run. When a release changes the shipped mapping, the existing `profiles/Default.json` is replaced **once** (the old file is kept as `Default.json.bak`, or `.bak2`, ... so a backup is never overwritten); `settings.json` remembers that the upgrade was applied (`DefaultMappingVersion`). Your own profiles are never touched. To go back to the shipped layout later, delete `profiles/Default.json` and restart.
+`Default.json` (PS4, nothing bound) ships inside the app and is written to `profiles/Default.json` on first run; Apex is read from the app itself and never written to `profiles/`. When a release changes the shipped Default, the existing `profiles/Default.json` is replaced **once** (the old file is kept as `Default.json.bak`, or `.bak2`, ... so a backup is never overwritten); `settings.json` remembers that the upgrade was applied (`DefaultMappingVersion`). Your own profiles are never touched. To get the empty Default back later, delete `profiles/Default.json` and restart.

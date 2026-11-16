@@ -27,7 +27,8 @@
         <Button Content="Delete" Margin="0,4,6,4" Click="DeleteProfileButton_Click" />
         <Button Content="Import..." Margin="0,4,6,4" Click="ImportProfileButton_Click" ToolTip.Tip="Load a profile file (.json) and add it to the list" />
         <Button Content="Export..." Margin="0,4,6,4" Click="ExportProfileButton_Click" ToolTip.Tip="Save the current mapping to a file you can share or edit" />
-        <Button Content="Folder" Margin="0,4,18,4" Click="OpenProfilesFolderButton_Click" ToolTip.Tip="Open the profiles folder" />
+        <Button Content="Folder" Margin="0,4,10,4" Click="OpenProfilesFolderButton_Click" ToolTip.Tip="Open the profiles folder" />
+        <ToggleButton x:Name="apexToggle" Content="Apex" Margin="0,4,18,4" Click="ApexToggle_Click" ToolTip.Tip="On: the built-in Apex keyboard + mouse layout. Off: your editable Default PS4 profile (nothing bound until you remap it)." />
 
         <ToggleButton x:Name="darkModeToggle" Content="Dark mode" IsChecked="True" Margin="0,4,18,4" Click="DarkModeToggle_Click" />
 
@@ -53,7 +54,7 @@
               <StackPanel Spacing="10">
                 <TextBlock Classes="h" Text="Buttons" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Bind each pad button to a keyboard key, a mouse button or a mouse wheel notch (the tag beside each picker says which). Turbo (rapid fire) is optional per button. Names show the PlayStation button first, then the Xbox 360 one. The Apex line is what Apex Legends' default controller preset does on that button; Ultimate Ability is L1 + R1 together (Q + Mouse 4 by default)." />
+                           Text="Bind each pad button to a keyboard key, a mouse button or a mouse wheel notch (the tag beside each picker says which). Turbo (rapid fire) is optional per button. The Apex line is what Apex Legends' default controller preset does on that button; Ultimate Ability is L1 + R1 together (Q + Mouse 4 by default)." />
                 <UniformGrid x:Name="bindingsGrid" Columns="2" />
               </StackPanel>
             </Border>
