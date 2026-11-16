@@ -60,3 +60,18 @@ namespace GamepadEnhancer.Tests
         }
     }
 }
+
+namespace GamepadEnhancer.Tests
+{
+    public class BlockHotkeysTests
+    {
+        [Fact]
+        public void NamesRoundTripAndUnknownFallsBackToScrollLock()
+        {
+            foreach (string name in BlockHotkeys.Names)
+                Assert.Equal(name, BlockHotkeys.FromVk(BlockHotkeys.ToVk(name)));
+            Assert.Equal(0x91, BlockHotkeys.ToVk("nope"));
+            Assert.Equal("Scroll Lock", BlockHotkeys.FromVk(0xFF));
+        }
+    }
+}

@@ -130,6 +130,28 @@
           <StackPanel Margin="0,12,0,12" Spacing="12">
             <Border Classes="card">
               <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Block physical keyboard and mouse" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="While one of the listed programs is focused and the virtual controller is connected, the keys and mouse buttons you mapped to pad actions (and mouse movement, if mouse look is on) are swallowed so only the controller reaches the game. Unmapped input is untouched, and the toggle hotkey is never blocked. Needs the Low-Level Hooks capture method. Input injected by other tools is never blocked." />
+                <CheckBox x:Name="blockEnabledBox" Content="Block mapped input while a listed program is focused" IsCheckedChanged="BlockSettings_Changed" />
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Programs (process names, separated by commas)" />
+                  <TextBox x:Name="blockProcessesBox" Watermark="game.exe, other.exe" LostFocus="BlockSettings_LostFocus" />
+                  <WrapPanel Orientation="Horizontal">
+                    <ComboBox x:Name="blockRunningBox" MinWidth="220" Margin="0,0,8,4" PlaceholderText="Running programs" />
+                    <Button x:Name="blockRefreshButton" Content="Refresh" Margin="0,0,8,4" Click="BlockRefresh_Click" />
+                    <Button x:Name="blockAddButton" Content="Add selected" Margin="0,0,0,4" Click="BlockAdd_Click" />
+                  </WrapPanel>
+                </StackPanel>
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="Toggle / panic hotkey" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <ComboBox x:Name="blockHotkeyBox" MinWidth="150" Margin="0,0,0,4" SelectionChanged="BlockHotkeyBox_SelectionChanged" />
+                </WrapPanel>
+                <TextBlock x:Name="blockStatusLabel" Classes="muted" Text="Input blocking is off" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="10">
                 <TextBlock Classes="h" Text="Mouse look (mouse to right stick)" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
                            Text="Mouse movement drives the right stick, on top of drift, filtering and recoil. Movement is read with Raw Input, so it works with either input capture method. Mouse buttons and the wheel can be bound to pad actions on the PC to Controller tab. Sensitivity is percent of stick per (mouse count per millisecond): higher = a slower mouse reaches full tilt." />

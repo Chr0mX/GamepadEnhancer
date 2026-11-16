@@ -35,6 +35,13 @@ namespace GamepadEnhancer
         /// <summary>Optional shared tag secret (plain text in settings.json); must match the receiver's token.</summary>
         public string MouseUdpToken { get; set; } = "";
 
+        /// <summary>Input blocking: swallow the mapped physical keyboard/mouse input while a chosen game is focused. Off by default.</summary>
+        public bool BlockEnabled { get; set; }
+        /// <summary>Process names (comma / semicolon / newline separated, ".exe" optional) that blocking applies to.</summary>
+        public string BlockProcesses { get; set; } = "";
+        /// <summary>Virtual-key code of the toggle / panic hotkey (default Scroll Lock).</summary>
+        public int BlockHotkeyVk { get; set; } = 0x91;
+
         public static string NewToken()
         {
             const string alphabet = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";

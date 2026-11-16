@@ -29,6 +29,11 @@ namespace GamepadEnhancer
         private InputStateManager inputManager;
         private RawInputService mouseMoveSource;
         private readonly BlockPolicy blockPolicy = new();
+        private readonly ForegroundWindow foregroundWindow = new();
+        private Avalonia.Threading.DispatcherTimer blockTimer;
+        private List<string> blockProcessList = new();
+        private bool blockToggledOn = true;
+        private bool suppressBlockChange;
         private AppSettings appSettings;
         private NetworkApiServer networkApi;
         private MouseUdpSender mouseUdp;
@@ -100,6 +105,7 @@ namespace GamepadEnhancer
             });
 
             InitializeInputHook();
+            InitializeBlocking();
             InitializeNetworkApi();
             InitializeMouseUdp();
             ApplyDefaults();
@@ -250,6 +256,7 @@ namespace GamepadEnhancer
             };
 
             UpdateMouseMoveSource(mouseLookBox.IsChecked == true);
+            RefreshBlockPolicy();
         }
 
         /// <summary>Starts or stops the movement-only Raw Input source that feeds mouse-look.</summary>
@@ -281,7 +288,7 @@ namespace GamepadEnhancer
             inputManager = new InputStateManager(engine, (method, receiver) =>
                 method == InputCaptureMethod.RawInput
                     ? new RawInputService(receiver)
-                    : new LowLevelHookCapture(receiver, blockPolicy));
+                    : CreateHookCapture(receiver));
             engine.BlockedInputProbe = name => blockPolicy.Settings.Active && blockPolicy.Settings.BlockedMouseInputs.Contains(name);
             inputManager.Faulted += (method, message) => Dispatcher.UIThread.Post(() => OnCaptureFaulted(method, message));
 
@@ -316,9 +323,146 @@ namespace GamepadEnhancer
         {
             if (!ready || suppressInputMethodChange || inputManager == null) return;
             InputCaptureMethod method = InputCaptureMethods.FromLabel(inputMethodBox.SelectedItem as string);
+            if (method == InputCaptureMethod.RawInput && appSettings.BlockEnabled)
+            {
+                // Raw Input can't swallow input; keep the hooks while blocking is on.
+                suppressInputMethodChange = true;
+                inputMethodBox.SelectedItem = InputCaptureMethods.ToLabel(InputCaptureMethod.LowLevelHooks);
+                suppressInputMethodChange = false;
+                statusLabel.Text = "Status: Input blocking needs Low-Level Hooks; turn blocking off to use Raw Input";
+                return;
+            }
             if (!TryActivateInputMethod(method)) return;
             appSettings.InputCaptureMethod = InputCaptureMethods.ToStored(method);
             if (!appSettings.Save()) statusLabel.Text += " (settings.json could not be saved)";
+        }
+
+        private LowLevelHookCapture CreateHookCapture(IInputEventReceiver receiver)
+        {
+            var capture = new LowLevelHookCapture(receiver, blockPolicy);
+            capture.HotkeyPressed += OnBlockHotkey;   // raised on the hook thread = the UI thread
+            return capture;
+        }
+
+        // ── Input blocking ───────────────────────────────────────────────────────
+
+        private void InitializeBlocking()
+        {
+            suppressBlockChange = true;
+            blockEnabledBox.IsChecked = appSettings.BlockEnabled;
+            blockProcessesBox.Text = appSettings.BlockProcesses ?? "";
+            blockHotkeyBox.ItemsSource = BlockHotkeys.Names;
+            blockHotkeyBox.SelectedItem = BlockHotkeys.FromVk(appSettings.BlockHotkeyVk);
+            suppressBlockChange = false;
+            blockProcessList = ProcessMatcher.ParseList(appSettings.BlockProcesses);
+            RefreshRunningPrograms();
+
+            blockTimer = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+            blockTimer.Tick += (_, _) => RefreshBlockPolicy();
+            blockTimer.Start();
+        }
+
+        /// <summary>
+        /// Recomputes whether blocking is active (enabled, toggled on, pad connected, hooks in use, a listed program focused)
+        /// and publishes the blocked set to the hook. Cheap; runs on a timer and whenever a setting changes.
+        /// </summary>
+        private void RefreshBlockPolicy()
+        {
+            if (inputManager == null) return;
+            bool hooks = inputManager.ActiveMethod == InputCaptureMethod.LowLevelHooks;
+            string focused = null;
+            bool match = false;
+            if (foregroundWindow.TryGet(out int pid, out string name) && pid != Environment.ProcessId)
+            {
+                focused = name;
+                match = ProcessMatcher.Matches(name, blockProcessList);
+            }
+
+            bool active = appSettings.BlockEnabled && blockToggledOn && engine.IsConnected && hooks && match;
+            blockPolicy.Update(BlockSettings.From(engine.Settings, active, appSettings.BlockHotkeyVk));
+
+            string text;
+            if (!appSettings.BlockEnabled) text = "Input blocking is off";
+            else if (!hooks) text = "Input blocking needs the Low-Level Hooks capture method";
+            else if (!engine.IsConnected) text = "Input blocking waits for the controller to be connected";
+            else if (!blockToggledOn) text = $"Input blocking is paused ({BlockHotkeys.FromVk(appSettings.BlockHotkeyVk)} to resume)";
+            else if (blockProcessList.Count == 0) text = "Add a program to block input for";
+            else if (active) text = $"Input blocked: {focused} ({BlockHotkeys.FromVk(appSettings.BlockHotkeyVk)} pauses)";
+            else text = $"Input blocking is ready: waiting for {string.Join(", ", blockProcessList)}";
+            if (blockStatusLabel.Text != text) blockStatusLabel.Text = text;
+        }
+
+        private void OnBlockHotkey()
+        {
+            if (!ready || !appSettings.BlockEnabled) return;
+            blockToggledOn = !blockToggledOn;
+            RefreshBlockPolicy();
+        }
+
+        private void SaveBlockSettings()
+        {
+            appSettings.BlockEnabled = blockEnabledBox.IsChecked == true;
+            appSettings.BlockProcesses = (blockProcessesBox.Text ?? "").Trim();
+            appSettings.BlockHotkeyVk = BlockHotkeys.ToVk(blockHotkeyBox.SelectedItem as string);
+            blockProcessList = ProcessMatcher.ParseList(appSettings.BlockProcesses);
+            appSettings.Save();
+            blockToggledOn = true;
+
+            // Blocking needs the hook backend: switch away from Raw Input when it is turned on.
+            if (appSettings.BlockEnabled && inputManager?.ActiveMethod == InputCaptureMethod.RawInput)
+            {
+                if (TryActivateInputMethod(InputCaptureMethod.LowLevelHooks))
+                {
+                    appSettings.InputCaptureMethod = InputCaptureMethods.ToStored(InputCaptureMethod.LowLevelHooks);
+                    appSettings.Save();
+                }
+            }
+            RefreshBlockPolicy();
+        }
+
+        private void BlockSettings_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!ready || suppressBlockChange) return;
+            SaveBlockSettings();
+        }
+
+        private void BlockSettings_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (!ready || suppressBlockChange) return;
+            SaveBlockSettings();
+        }
+
+        private void BlockHotkeyBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!ready || suppressBlockChange) return;
+            SaveBlockSettings();
+        }
+
+        private void RefreshRunningPrograms()
+        {
+            try
+            {
+                blockRunningBox.ItemsSource = Process.GetProcesses()
+                    .Where(p => { try { return p.MainWindowHandle != IntPtr.Zero; } catch { return false; } })
+                    .Select(p => { try { return p.ProcessName; } catch { return null; } })
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+            }
+            catch { /* the list is only a convenience */ }
+        }
+
+        private void BlockRefresh_Click(object sender, RoutedEventArgs e) => RefreshRunningPrograms();
+
+        private void BlockAdd_Click(object sender, RoutedEventArgs e)
+        {
+            if (blockRunningBox.SelectedItem is not string name) return;
+            var list = ProcessMatcher.ParseList(blockProcessesBox.Text);
+            string n = ProcessMatcher.Normalize(name);
+            if (!list.Contains(n)) list.Add(n);
+            blockProcessesBox.Text = string.Join(", ", list);
+            SaveBlockSettings();
         }
 
         private void OnCaptureFaulted(InputCaptureMethod method, string message)
@@ -1025,6 +1169,8 @@ namespace GamepadEnhancer
         {
             try { networkApi?.Dispose(); } catch { }
             try { mouseUdp?.Dispose(); } catch { }
+            try { blockTimer?.Stop(); } catch { }
+            blockPolicy.Update(BlockSettings.Off);
             try { mouseMoveSource?.Dispose(); } catch { }
             try { inputManager?.Dispose(); } catch { }
             engine.Dispose();
