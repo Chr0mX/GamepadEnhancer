@@ -1,0 +1,278 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GamepadEnhancer.MainWindow"
+        Title="GamepadEnhancer"
+        Width="1100" Height="780" MinWidth="520" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        UseLayoutRounding="True"
+        Background="{DynamicResource CanvasBrush}">
+
+  <DockPanel>
+
+    <!-- Header: wraps instead of scrolling when the window is narrow -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="12,12,12,6">
+      <WrapPanel Orientation="Horizontal">
+        <TextBlock Classes="title" Text="ViGEm Recoil Pattern" VerticalAlignment="Center" Margin="0,4,18,4" />
+        <ComboBox x:Name="controllerTypeBox" MinWidth="120" Margin="0,4,8,4" VerticalAlignment="Center" />
+        <Button x:Name="connectButton" Classes="primary" Content="Connect" Margin="0,4,6,4" Click="ConnectButton_Click" />
+        <Button x:Name="disconnectButton" Content="Disconnect" IsEnabled="False" Margin="0,4,18,4" Click="DisconnectButton_Click" />
+
+        <TextBlock Text="Profile" VerticalAlignment="Center" Margin="0,4,8,4" />
+        <ComboBox x:Name="profileComboBox" MinWidth="140" Margin="0,4,6,4" VerticalAlignment="Center" SelectionChanged="ProfileComboBox_SelectionChanged" />
+        <TextBox x:Name="profileNameBox" MinWidth="140" Watermark="Profile name" Margin="0,4,6,4" VerticalAlignment="Center" />
+        <Button Content="Save" Margin="0,4,6,4" Click="SaveProfileButton_Click" />
+        <Button Content="Load" Margin="0,4,6,4" Click="LoadProfileButton_Click" />
+        <Button Content="Delete" Margin="0,4,18,4" Click="DeleteProfileButton_Click" />
+
+        <ToggleButton x:Name="darkModeToggle" Content="Dark mode" IsChecked="True" Margin="0,4,18,4" Click="DarkModeToggle_Click" />
+
+        <TextBlock Text="Input capture" VerticalAlignment="Center" Margin="0,4,8,4" />
+        <ComboBox x:Name="inputMethodBox" MinWidth="150" Margin="0,4,0,4" VerticalAlignment="Center" SelectionChanged="InputMethodBox_SelectionChanged" />
+      </WrapPanel>
+    </Border>
+
+    <!-- Status bar -->
+    <Border DockPanel.Dock="Bottom" Classes="card" Margin="12,6,12,12" Padding="12,8">
+      <StackPanel Spacing="2">
+        <TextBlock x:Name="valueLabel" FontWeight="SemiBold" TextWrapping="Wrap" Text="Base downward drift: 0%" />
+        <TextBlock x:Name="statusLabel" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource AccentTextBrush}" Text="Status: Not connected" />
+      </StackPanel>
+    </Border>
+
+    <TabControl x:Name="mainTabs" Margin="12,0,12,0">
+
+      <!-- ─────────────── Controller ─────────────── -->
+      <TabItem Header="Controller">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <Grid x:Name="controllerGrid" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*" Margin="0,12,0,12">
+
+            <Border x:Name="driftCard" Classes="card" VerticalAlignment="Stretch" Margin="0,0,6,12">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="h" Text="Base drift" />
+                <TextBlock Text="Centered / neutral" HorizontalAlignment="Center" />
+                <Slider x:Name="driftSlider" Orientation="Vertical" IsDirectionReversed="True"
+                        Minimum="0" Maximum="100" Value="0" TickFrequency="10" TickPlacement="BottomRight"
+                        IsSnapToTickEnabled="False" Height="190" HorizontalAlignment="Center"
+                        ValueChanged="DriftSlider_ValueChanged" />
+                <TextBlock x:Name="driftMoreLabel" Text="More downward drift" HorizontalAlignment="Center" />
+                <Button Content="Reset" HorizontalAlignment="Center" MinWidth="90" HorizontalContentAlignment="Center" Click="ResetButton_Click" />
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="Pull direction" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <ComboBox x:Name="pullDirectionBox" MinWidth="130" Margin="0,0,0,4" SelectionChanged="PullDirectionBox_SelectionChanged" />
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+
+            <Border x:Name="disengageCard" Classes="card" VerticalAlignment="Top" Margin="6,0,0,12" Grid.Column="1">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Disengage / disable" />
+                <ToggleButton x:Name="wheelDisengageToggle" IsChecked="True" Content="Wheel disengage: ON"
+                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="WheelDisengageToggle_Click" />
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="Disable duration (ms)" VerticalAlignment="Center" Margin="0,0,10,4" />
+                  <NumericUpDown x:Name="scrollDisengageBox" Minimum="0" Maximum="5000" Value="500" Increment="50"
+                                 FormatString="0" MinWidth="130" Margin="0,0,0,4" ValueChanged="AnySettingChangedNumeric" />
+                </WrapPanel>
+                <WrapPanel x:Name="disableKeysPanel" Orientation="Horizontal" />
+                <TextBlock Classes="muted" Text="Press any checked key to temporarily neutralize the stick while looting." />
+              </StackPanel>
+            </Border>
+
+            <Border x:Name="jitterCard" Classes="card" VerticalAlignment="Stretch" Margin="6,0,6,12">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="h" Text="Right stick filtering" />
+                <TextBlock Text="Off / neutral" HorizontalAlignment="Center" />
+                <Slider x:Name="jitterSlider" Orientation="Vertical"
+                        Minimum="-50" Maximum="0" Value="0" TickFrequency="5" TickPlacement="BottomRight"
+                        IsSnapToTickEnabled="False" Height="190" HorizontalAlignment="Center"
+                        ValueChanged="JitterSlider_ValueChanged" />
+                <TextBlock x:Name="jitterMoreLabel" Text="More jitter" HorizontalAlignment="Center" />
+                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                  <NumericUpDown x:Name="jitterBox" Minimum="-50" Maximum="0" Value="0" Increment="1"
+                                 FormatString="0" MinWidth="110" Margin="0,0,6,4" ValueChanged="JitterBox_ValueChanged" />
+                  <Button Content="Reset" MinWidth="80" HorizontalContentAlignment="Center" Margin="0,0,0,4" Click="JitterResetButton_Click" />
+                </WrapPanel>
+                <TextBlock Text="Filter Algorithm" Margin="0,6,0,0" />
+                <ComboBox x:Name="jitterAlgorithmBox" HorizontalAlignment="Stretch" SelectionChanged="JitterAlgorithmBox_SelectionChanged" />
+                <TextBlock Text="Filter Button" />
+                <ComboBox x:Name="jitterButtonBox" HorizontalAlignment="Stretch" SelectionChanged="AnySettingChanged" />
+                <TextBlock Text="Filter Mode" />
+                <ComboBox x:Name="jitterModeBox" HorizontalAlignment="Stretch" SelectionChanged="AnySettingChanged" />
+                <TextBlock Text="Filter rate" />
+                <ComboBox x:Name="jitterRateBox" HorizontalAlignment="Stretch" SelectionChanged="AnySettingChanged" />
+                <TextBlock x:Name="jitterNoteText" Classes="muted" FontSize="12" HorizontalAlignment="Center" TextAlignment="Center" />
+              </StackPanel>
+            </Border>
+
+          </Grid>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ─────────────── PC to Controller ─────────────── -->
+      <TabItem Header="PC to Controller">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="0,12,0,12" Spacing="12">
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="PC key -> controller" />
+                <TextBlock Classes="muted"
+                           Text="Bind keyboard keys to virtual controller actions, then optionally enable Turbo (rapid fire) per action with a custom Hz rate." />
+                <UniformGrid x:Name="bindingsGrid" Columns="2" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ─────────────── Network API ─────────────── -->
+      <TabItem Header="Network">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="0,12,0,12" Spacing="12">
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Network API (MAKCU commands)" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Let another computer drive this virtual controller with MAKCU-style text commands over TCP (km.controller(id,value[,hold_ms]), km.controller_clear()). Off by default. A client must send its token first: auth &lt;token&gt;. Anyone on your network who has the token can control the pad, so keep the port firewalled. Connect the controller first." />
+                <CheckBox x:Name="netEnabledBox" Content="Enable Network API" IsCheckedChanged="NetworkSettings_Changed" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Port" VerticalAlignment="Center" />
+                  <TextBox x:Name="netPortBox" Width="90" Text="5555" LostFocus="NetworkSettings_LostFocus" />
+                  <CheckBox x:Name="netBindAllBox" Content="Allow other computers (LAN)" IsChecked="True" IsCheckedChanged="NetworkSettings_Changed" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Token" VerticalAlignment="Center" />
+                  <TextBox x:Name="netTokenBox" Width="260" IsReadOnly="True" PasswordChar="*" />
+                  <CheckBox x:Name="netShowTokenBox" Content="Show" IsCheckedChanged="NetShowToken_Changed" />
+                  <Button x:Name="netCopyButton" Content="Copy" Click="NetCopyToken_Click" />
+                  <Button x:Name="netNewTokenButton" Content="New token" Click="NetNewToken_Click" />
+                </StackPanel>
+                <TextBlock x:Name="netStatusLabel" Classes="muted" Text="Network API is off" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Send to another PC" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Run this app on the PC with your mouse and keyboard and let the other PC (the one with ViGEmBus and the game) create the virtual controller. Turn this on, enter that PC's address and token from its Network tab, then press Connect. No ViGEmBus is needed on this PC." />
+                <CheckBox x:Name="remoteSendBox" Content="Send the controller to another PC instead of creating it here" IsCheckedChanged="RemoteSettings_Changed" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Address" VerticalAlignment="Center" />
+                  <TextBox x:Name="remoteHostBox" Width="180" Watermark="192.168.1.20" LostFocus="RemoteSettings_LostFocus" />
+                  <TextBlock Text="Port" VerticalAlignment="Center" />
+                  <TextBox x:Name="remotePortBox" Width="80" Text="5555" LostFocus="RemoteSettings_LostFocus" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Token" VerticalAlignment="Center" />
+                  <TextBox x:Name="remoteTokenBox" Width="260" PasswordChar="*" LostFocus="RemoteSettings_LostFocus" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Send mouse buttons (UDP)" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Stream this PC's physical mouse buttons (left, right, middle, side 1 and 2) over UDP to another PC (for example an aim-assist tool that wants a remote trigger button). Enter that PC's address and the UDP port it listens on. The token is optional but must match the receiver's if set. It only guards against accidental packets, it is not strong security." />
+                <CheckBox x:Name="mouseUdpEnabledBox" Content="Send mouse buttons to another PC" IsCheckedChanged="MouseUdpSettings_Changed" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Address" VerticalAlignment="Center" />
+                  <TextBox x:Name="mouseUdpHostBox" Width="180" Watermark="192.168.1.30" LostFocus="MouseUdpSettings_LostFocus" />
+                  <TextBlock Text="Port" VerticalAlignment="Center" />
+                  <TextBox x:Name="mouseUdpPortBox" Width="80" Text="5602" LostFocus="MouseUdpSettings_LostFocus" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Token" VerticalAlignment="Center" />
+                  <TextBox x:Name="mouseUdpTokenBox" Width="260" PasswordChar="*" LostFocus="MouseUdpSettings_LostFocus" />
+                </StackPanel>
+                <TextBlock x:Name="mouseUdpStatusLabel" Classes="muted" Text="Mouse button sender is off" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ─────────────── Recoil Pattern ─────────────── -->
+      <TabItem Header="Recoil Pattern">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="0,12,0,12" Spacing="12">
+
+            <Border Classes="card">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="h" Text="Recoil Pattern" />
+                <WrapPanel Orientation="Horizontal">
+                  <CheckBox x:Name="recoilEnabledCheckBox" Content="Enabled" Margin="0,0,16,4" IsCheckedChanged="AnySettingChangedChecked" />
+                  <CheckBox x:Name="recoilLoopCheckBox" Content="Loop pattern while firing" Margin="0,0,16,4" IsCheckedChanged="AnySettingChangedChecked" />
+                  <TextBlock Text="Aim Trigger Key:" VerticalAlignment="Center" Margin="0,0,8,4" />
+                  <ComboBox x:Name="recoilTriggerKeyBox" MinWidth="110" Margin="0,0,16,4" SelectionChanged="AnySettingChanged" />
+                  <TextBlock Text="Trigger Mode:" VerticalAlignment="Center" Margin="0,0,8,4" />
+                  <ComboBox x:Name="recoilTriggerModeBox" MinWidth="110" Margin="0,0,16,4" SelectionChanged="AnySettingChanged" />
+                </WrapPanel>
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="Start Delay (ms):" VerticalAlignment="Center" Margin="0,0,8,4" />
+                  <NumericUpDown x:Name="recoilStartDelayBox" Minimum="0" Maximum="5000" Value="0" Increment="10"
+                                 FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <TextBlock Text="Center Radius (%):" VerticalAlignment="Center" Margin="0,0,8,4" />
+                  <NumericUpDown x:Name="recoilCenterRadiusBox" Minimum="0" Maximum="100" Value="0" Increment="1"
+                                 FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
+                  <TextBlock Text="Center Radius Mode:" VerticalAlignment="Center" Margin="0,0,8,4" />
+                  <ComboBox x:Name="recoilRadiusModeBox" MinWidth="200" Margin="0,0,16,4" SelectionChanged="AnySettingChanged" />
+                </WrapPanel>
+                <TextBlock Classes="muted"
+                           Text="Aim, then fire: the Aim Trigger Key is your aim button (Right or Middle click) and Trigger Mode says how it counts (Hold = only while pressed, Toggle = press once to switch aiming on, again to switch off). The pattern then plays only while Left click is held. Off = no aim needed, Left click alone fires. Left = Left click is both. Start Delay waits before the first step. Center Radius Mode: New lifts small non-zero steps out to at least that % of stick travel; Old adds a centered Shake or Circle wobble of that radius (max 45). See docs/CENTER_RADIUS.md." />
+
+                <WrapPanel Orientation="Horizontal">
+                  <TextBlock Text="Pattern:" VerticalAlignment="Center" Margin="0,0,8,4" />
+                  <ComboBox x:Name="recoilPatternComboBox" MinWidth="160" Margin="0,0,6,4" SelectionChanged="RecoilPatternComboBox_SelectionChanged" />
+                  <TextBox x:Name="patternNameBox" MinWidth="160" Watermark="Pattern name" Margin="0,0,6,4" />
+                  <Button Content="Save" Margin="0,0,6,4" Click="SavePatternButton_Click" />
+                  <Button Content="Load" Margin="0,0,6,4" Click="LoadPatternButton_Click" />
+                  <Button Content="Delete" Margin="0,0,6,4" Click="DeletePatternButton_Click" />
+                  <Button Content="Open Folder" Margin="0,0,6,4" Click="OpenPatternFolderButton_Click" />
+                </WrapPanel>
+                <TextBlock Classes="muted" Text="Patterns are .config files in the 'patterns' folder (X,Y,delay per line)." />
+              </StackPanel>
+            </Border>
+
+            <UniformGrid x:Name="recoilEditorGrid" Columns="2">
+              <Border Classes="card" Margin="0,0,6,0">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h" Text="Steps" />
+                  <DataGrid x:Name="recoilStepsGrid" AutoGenerateColumns="False" CanUserSortColumns="False"
+                            CanUserReorderColumns="False" HeadersVisibility="Column" Height="240"
+                            CellEditEnded="RecoilStepsGrid_CellEditEnded">
+                    <DataGrid.Columns>
+                      <DataGridTextColumn Header="X" Binding="{Binding X}" Width="*" />
+                      <DataGridTextColumn Header="Y" Binding="{Binding Y}" Width="*" />
+                      <DataGridTextColumn Header="ms" Binding="{Binding IntervalMs}" Width="*" />
+                    </DataGrid.Columns>
+                  </DataGrid>
+                  <WrapPanel Orientation="Horizontal">
+                    <Button Content="Add Step" Margin="0,0,6,6" Click="AddRecoilStepButton_Click" />
+                    <Button Content="Remove" Margin="0,0,6,6" Click="RemoveRecoilStepButton_Click" />
+                    <Button Content="Clear" Margin="0,0,6,6" Click="ClearRecoilButton_Click" />
+                    <Button Content="Vertical" Margin="0,0,6,6" Click="VerticalPresetButton_Click" />
+                    <Button Content="Circle" Margin="0,0,6,6" Click="CirclePresetButton_Click" />
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+              <Border Classes="card" Margin="6,0,0,0">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="h" Text="Preview" />
+                  <Border x:Name="previewHost" />
+                </StackPanel>
+              </Border>
+            </UniformGrid>
+
+            <Border Classes="card">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Pattern text (x:y:ms|x:y:ms|...)" />
+                <TextBox x:Name="recoilPatternTextBox" AcceptsReturn="False" TextWrapping="Wrap" TextChanged="RecoilPatternTextBox_TextChanged" />
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+    </TabControl>
+  </DockPanel>
+</Window>

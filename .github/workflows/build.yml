@@ -1,0 +1,116 @@
+name: build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag (blank = auto-increment, e.g. v1.2)"
+        required: false
+        default: ""
+      release_name:
+        description: "Release title (blank = 'Release <tag>')"
+        required: false
+        default: ""
+      prerelease:
+        description: "Mark the release as a pre-release"
+        type: boolean
+        default: false
+      release_notes_file:
+        description: "Path of a markdown file to use as the release notes (blank = auto-generated notes)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore .\GamepadEnhancer.sln
+
+      - name: Build
+        run: dotnet build .\GamepadEnhancer.sln --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish .\src\GamepadEnhancer\GamepadEnhancer.csproj --configuration Release --runtime win-x64 --self-contained false --output .\artifacts\publish
+
+      - name: Generate release tag
+        id: tag
+        shell: pwsh
+        run: |
+          git fetch --tags
+
+          $tags = @(git tag --list "v*" | Where-Object { $_ -match '^v\d+(\.\d+)?$' } | Sort-Object {
+            $t = $_.TrimStart('v')
+            if ($t -eq "1") { [version]"1.0" } else { [version]$t }
+          })
+
+          if (-not $tags -or $tags.Count -eq 0) {
+            $newTag = "v1"
+          } else {
+            $latest = $tags[-1]
+            $ver = $latest.TrimStart('v')
+
+            if ($ver -eq "1") {
+              $newTag = "v1.1"
+            } else {
+              $parts = $ver.Split(".")
+              $major = [int]$parts[0]
+              $minor = [int]$parts[1]
+              $minor++
+              $newTag = "v$major.$minor"
+            }
+          }
+
+          if ("${{ inputs.tag_name }}") { $newTag = "${{ inputs.tag_name }}" }
+
+          $zipName = "GamepadEnhancer-win-x64-$newTag.zip"
+
+          Compress-Archive -Path .\artifacts\publish\* -DestinationPath ".\artifacts\$zipName" -Force
+
+          "tag_name=$newTag" >> $env:GITHUB_OUTPUT
+          "zip_name=$zipName" >> $env:GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GamepadEnhancer-win-x64
+          path: .\artifacts\publish\
+
+      - name: Replace existing release for this tag
+        if: ${{ inputs.tag_name != '' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${{ inputs.tag_name }}" --repo "${{ github.repository }}" 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release delete "${{ inputs.tag_name }}" --repo "${{ github.repository }}" --cleanup-tag --yes
+          }
+          $global:LASTEXITCODE = 0
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag_name }}
+          name: ${{ inputs.release_name || format('Release {0}', steps.tag.outputs.tag_name) }}
+          prerelease: ${{ inputs.prerelease }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: ${{ inputs.release_notes_file == '' }}
+          body_path: ${{ inputs.release_notes_file }}
+          files: .\artifacts\${{ steps.tag.outputs.zip_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

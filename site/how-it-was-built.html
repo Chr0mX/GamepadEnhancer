@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How it was built - GamepadEnhancer</title>
+  <meta name="description" content="The history of GamepadEnhancer: from a WinForms form to an Avalonia app with a testable engine, how it was verified without a driver, the performance work, CI releases and the mistakes made along the way.">
+  <meta property="og:title" content="How it was built - GamepadEnhancer">
+  <meta property="og:description" content="The history of GamepadEnhancer: from a WinForms form to an Avalonia app with a testable engine, how it was verified without a driver, the performance work, CI releases and the mistakes made along the way.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <script>
+    /* apply the saved theme before first paint (no flash); falls back to the OS setting via CSS */
+    try { var t = localStorage.getItem('vigem-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-nav">
+    <div class="container">
+      <a class="brand" href="index.html" aria-label="GamepadEnhancer - home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" style="stroke:var(--color-border-strong)" stroke-width="2"/><path d="M16 5v22M5 16h22" style="stroke:var(--color-border)" stroke-width="1.2"/><circle cx="21" cy="20" r="4.2" style="fill:var(--color-accent)"/></svg>
+        <span>GamepadEnhancer</span>
+      </a>
+      <button class="icon-button nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="how-it-works.html">How it works</a></li>
+        <li><a href="how-it-was-built.html" aria-current="page">How it was built</a></li>
+        <li><a href="reference.html">Reference</a></li>
+        <li><a href="https://github.com/Chr0mX/GamepadEnhancer" rel="noopener">GitHub</a></li>
+      </ul>
+      <button class="icon-button theme-slot" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+<header class="page-hero"><div class="container">
+      <span class="eyebrow">How it was built</span>
+      <h1>From one big form to a testable engine</h1>
+      <p class="lead">The project started as a single WinForms window and grew through about twenty-five betas. This page covers the path, how each piece was checked, and what went wrong.</p>
+      <nav class="page-toc" aria-label="On this page"><a href="#timeline">Timeline</a><a href="#stack">Stack</a><a href="#testing">Testing</a><a href="#perf">Performance</a><a href="#ci">CI and releases</a><a href="#lessons">Lessons</a><a href="#honest">Verified or not</a></nav>
+    </div></header>
+
+    <div class="container prose">
+      <section id="timeline" class="section-head">
+        <h2>Timeline</h2>
+        <ol class="timeline">
+          <li><span class="when">April 2026</span><h3>Version 1: WinForms</h3><p>One 1,886-line <code>MainForm</code>. A right-stick <em>jitter</em> to counter recoil, a base drift, key bindings and turbo. It worked, but the logic and the UI were tangled together.</p></li>
+          <li><span class="when">June 2026</span><h3>Recoil replaces jitter</h3><p>The jitter idea was reworked into recoil patterns: a list of stick positions played while you fire.</p></li>
+          <li><span class="when">August 2026</span><h3>Dark mode and flat UI</h3><p>Two pull requests gave the WinForms app a dark theme and a flat look, which also showed how hard the form was to scale.</p></li>
+          <li><span class="when">October 2026</span><h3>Beta 1.1: Avalonia</h3><p>The UI was rewritten in Avalonia 11 with proper scaling, a dedicated tab for PC to controller, and settings preserved. Negative filtering values were introduced: a fast, invisible wiggle of the reported value.</p></li>
+          <li><span class="when">October - November 2026</span><h3>Betas 1.2 to 2.2</h3><p>Aim then fire triggers, Hold or Toggle, Circle preset and Loop, two filter algorithms, a Filter rate, an Input capture dropdown with Raw Input, a lag fix, Down/Up/Left/Right pull directions and a shipped default profile. The table below lists the headline of each.</p></li>
+        </ol>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Release</th><th>Headline change</th></tr></thead>
+          <tbody>
+            <tr><td>Beta 1.2 - 1.3</td><td>Recoil start delay and Center Radius; trigger key revamp (Left, Right, Middle, Off; Hold or Toggle).</td></tr>
+            <tr><td>Beta 1.4 - 1.6</td><td>Aim then fire gating, filtering gated by a button, Circle preset and Loop.</td></tr>
+            <tr><td>Beta 1.7 - 1.9</td><td>RC-Style versus Low-Pass algorithms, stuck-button polling, settings polish.</td></tr>
+            <tr><td>Beta 2.0</td><td>Input capture method dropdown with Raw Input and a fallback.</td></tr>
+            <tr><td>Beta 2.1</td><td>Fix for rapid switching between mouse and controller in games (output path rewrite), Down/Up/Left/Right, Xbox Y flip fix.</td></tr>
+            <tr><td>Beta 2.2</td><td>The wiggle goes on the axis across the drift; shipped default profile.</td></tr>
+          </tbody></table></div>
+        <p>Full notes for each release are in <a href="https://github.com/Chr0mX/GamepadEnhancer/tree/main/docs/releases">docs/releases</a>.</p>
+      </section>
+
+      <section id="stack" class="section-head">
+        <h2>The stack</h2>
+        <div class="grid cols-3">
+          <article class="card"><h3>C# on .NET 8</h3><p>One project, <code>GamepadEnhancer</code>, Windows only because of the hooks, Raw Input and the driver.</p></article>
+          <article class="card"><h3>Avalonia 11.2.3</h3><p>Cross-platform UI with real layout and scaling. Custom dark theme, a recoil preview control and dialogs.</p></article>
+          <article class="card"><h3>Nefarius.ViGEm.Client</h3><p>Version 1.21.256, the managed client for the ViGEmBus driver. <code>AutoSubmitReport</code> is off; the engine submits.</p></article>
+        </div>
+        <div class="grid cols-3">
+          <article class="card"><h3>Win32 P/Invoke</h3><p>Hooks, Raw Input, <code>GetAsyncKeyState</code>, thread priority and timer resolution.</p></article>
+          <article class="card"><h3>JSON on disk</h3><p>Profiles, patterns and <code>settings.json</code> sit next to the exe so everything stays portable.</p></article>
+          <article class="card"><h3>GitHub Actions</h3><p>One workflow builds on Windows and publishes a zip to a release.</p></article>
+        </div>
+      </section>
+
+      <section id="testing" class="section-head">
+        <h2>Testing without a driver</h2>
+        <p>Most of the work was done in a Linux sandbox where the Windows driver, the real input hooks and the NuGet feed were all unavailable. The answer was to keep the interesting logic free of those things and test it directly.</p>
+        <ul>
+          <li><strong>Pure logic first.</strong> Percent to axis, pull directions, lifting, the filter maths and pattern parsing live in plain classes with no UI or driver types.</li>
+          <li><strong>A stub controller.</strong> The engine tests compile the real engine source against a small stub that records every axis and button write and every <code>SubmitReport()</code>. Tests then assert exact values, such as DS4 Y = 160 for 25 percent Down, or X 116 to 140 for RC -12.</li>
+          <li><strong>Scratch projects.</strong> Separate throwaway projects covered the engine, the capture manager, performance and the circle preset, so the repository stays clean.</li>
+          <li><strong>The UI is verified on Windows CI.</strong> The sandbox could not compile Avalonia, so each push was built by GitHub Actions on Windows; builds 78 to 94 all passed.</li>
+          <li><strong>This website.</strong> The two labs above use a JavaScript port of the same maths. A Node test checks the same expected numbers as the C# tests (for example DS4 25 percent is 160, Xbox 25 percent is 8192).</li>
+        </ul>
+      </section>
+
+      <section id="perf" class="section-head">
+        <h2>Case study: the lag when filtering was on</h2>
+        <p>The report: in game, the pad flipped between "controller" and "PC" very quickly, and the PC lagged, but only while filtering was enabled. The cause was the output path, not the maths.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Measurement (simulated 0.5 ms driver call)</th><th>Before</th><th>After</th></tr></thead>
+          <tbody>
+            <tr><td>Filter loop CPU</td><td>about 102 percent</td><td>about 30 percent</td></tr>
+            <tr><td>Hook callback wait</td><td>131 to 178 microseconds</td><td>3 to 4 microseconds</td></tr>
+            <tr><td>Worst hook stall</td><td>1.8 to 15 ms</td><td>under 0.5 ms</td></tr>
+            <tr><td>Reports per second, static stick</td><td>100</td><td>4</td></tr>
+          </tbody></table></div>
+        <ol class="pipeline">
+          <li><b>Submit only on change</b>A report is sent only if the stick or buttons differ from the last one, plus a 250 ms heartbeat. A static stick went from 100 to 4 reports per second.</li>
+          <li><b>One submit per tick, outside the lock</b>Auto-submit was disabled and <code>SubmitReport()</code> is called after the engine releases its lock, so the hook threads never wait behind a driver call.</li>
+          <li><b>A leaner filter loop</b>The fast loop does only the filter work, with a user-chosen period (2, 4, 8 or 16 ms) so a slower rate can cut the load further.</li>
+        </ol>
+        <div class="callout warn"><span class="callout-title">What the code could not fix</span>
+          <p>Some games switch their on-screen prompts between controller and mouse the moment any input appears on either device. Fewer, steadier reports help, but this behaviour is the game's. Tips are in the <a href="reference.html#faq">FAQ</a>.</p></div>
+      </section>
+
+      <section id="ci" class="section-head">
+        <h2>Builds and releases</h2>
+        <p>A single workflow, <code>build.yml</code>, is started by hand (<code>workflow_dispatch</code>). It restores, builds and publishes on Windows, zips the output and creates a GitHub release from a tag such as <code>v2.2-beta</code>, using a notes file from <code>docs/releases/</code>. The inputs control the tag, whether it is a pre-release and which notes file to use. A beta is a pre-release; a build from <code>main</code> with pre-release off becomes the <em>Latest</em> release.</p>
+        <p>This website is published by a second workflow, <code>pages.yml</code>, which runs <code>site/build.py</code> and deploys the <code>site</code> folder with GitHub Pages. There is no framework or bundler: plain HTML, one CSS file built on design tokens, and one JavaScript file.</p>
+      </section>
+
+      <section id="lessons" class="section-head">
+        <h2>Mistakes and lessons</h2>
+        <div class="grid cols-2">
+          <article class="card"><h3>Xbox Y is upside down</h3><p>DS4 counts Y downward, Xbox upward. Pull Down worked on one pad and pulled up on the other until the Y sign was flipped for Xbox.</p></article>
+          <article class="card"><h3>"Center" was really Down</h3><p>The first drift direction called Center was a straight pull down. Renaming it Down and adding Up, Left and Right with the same method removed the confusion. Old profiles that say Center still load as Down.</p></article>
+          <article class="card"><h3>The wiggle axis</h3><p>Filtering first shook the same axis as the drift. It now shakes the one across it, so the stick keeps its pull and the wiggle stays centered on neutral.</p></article>
+          <article class="card"><h3>Never quite at the target</h3><p>An exponential filter approaches its target forever and never lands on it. A tiny snap threshold (0.001 percent) makes the output exact.</p></article>
+          <article class="card"><h3>Tests can be wrong too</h3><p>Several failing checks were bad expectations (a sign, a parity assumption) rather than bad code. Each was worked out before changing anything.</p></article>
+          <article class="card"><h3>Don't route around blocks</h3><p>When the package feed refused the sandbox, the fix was to compile without the package and use a stub, not to bypass the proxy.</p></article>
+        </div>
+      </section>
+
+      <section id="honest" class="section-head">
+        <h2>What is verified, and what is not</h2>
+        <div class="grid cols-2">
+          <article class="card"><h3>Verified</h3><ul><li>The engine maths, timing and gating against a stub controller.</li><li>Capture state handling, switching and fallback with fakes.</li><li>The Windows build of the whole app on every push.</li><li>The numbers shown in the labs on this site.</li></ul></article>
+          <article class="card"><h3>Needs your eyes on Windows</h3><ul><li>What the real virtual pad shows in <code>joy.cpl</code>.</li><li>How a particular game reacts to the stick, the rate and the pattern.</li><li>Raw Input device behaviour with your hardware.</li><li>Anti-cheat compatibility. The project makes no promise about it.</li></ul></article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div>
+        <strong>GamepadEnhancer</strong><br>
+        <span>A hobby project. Not affiliated with Microsoft, Sony or Nefarius. Virtual controllers by the <a href="https://github.com/nefarius/ViGEmBus">ViGEmBus</a> driver.</span>
+      </div>
+      <ul>
+        <li><a href="https://github.com/Chr0mX/GamepadEnhancer">Source</a></li>
+        <li><a href="https://github.com/Chr0mX/GamepadEnhancer/releases">Releases</a></li>
+        <li><a href="https://github.com/Chr0mX/GamepadEnhancer/tree/main/docs">Docs</a></li>
+        <li><a href="reference.html#faq">Troubleshooting</a></li>
+      </ul>
+    </div>
+  </footer>
+  <script src="js/app.js" defer></script>
+</body>
+</html>

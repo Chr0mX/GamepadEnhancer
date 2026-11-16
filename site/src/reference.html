@@ -1,0 +1,121 @@
+<!--meta title="Reference - GamepadEnhancer" description="Settings, profile file fields, files and folders, key names, troubleshooting and glossary for GamepadEnhancer." nav="Reference" order="4"-->
+    <header class="page-hero"><div class="container">
+      <span class="eyebrow">Reference</span>
+      <h1>Settings, files and troubleshooting</h1>
+      <nav class="page-toc" aria-label="On this page"><a href="#settings">Settings</a><a href="#profile">Profile file</a><a href="#files">Files and folders</a><a href="#network">Network API</a><a href="#faq">FAQ</a><a href="#glossary">Glossary</a><a href="#releases">Releases</a></nav>
+    </div></header>
+
+    <div class="container prose">
+      <section id="settings" class="section-head">
+        <h2>Settings</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Setting</th><th>Values</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>Controller</td><td>PS4 (DS4), Xbox 360</td><td>Which virtual pad is created on Connect.</td></tr>
+            <tr><td>Base drift</td><td>0 - 100 %</td><td>How far the right stick is held from center.</td></tr>
+            <tr><td>Pull direction</td><td>Down, Up, Left, Right</td><td>Direction of the drift. <code>Center</code> in old profiles means Down.</td></tr>
+            <tr><td>Recoil enabled</td><td>on / off</td><td>Plays the pattern while you aim and fire.</td></tr>
+            <tr><td>Aim key / mode</td><td>Left, Right, Middle, Off; Hold or Toggle</td><td>Arms the pattern.</td></tr>
+            <tr><td>Fire key</td><td>Left, Right, Middle</td><td>Plays the pattern while armed.</td></tr>
+            <tr><td>Start delay</td><td>ms</td><td>Wait before the first step.</td></tr>
+            <tr><td>Loop</td><td>on / off</td><td>Repeat the pattern while fire is held.</td></tr>
+            <tr><td>Center Radius</td><td>0 - 100 %, Lift / Shake / Circle</td><td>Pushes the stick off dead center or adds a small wobble.</td></tr>
+            <tr><td>Pattern</td><td><code>x:y:ms|x:y:ms|...</code></td><td>Absolute stick percent per step, held for ms (rounded to 10 ms).</td></tr>
+            <tr><td>Stick filtering</td><td>-1 to -30 (0 off)</td><td>Strength N of the wiggle in counts.</td></tr>
+            <tr><td>Algorithm</td><td>RC-Style, Low-Pass</td><td>Square-step oscillation or exponential low-pass.</td></tr>
+            <tr><td>Filter button / mode</td><td>mouse button; Hold or Toggle</td><td>Gates the filtering.</td></tr>
+            <tr><td>Filter rate</td><td>2, 4, 8, 16 ms</td><td>Period of the fast loop while filtering.</td></tr>
+            <tr><td>Scroll disengage</td><td>ms, on / off</td><td>Briefly pauses the drift after a mouse wheel scroll.</td></tr>
+            <tr><td>Disable keys</td><td>list of keys</td><td>Holding any of them stops the stick output.</td></tr>
+            <tr><td>Key bindings / turbo</td><td>16 actions; 1 - 30 Hz</td><td>Press controller buttons from keys.</td></tr>
+            <tr><td>Input capture</td><td>Low-Level Hooks, Raw Input</td><td>How mouse and keyboard are read. Saved app-wide.</td></tr>
+          </tbody></table></div>
+      </section>
+
+      <section id="profile" class="section-head">
+        <h2>The profile file</h2>
+        <p>These are the fields in the shipped <code>Default.json</code>. Missing fields take their built-in defaults.</p>
+<pre><code>{
+  "Name": "Default",
+  "ControllerType": "PS4",
+  "BaseDriftPercent": 32,
+  "BasePullDirection": "Down",
+  "RightStickJitter": -10,
+  "RightStickJitterAlgorithm": "LowPass",
+  "RightStickJitterButton": "Mouse Right",
+  "RightStickJitterMode": "Hold",
+  "RightStickJitterRateMs": 2,
+  "ScrollDisengageMs": 500,
+  "WheelDisengageEnabled": true,
+  "RecoilEnabled": false,
+  "RecoilLoop": false,
+  "RecoilTriggerKey": "Mouse Left",
+  "RecoilTriggerMode": "Hold",
+  "RecoilStartDelayMs": 0,
+  "RecoilCenterRadiusPercent": 0,
+  "RecoilCenterRadiusMode": "Lift",
+  "RecoilPatternText": "0:0:17.3|0:18:17.3|2:32:17.3|4:44:17.3|5:50:17.3",
+  "DisableKeys": ["Tab", "E"],
+  "KeyBindings": { "A / Cross": "None", "...": "..." },
+  "TurboEnabled": { "A / Cross": false, "...": "..." },
+  "TurboHz": { "A / Cross": 12, "...": 12 }
+}</code></pre>
+        <p><code>RightStickJitter</code> keeps its old name for compatibility; in the app it is the stick filtering strength.</p>
+      </section>
+
+      <section id="files" class="section-head">
+        <h2>Files and folders</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Path (next to the exe)</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>profiles/*.json</code></td><td>Saved profiles. <code>Default.json</code> is loaded at startup.</td></tr>
+            <tr><td><code>patterns/*.config</code></td><td>Recoil patterns, one <code>x,y,ms</code> line per step.</td></tr>
+            <tr><td><code>settings.json</code></td><td>App-wide settings such as the Input capture method.</td></tr>
+          </tbody></table></div>
+      </section>
+
+      <section id="network" class="section-head">
+        <h2>Network API</h2>
+        <p>The <strong>Network</strong> tab lets another computer drive the virtual pad with MAKCU-style text commands over TCP. It is off by default and every client must send <code>auth &lt;token&gt;</code> first. The same app can also <em>send</em> its pad to another PC, so the mouse-and-keyboard PC and the game PC can be different machines.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td><code>km.controller(id,value[,hold_ms])</code></td><td>Set one control (buttons 0-9 and 16-19, triggers 10-11 as 0-1023, sticks 12-15 as -32768 to 32767, +Y down). <code>hold_ms</code> releases it afterwards.</td></tr>
+            <tr><td><code>km.controller_clear()</code></td><td>Release everything set remotely.</td></tr>
+            <tr><td><code>km.version()</code>, <code>km.api_version()</code>, <code>km.echo()</code></td><td>Identification and echo.</td></tr>
+          </tbody></table></div>
+        <div class="callout warn"><span class="callout-title">Keep the port private</span>
+          <p>Anyone on your network with the token controls the pad, and the traffic is not encrypted. Use the "this PC only" option, a firewall, or a VPN. The button ids 0-9 and 16-19 are this app's own mapping, not confirmed against MAKXD firmware. Full details: <a href="https://github.com/Chr0mX/GamepadEnhancer/blob/main/docs/NETWORK_API.md">docs/NETWORK_API.md</a>.</p></div>
+      </section>
+
+      <section id="faq" class="section-head">
+        <h2>FAQ and troubleshooting</h2>
+        <details><summary>The game does not react at all</summary><p>Check that ViGEmBus is installed and the app says Connected. Open <code>joy.cpl</code> and confirm the stick moves there. If it does, check the game's controller settings and that it is using the new pad.</p></details>
+        <details><summary>Aim, fire or filter buttons do nothing</summary><p>If the game is elevated, run this app as administrator. Windows blocks hook and Raw Input events from lower-privileged apps to elevated windows. Also try the other Input capture method.</p></details>
+        <details><summary>The game flips between controller and mouse prompts</summary><p>This is the game reacting to any input on either device. Try a slower Filter rate (8 or 16 ms), a Toggle filter mode with the Filter button held less, a lower filter strength, or the game's input lock option if it has one. The app cannot change how a game decides which device you are using.</p></details>
+        <details><summary>How can I see the filtering without a game?</summary><p>In <code>joy.cpl</code> open the virtual pad's Test tab. With the filter button held, the right-stick axis values flicker around the drift value. The values on this site's Stick lab show the same thing.</p></details>
+        <details><summary>The pattern does not draw the shape on screen</summary><p>Stick deflection is speed, not position. The preview is the shape of the input. Tune it by what the camera does in game, not by what the preview looks like.</p></details>
+        <details><summary>Xbox 360 Down pulls up</summary><p>On Xbox 360 positive Y is up, so the app flips the sign and Down still pulls down on screen in the app's preview. Raw axis numbers in tools show the real sign.</p></details>
+        <details><summary>Does it move my mouse?</summary><p>No. It only reads mouse and keyboard, and its output is a virtual controller.</p></details>
+        <details><summary>Will I be banned?</summary><p>Possibly, in online games that forbid input tools. This project gives no guarantee about any game's rules. Read the game's terms and use it only where it is allowed.</p></details>
+      </section>
+
+      <section id="glossary" class="section-head">
+        <h2>Glossary</h2>
+        <div class="table-wrap"><table>
+          <tbody>
+            <tr><th>ViGEm / ViGEmBus</th><td>Virtual Gamepad Emulation framework and its Windows driver that creates virtual controllers.</td></tr>
+            <tr><th>DS4</th><td>DualShock 4, the PS4 controller. Axes run 0 to 255.</td></tr>
+            <tr><th>Drift</th><td>A steady offset of the stick from center.</td></tr>
+            <tr><th>Tick</th><td>One pass of the engine loop (10 ms normally, the Filter rate while filtering).</td></tr>
+            <tr><th>Heartbeat</th><td>A repeated report every 250 ms when nothing changed, so the game keeps seeing a live pad.</td></tr>
+            <tr><th>Raw Input</th><td>A Windows API that delivers device input directly to a window, even in the background.</td></tr>
+            <tr><th>Synthetic input</th><td>Input produced by software rather than a physical device.</td></tr>
+          </tbody></table></div>
+      </section>
+
+      <section id="releases" class="section-head">
+        <h2>Releases</h2>
+        <p>Each beta has notes in <a href="https://github.com/Chr0mX/GamepadEnhancer/tree/main/docs/releases">docs/releases</a> and on the <a href="https://github.com/Chr0mX/GamepadEnhancer/releases">Releases</a> page. Deeper design notes: <a href="https://github.com/Chr0mX/GamepadEnhancer/blob/main/docs/AIM_TRIGGER.md">AIM_TRIGGER</a>, <a href="https://github.com/Chr0mX/GamepadEnhancer/blob/main/docs/CENTER_RADIUS.md">CENTER_RADIUS</a> and <a href="https://github.com/Chr0mX/GamepadEnhancer/blob/main/docs/INPUT_CAPTURE.md">INPUT_CAPTURE</a>.</p>
+      </section>
+    </div>

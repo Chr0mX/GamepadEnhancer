@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet restore .\GamepadEnhancer.sln
+      - run: dotnet build .\GamepadEnhancer.sln --configuration Release --no-restore
+      - name: Publish
+        run: dotnet publish .\src\GamepadEnhancer\GamepadEnhancer.csproj --configuration Release --runtime win-x64 --self-contained false --output .\artifacts\publish
+      - name: Smoke check output
+        shell: pwsh
+        run: |
+          if (-not (Test-Path .\artifacts\publish\GamepadEnhancer.exe)) { throw "GamepadEnhancer.exe missing from publish output" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GamepadEnhancer-win-x64
+          path: .\artifacts\publish\

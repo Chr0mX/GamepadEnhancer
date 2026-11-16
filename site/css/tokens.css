@@ -1,0 +1,233 @@
+/* ==========================================================================
+   Design tokens - three layers (primitive -> semantic -> component).
+   This is the ONLY file that contains raw colour / size values. styles.css
+   and the page scripts reference tokens with var(--...) only.
+   Palette taken from the app's own dark/light theme.
+   ========================================================================== */
+
+/* ---- Layer 1: primitives (raw values, no meaning) ------------------------ */
+:root {
+  /* neutral ramp */
+  --color-neutral-0: #FFFFFF;
+  --color-neutral-50: #F4F5F7;
+  --color-neutral-100: #EEF0F4;
+  --color-neutral-200: #E2E5EA;
+  --color-neutral-300: #C9CED8;
+  --color-neutral-500: #6B7280;
+  --color-neutral-400: #9BA1AD;
+  --color-neutral-600: #4A4E5A;
+  --color-neutral-700: #373A44;
+  --color-neutral-800: #2C2F38;
+  --color-neutral-850: #21232A;
+  --color-neutral-900: #16171C;
+  --color-neutral-950: #0F1014;
+  --color-neutral-text-dark: #1F2430;
+  --color-neutral-text-light: #E6E7EB;
+
+  /* accent (blue) */
+  --color-blue-300: #9DB3FF;
+  --color-blue-400: #85A0FF;
+  --color-blue-500: #6C8CFF;
+  --color-blue-600: #4C6FFF;
+  --color-blue-700: #3B5CE6;
+  --color-blue-800: #2D4BCC;
+
+  /* status */
+  --color-green-400: #4CD787;
+  --color-green-700: #1E7F47;
+  --color-red-400: #FF6E6E;
+  --color-red-700: #C23A3A;
+  --color-amber-400: #F5B84A;
+  --color-amber-700: #98630F;
+  --color-violet-400: #B39DFF;
+  --color-violet-700: #6B4BD6;
+
+  /* spacing (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+
+  /* type */
+  --font-family-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, "Liberation Mono", monospace;
+  --font-size-xs: 0.78rem;
+  --font-size-sm: 0.9rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.375rem;
+  --font-size-2xl: 1.75rem;
+  --font-size-3xl: 2.25rem;
+  --font-size-hero: clamp(2.2rem, 5vw + 0.6rem, 3.8rem);
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.15;
+  --line-height-snug: 1.35;
+  --line-height-body: 1.65;
+
+  /* shape + elevation */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-pill: 999px;
+  --border-width: 1px;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.18);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.22);
+
+  /* component sizes */
+  --size-icon-sm: 1.15rem;
+  --size-icon-md: 1.6rem;
+  --size-control: 2.4rem;
+  --size-badge: 2rem;
+  --size-dot: 0.8rem;
+  --size-dot-offset: -0.45rem;
+  --size-stat-min: 6.5rem;
+  --size-textarea-min: 5.5rem;
+  --size-hairline: 0.1rem;
+  --font-size-diagram: 0.6875rem;
+
+  /* layout + motion */
+  --container-max: 71rem;
+  --container-prose: 46rem;
+  --nav-height: 3.75rem;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ---- Layer 2: semantic tokens (meaning; this is what themes switch) ------ */
+/* Dark is the default (matches the app); light follows the OS or the toggle. */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: var(--color-neutral-900);
+  --color-bg-deep: var(--color-neutral-950);
+  --color-surface: var(--color-neutral-850);
+  --color-surface-raised: var(--color-neutral-800);
+  --color-border: var(--color-neutral-700);
+  --color-border-strong: var(--color-neutral-600);
+  --color-text: var(--color-neutral-text-light);
+  --color-text-muted: var(--color-neutral-400);
+  --color-text-faint: var(--color-neutral-500);
+  --color-accent: var(--color-blue-500);
+  --color-accent-hover: var(--color-blue-400);
+  --color-accent-soft: rgb(108 140 255 / 0.14);
+  --color-on-accent: var(--color-neutral-950);
+  --color-success: var(--color-green-400);
+  --color-danger: var(--color-red-400);
+  --color-warning: var(--color-amber-400);
+  --color-info: var(--color-violet-400);
+  --color-code-bg: var(--color-neutral-950);
+  --color-focus: var(--color-blue-300);
+  --color-grid: rgb(255 255 255 / 0.06);
+  --color-glow: rgb(108 140 255 / 0.18);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: var(--color-neutral-50);
+  --color-bg-deep: var(--color-neutral-100);
+  --color-surface: var(--color-neutral-0);
+  --color-surface-raised: var(--color-neutral-100);
+  --color-border: var(--color-neutral-200);
+  --color-border-strong: var(--color-neutral-300);
+  --color-text: var(--color-neutral-text-dark);
+  --color-text-muted: var(--color-neutral-600);
+  --color-text-faint: var(--color-neutral-500);
+  --color-accent: var(--color-blue-600);
+  --color-accent-hover: var(--color-blue-700);
+  --color-accent-soft: rgb(76 111 255 / 0.1);
+  --color-on-accent: var(--color-neutral-0);
+  --color-success: var(--color-green-700);
+  --color-danger: var(--color-red-700);
+  --color-warning: var(--color-amber-700);
+  --color-info: var(--color-violet-700);
+  --color-code-bg: var(--color-neutral-100);
+  --color-focus: var(--color-blue-700);
+  --color-grid: rgb(0 0 0 / 0.06);
+  --color-glow: rgb(76 111 255 / 0.12);
+  --shadow-sm: 0 1px 2px rgb(20 30 60 / 0.08);
+  --shadow-md: 0 8px 24px rgb(20 30 60 / 0.1);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+    --color-bg: var(--color-neutral-50);
+    --color-bg-deep: var(--color-neutral-100);
+    --color-surface: var(--color-neutral-0);
+    --color-surface-raised: var(--color-neutral-100);
+    --color-border: var(--color-neutral-200);
+    --color-border-strong: var(--color-neutral-300);
+    --color-text: var(--color-neutral-text-dark);
+    --color-text-muted: var(--color-neutral-600);
+    --color-text-faint: var(--color-neutral-500);
+    --color-accent: var(--color-blue-600);
+    --color-accent-hover: var(--color-blue-700);
+    --color-accent-soft: rgb(76 111 255 / 0.1);
+    --color-on-accent: var(--color-neutral-0);
+    --color-success: var(--color-green-700);
+    --color-danger: var(--color-red-700);
+    --color-warning: var(--color-amber-700);
+    --color-info: var(--color-violet-700);
+    --color-code-bg: var(--color-neutral-100);
+    --color-focus: var(--color-blue-700);
+    --color-grid: rgb(0 0 0 / 0.06);
+    --color-glow: rgb(76 111 255 / 0.12);
+    --shadow-sm: 0 1px 2px rgb(20 30 60 / 0.08);
+    --shadow-md: 0 8px 24px rgb(20 30 60 / 0.1);
+  }
+}
+
+/* ---- Layer 3: component tokens (per-component, reference semantics) ------ */
+:root {
+  --nav-bg: color-mix(in srgb, var(--color-bg) 82%, transparent);
+  --nav-border: var(--color-border);
+  --nav-link: var(--color-text-muted);
+  --nav-link-active: var(--color-text);
+
+  --card-bg: var(--color-surface);
+  --card-border: var(--color-border);
+  --card-radius: var(--radius-lg);
+  --card-padding: var(--space-6);
+
+  --button-bg: var(--color-accent);
+  --button-bg-hover: var(--color-accent-hover);
+  --button-fg: var(--color-on-accent);
+  --button-ghost-border: var(--color-border-strong);
+  --button-radius: var(--radius-md);
+
+  --code-bg: var(--color-code-bg);
+  --code-border: var(--color-border);
+  --code-fg: var(--color-text);
+  --code-accent: var(--color-accent);
+
+  --callout-bg: var(--color-accent-soft);
+  --callout-border: var(--color-accent);
+  --callout-warning-border: var(--color-warning);
+  --callout-danger-border: var(--color-danger);
+
+  --table-head-bg: var(--color-surface-raised);
+  --table-row-border: var(--color-border);
+
+  --chip-bg: var(--color-surface-raised);
+  --chip-fg: var(--color-text-muted);
+  --chip-border: var(--color-border);
+
+  --lab-bg: var(--color-bg-deep);
+  --lab-grid: var(--color-grid);
+  --lab-trace: var(--color-accent);
+  --lab-dot: var(--color-success);
+  --lab-target: var(--color-warning);
+  --lab-axis: var(--color-border-strong);
+  --lab-text: var(--color-text-muted);
+}
