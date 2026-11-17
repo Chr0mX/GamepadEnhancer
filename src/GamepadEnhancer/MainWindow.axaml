@@ -380,6 +380,9 @@
               <v:Section Title="Automatic bindings" Description="Your normal controller mappings (Controller page) are the automatic bindings.">
                 <TextBlock x:Name="bindingsAutoText" Classes="caption" TextWrapping="Wrap" />
               </v:Section>
+              <v:Section Title="How layers work" Description="A layer is an alternate set of bindings that you switch on with a shift key, like Shift on a keyboard.">
+                <TextBlock Classes="caption" TextWrapping="Wrap" Text="Normally the Base layer is the only thing running. A binding set to Layer 1, 2 or 3 does nothing until that layer is switched on, and while it is on it takes over its input from the base binding. Example: (1) Add a binding: input Right Mouse, condition Held, then Details > Add output > Layer (shift) > Layer 1. That is your shift key. (2) Add a second binding: input Space, output Pad button Circle, and set its layer selector to Layer 1. Now Space does whatever its base binding does, but while you hold Right Mouse it presses Circle instead; let go and it is back to normal. For a shift that stays on, use Press + Toggle instead of Held: press once to switch the layer on, press again to switch it off. A Layer 1-3 binding with no outputs un-maps that input while the layer is on. The status On another layer means the binding exists but its layer is not on right now." />
+              </v:Section>
               <TextBlock Classes="caption" Text="Condition timing runs on the controller output tick (10 ms), so Tap, Double and Hold are accurate to about 10 ms." />
             </StackPanel>
           </ScrollViewer>
