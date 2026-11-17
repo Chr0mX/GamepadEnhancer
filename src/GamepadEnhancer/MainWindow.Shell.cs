@@ -73,6 +73,7 @@ namespace GamepadEnhancer
             dashTimer.Tick += (_, _) => UpdateDash();
             versionText.Text = "v" + (typeof(MainWindow).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
                 .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "").Split('+')[0];
+            if (versionText.Text.EndsWith(".0", StringComparison.Ordinal) && versionText.Text.Count(c => c == '.') == 2) versionText.Text = versionText.Text[..^2];   // v2.3.0 is shown as v2.3 (the release tag)
             dataPathLabel.Text = $"Profiles: {profilesDirectory}{Environment.NewLine}Settings: {AppSettings.DefaultPath}";
 
             shellTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
