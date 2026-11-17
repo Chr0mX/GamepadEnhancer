@@ -363,16 +363,19 @@ namespace GamepadEnhancer
         /// </summary>
         private void ArrangeDashboard(double content)
         {
-            var cards = new[] { cardStickL, cardStickR, cardVirtual, cardConfig, cardPad, cardAxes, cardEvents };
+            // Live state leads: the pad picture and the sticks come first, the settings-like cards (device, details) last.
+            var cards = new[] { cardPad, cardStickL, cardStickR, cardAxes, cardEvents, cardVirtual, cardConfig };
             if (content >= 1180)
             {
-                Place(cardStickL, 0, 0, 3); Place(cardStickR, 3, 0, 3); Place(cardVirtual, 6, 0, 3); Place(cardConfig, 9, 0, 3);
-                Place(cardPad, 0, 1, 4); Place(cardAxes, 4, 1, 4); Place(cardEvents, 8, 1, 4);
+                Place(cardPad, 0, 0, 6); Place(cardStickL, 6, 0, 3); Place(cardStickR, 9, 0, 3);
+                Place(cardAxes, 0, 1, 3); Place(cardEvents, 3, 1, 3); Place(cardVirtual, 6, 1, 3); Place(cardConfig, 9, 1, 3);
             }
             else if (content >= 760)
             {
-                Place(cardStickL, 0, 0, 6); Place(cardStickR, 6, 0, 6); Place(cardVirtual, 0, 1, 6); Place(cardConfig, 6, 1, 6);
-                Place(cardPad, 0, 2, 12); Place(cardAxes, 0, 3, 6); Place(cardEvents, 6, 3, 6);
+                Place(cardPad, 0, 0, 12);
+                Place(cardStickL, 0, 1, 6); Place(cardStickR, 6, 1, 6);
+                Place(cardAxes, 0, 2, 6); Place(cardEvents, 6, 2, 6);
+                Place(cardVirtual, 0, 3, 6); Place(cardConfig, 6, 3, 6);
             }
             else
             {

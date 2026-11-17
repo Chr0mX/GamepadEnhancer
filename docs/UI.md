@@ -5,7 +5,7 @@ GamepadEnhancer's window is a dark-first, single-accent desktop utility: a persi
 ## Structure
 | Page | What it holds |
 |---|---|
-| Dashboard | Virtual controller, output path (ViGEm or another PC), physical controller, Network API status; the active game and profile; the state of mouse look, paddles, blocking and input capture, each with an "Open" shortcut |
+| Dashboard | Live state first: the controller picture (pressed buttons light up), left and right stick plots, triggers and the button event stream, then the virtual controller, output path, physical controller, Network API status; output path (ViGEm or another PC), physical controller, Network API status; the active game and profile; the state of mouse look, paddles, blocking and input capture, each with an "Open" shortcut |
 | Controller | The interactive diagram (Xbox 360 / PS4 switch above it), the editor for the selected control, and the list view of all bindings |
 | Games | Configs list (Default, Apex Legends, Warzone), built-in versus saved-changes state, source of the defaults, the game's native layout, Restore defaults |
 | Rear paddles | A large rear view with the four paddles, the same editor, a four-row overview with live "held" dots and the hardware paddle each slot reads |
