@@ -6,100 +6,100 @@
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
-          <StaticResource x:Key="ButtonBackground" ResourceKey="RaisedBrush" />
-          <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
-          <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="PressedBrush" />
-          <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ButtonForeground" ResourceKey="TextBrush" />
-          <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="TextBrush" />
-          <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="TextBrush" />
-          <StaticResource x:Key="ButtonForegroundDisabled" ResourceKey="FaintTextBrush" />
-          <StaticResource x:Key="ButtonBorderBrush" ResourceKey="BorderBrushDefault" />
-          <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
-          <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="BorderBrushStrong" />
-          <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <DynamicResource x:Key="ButtonBackground" ResourceKey="RaisedBrush" />
+          <DynamicResource x:Key="ButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
+          <DynamicResource x:Key="ButtonBackgroundPressed" ResourceKey="PressedBrush" />
+          <DynamicResource x:Key="ButtonBackgroundDisabled" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="ButtonForeground" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="ButtonForegroundPointerOver" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="ButtonForegroundPressed" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="ButtonForegroundDisabled" ResourceKey="FaintTextBrush" />
+          <DynamicResource x:Key="ButtonBorderBrush" ResourceKey="BorderBrushDefault" />
+          <DynamicResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="ButtonBorderBrushPressed" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="ButtonBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
 
-          <StaticResource x:Key="TextControlBackground" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="SidebarBrush" />
-          <StaticResource x:Key="TextControlBorderBrush" ResourceKey="BorderBrushDefault" />
-          <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
-          <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="AccentBrush" />
-          <StaticResource x:Key="TextControlBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
-          <StaticResource x:Key="TextControlForeground" ResourceKey="TextBrush" />
-          <StaticResource x:Key="TextControlForegroundPointerOver" ResourceKey="TextBrush" />
-          <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="TextBrush" />
-          <StaticResource x:Key="TextControlForegroundDisabled" ResourceKey="FaintTextBrush" />
-          <StaticResource x:Key="TextControlPlaceholderForeground" ResourceKey="FaintTextBrush" />
+          <DynamicResource x:Key="TextControlBackground" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="TextControlBackgroundPointerOver" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="TextControlBackgroundFocused" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="TextControlBackgroundDisabled" ResourceKey="SidebarBrush" />
+          <DynamicResource x:Key="TextControlBorderBrush" ResourceKey="BorderBrushDefault" />
+          <DynamicResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="TextControlBorderBrushFocused" ResourceKey="AccentBrush" />
+          <DynamicResource x:Key="TextControlBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <DynamicResource x:Key="TextControlForeground" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="TextControlForegroundPointerOver" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="TextControlForegroundFocused" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="TextControlForegroundDisabled" ResourceKey="FaintTextBrush" />
+          <DynamicResource x:Key="TextControlPlaceholderForeground" ResourceKey="FaintTextBrush" />
 
-          <StaticResource x:Key="ComboBoxBackground" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="SidebarBrush" />
-          <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderBrushDefault" />
-          <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
-          <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="AccentBrush" />
-          <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
-          <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="RaisedBrush" />
-          <StaticResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="BorderBrushDefault" />
+          <DynamicResource x:Key="ComboBoxBackground" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="ComboBoxBackgroundPressed" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="SidebarBrush" />
+          <DynamicResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderBrushDefault" />
+          <DynamicResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="AccentBrush" />
+          <DynamicResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <DynamicResource x:Key="ComboBoxDropDownBackground" ResourceKey="RaisedBrush" />
+          <DynamicResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="BorderBrushDefault" />
 
-          <StaticResource x:Key="ListBoxItemBackgroundPointerOver" ResourceKey="HoverBrush" />
-          <StaticResource x:Key="ListBoxItemBackgroundSelected" ResourceKey="AccentTintBrush" />
-          <StaticResource x:Key="ListBoxItemBackgroundSelectedPointerOver" ResourceKey="AccentTintBrush" />
-          <StaticResource x:Key="ListBoxItemBackgroundSelectedPressed" ResourceKey="AccentTintBrush" />
+          <DynamicResource x:Key="ListBoxItemBackgroundPointerOver" ResourceKey="HoverBrush" />
+          <DynamicResource x:Key="ListBoxItemBackgroundSelected" ResourceKey="AccentTintBrush" />
+          <DynamicResource x:Key="ListBoxItemBackgroundSelectedPointerOver" ResourceKey="AccentTintBrush" />
+          <DynamicResource x:Key="ListBoxItemBackgroundSelectedPressed" ResourceKey="AccentTintBrush" />
 
-          <StaticResource x:Key="ToolTipBackground" ResourceKey="RaisedBrush" />
-          <StaticResource x:Key="ToolTipForeground" ResourceKey="TextBrush" />
-          <StaticResource x:Key="ToolTipBorderBrush" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="ToolTipBackground" ResourceKey="RaisedBrush" />
+          <DynamicResource x:Key="ToolTipForeground" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="ToolTipBorderBrush" ResourceKey="BorderBrushStrong" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
-          <StaticResource x:Key="ButtonBackground" ResourceKey="RaisedBrush" />
-          <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
-          <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="PressedBrush" />
-          <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ButtonForeground" ResourceKey="TextBrush" />
-          <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="TextBrush" />
-          <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="TextBrush" />
-          <StaticResource x:Key="ButtonForegroundDisabled" ResourceKey="FaintTextBrush" />
-          <StaticResource x:Key="ButtonBorderBrush" ResourceKey="BorderBrushDefault" />
-          <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
-          <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="BorderBrushStrong" />
-          <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <DynamicResource x:Key="ButtonBackground" ResourceKey="RaisedBrush" />
+          <DynamicResource x:Key="ButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
+          <DynamicResource x:Key="ButtonBackgroundPressed" ResourceKey="PressedBrush" />
+          <DynamicResource x:Key="ButtonBackgroundDisabled" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="ButtonForeground" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="ButtonForegroundPointerOver" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="ButtonForegroundPressed" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="ButtonForegroundDisabled" ResourceKey="FaintTextBrush" />
+          <DynamicResource x:Key="ButtonBorderBrush" ResourceKey="BorderBrushDefault" />
+          <DynamicResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="ButtonBorderBrushPressed" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="ButtonBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
 
-          <StaticResource x:Key="TextControlBackground" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="SidebarBrush" />
-          <StaticResource x:Key="TextControlBorderBrush" ResourceKey="BorderBrushDefault" />
-          <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
-          <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="AccentBrush" />
-          <StaticResource x:Key="TextControlBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
-          <StaticResource x:Key="TextControlForeground" ResourceKey="TextBrush" />
-          <StaticResource x:Key="TextControlForegroundPointerOver" ResourceKey="TextBrush" />
-          <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="TextBrush" />
-          <StaticResource x:Key="TextControlForegroundDisabled" ResourceKey="FaintTextBrush" />
-          <StaticResource x:Key="TextControlPlaceholderForeground" ResourceKey="FaintTextBrush" />
+          <DynamicResource x:Key="TextControlBackground" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="TextControlBackgroundPointerOver" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="TextControlBackgroundFocused" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="TextControlBackgroundDisabled" ResourceKey="SidebarBrush" />
+          <DynamicResource x:Key="TextControlBorderBrush" ResourceKey="BorderBrushDefault" />
+          <DynamicResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="TextControlBorderBrushFocused" ResourceKey="AccentBrush" />
+          <DynamicResource x:Key="TextControlBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <DynamicResource x:Key="TextControlForeground" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="TextControlForegroundPointerOver" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="TextControlForegroundFocused" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="TextControlForegroundDisabled" ResourceKey="FaintTextBrush" />
+          <DynamicResource x:Key="TextControlPlaceholderForeground" ResourceKey="FaintTextBrush" />
 
-          <StaticResource x:Key="ComboBoxBackground" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="SidebarBrush" />
-          <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderBrushDefault" />
-          <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
-          <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="AccentBrush" />
-          <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
-          <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="RaisedBrush" />
-          <StaticResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="BorderBrushDefault" />
+          <DynamicResource x:Key="ComboBoxBackground" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="ComboBoxBackgroundPressed" ResourceKey="SurfaceBrush" />
+          <DynamicResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="SidebarBrush" />
+          <DynamicResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderBrushDefault" />
+          <DynamicResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="AccentBrush" />
+          <DynamicResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <DynamicResource x:Key="ComboBoxDropDownBackground" ResourceKey="RaisedBrush" />
+          <DynamicResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="BorderBrushDefault" />
 
-          <StaticResource x:Key="ListBoxItemBackgroundPointerOver" ResourceKey="HoverBrush" />
-          <StaticResource x:Key="ListBoxItemBackgroundSelected" ResourceKey="AccentTintBrush" />
-          <StaticResource x:Key="ListBoxItemBackgroundSelectedPointerOver" ResourceKey="AccentTintBrush" />
-          <StaticResource x:Key="ListBoxItemBackgroundSelectedPressed" ResourceKey="AccentTintBrush" />
+          <DynamicResource x:Key="ListBoxItemBackgroundPointerOver" ResourceKey="HoverBrush" />
+          <DynamicResource x:Key="ListBoxItemBackgroundSelected" ResourceKey="AccentTintBrush" />
+          <DynamicResource x:Key="ListBoxItemBackgroundSelectedPointerOver" ResourceKey="AccentTintBrush" />
+          <DynamicResource x:Key="ListBoxItemBackgroundSelectedPressed" ResourceKey="AccentTintBrush" />
 
-          <StaticResource x:Key="ToolTipBackground" ResourceKey="RaisedBrush" />
-          <StaticResource x:Key="ToolTipForeground" ResourceKey="TextBrush" />
-          <StaticResource x:Key="ToolTipBorderBrush" ResourceKey="BorderBrushStrong" />
+          <DynamicResource x:Key="ToolTipBackground" ResourceKey="RaisedBrush" />
+          <DynamicResource x:Key="ToolTipForeground" ResourceKey="TextBrush" />
+          <DynamicResource x:Key="ToolTipBorderBrush" ResourceKey="BorderBrushStrong" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -107,7 +107,7 @@
 
   <!-- ── Base ─────────────────────────────────────────────────────────────── -->
   <Style Selector="Window">
-    <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+    <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
     <Setter Property="FontSize" Value="13" />
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
   </Style>
@@ -172,7 +172,7 @@
     <Setter Property="Margin" Value="12,14,0,4" />
   </Style>
   <Style Selector="TextBlock.mono">
-    <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+    <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
     <Setter Property="FontSize" Value="12" />
   </Style>
 

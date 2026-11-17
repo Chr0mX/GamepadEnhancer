@@ -78,6 +78,10 @@ namespace GamepadEnhancer
 
         // ── Navigation ──────────────────────────────────────────────────────────
 
+        internal static readonly string[] PageKeys = { "dashboard", "controller", "games", "paddles", "mouse", "profiles", "monitor", "network", "settings" };
+        internal string CurrentPageKey => currentPage;
+        internal void ShowPageForTests(string key) => NavigateTo(key);
+
         private void Nav_Changed(object sender, RoutedEventArgs e)
         {
             if (!shellReady) return;
