@@ -38,6 +38,9 @@ namespace GamepadEnhancer
         private readonly Dictionary<string, TextBlock> gameHintLabels = new(StringComparer.OrdinalIgnoreCase);
         private ComboBox buttonPicker, stickPicker, paddlePicker;
         private TextBlock buttonKindTag;
+        private CapturingSink captureSink;
+        private DispatcherTimer captureTimer;
+        private bool capturing;
 
         private static PaddleSetting[] NewPaddleSettings()
         {
@@ -86,6 +89,9 @@ namespace GamepadEnhancer
             paddlePicker.SelectionChanged += (_, _) => ApplyPaddleEdit();
             paddleEnableBox.IsCheckedChanged += (_, _) => ApplyPaddleEdit();
             paddleLearnButton.Click += PaddleLearnButton_Click;
+            slotCaptureButton.Click += SlotCaptureButton_Click;
+            captureTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+            captureTimer.Tick += (_, _) => EndCapture("Nothing was pressed; cancelled.");
             slotTurboBox.IsCheckedChanged += OnSlotTurboChanged;
             slotTurboHz.ValueChanged += (_, _) => OnSlotTurboChanged(null, null);
 
@@ -280,6 +286,7 @@ namespace GamepadEnhancer
 
         private void OnSlotSelected(string id)
         {
+            EndCapture(null);
             selectedSlot = id;
             SyncEditor();
         }
@@ -309,6 +316,7 @@ namespace GamepadEnhancer
                 paddlePicker.IsVisible = isPaddle;
                 buttonKindTag.IsVisible = isAction;
                 slotTurboRow.IsVisible = isAction && !isStick;
+                slotCaptureRow.IsVisible = isAction || isPaddle;
                 paddleRow.IsVisible = isPaddle;
 
                 if (isAction)
@@ -444,8 +452,67 @@ namespace GamepadEnhancer
             diagram.Flash(PaddleSlots.Id(slot));
         }
 
+        // ── "Press a key" ───────────────────────────────────────────────────────
+
+        private void SlotCaptureButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (capturing) { EndCapture("Cancelled."); return; }
+            if (selectedSlot == null || captureSink == null) return;
+            bool isPaddle = PaddleSlots.TryParseId(selectedSlot, out _);
+            if (!isPaddle && !bindingControls.ContainsKey(selectedSlot)) return;
+
+            capturing = true;
+            slotCaptureButton.Content = "Press it now... (Esc cancels)";
+            slotHint.Text = InputChoices.IsStickAction(selectedSlot ?? "") ? "Press the keyboard key you want." : "Press the keyboard key, mouse button or wheel notch you want.";
+            captureTimer.Stop();
+            captureTimer.Start();
+            captureSink.BeginCapture(c => Dispatcher.UIThread.Post(() => OnCaptured(c)));
+        }
+
+        private void EndCapture(string message)
+        {
+            if (!capturing && message == null) return;
+            captureSink?.EndCapture();
+            captureTimer?.Stop();
+            capturing = false;
+            slotCaptureButton.Content = "Press a key or button...";
+            if (message != null) statusLabel.Text = "Status: " + message;
+            SyncEditor();
+        }
+
+        private void OnCaptured(CapturedInput input)
+        {
+            if (!capturing) return;
+            if (input.Kind == CapturedKind.Key && input.Name == "Escape") { EndCapture("Cancelled."); return; }
+
+            string slot = selectedSlot;
+            if (PaddleSlots.TryParseId(slot, out int paddle))
+            {
+                if (!InputCapture.TryAcceptForPaddle(input.Kind, input.Name, out PaddleTargetKind kind, out string value, out string error))
+                { EndCapture(error); return; }
+                var copy = (PaddleSetting[])paddleSettings.Clone();
+                if (!PaddleMappings.TryAssign(copy, paddle, true, kind, value, out error)) { EndCapture(error); return; }
+                paddleSettings = copy;
+                PushSettings();
+                diagram.Flash(slot);
+                EndCapture($"{PaddleSlots.Titles[paddle]} = {InputChoices.DisplayName(value)}");
+                return;
+            }
+
+            if (slot != null && bindingControls.TryGetValue(slot, out BindingControlSet c))
+            {
+                if (!InputCapture.TryAcceptForAction(slot, input.Kind, input.Name, out string value, out string error)) { EndCapture(error); return; }
+                SetChoice(c.KeySelector, value);   // the list picker does the rest (engine settings, kind tag, saving)
+                diagram.Flash(slot);
+                EndCapture($"{ActionTitle(slot)} = {InputChoices.DisplayName(value)}");
+                return;
+            }
+            EndCapture(null);
+        }
+
         private void StopGames()
         {
+            EndCapture(null);
             try { diagramTimer?.Stop(); } catch { }
             SaveActiveGameNow();
         }

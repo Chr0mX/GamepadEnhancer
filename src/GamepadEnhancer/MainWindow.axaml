@@ -68,6 +68,11 @@
                 <TextBlock x:Name="slotTitle" Classes="h" Text="Select a control" />
                 <TextBlock x:Name="slotNative" Classes="muted" TextWrapping="Wrap" Text="" />
                 <WrapPanel x:Name="slotPickerRow" Orientation="Horizontal" />
+                <WrapPanel x:Name="slotCaptureRow" Orientation="Horizontal" IsVisible="False">
+                  <Button x:Name="slotCaptureButton" Content="Press a key or button..." Margin="0,0,10,4"
+                          ToolTip.Tip="Click, then press the keyboard key, mouse button or wheel notch you want. Esc cancels." />
+                  <TextBlock Classes="muted" VerticalAlignment="Center" Margin="0,0,0,4" Text="or choose from the list" />
+                </WrapPanel>
                 <WrapPanel x:Name="slotTurboRow" Orientation="Horizontal" IsVisible="False">
                   <CheckBox x:Name="slotTurboBox" Content="Turbo" Margin="0,0,8,4" />
                   <NumericUpDown x:Name="slotTurboHz" Minimum="1" Maximum="30" Value="12" Increment="1" FormatString="0" MinWidth="100" Margin="0,0,6,4" />

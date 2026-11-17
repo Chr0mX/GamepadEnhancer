@@ -35,7 +35,9 @@ namespace GamepadEnhancer
             };
             keys.AddRange(Enumerable.Range(0, 10).Select(i => i.ToString(CultureInfo.InvariantCulture)));
             for (char c = 'A'; c <= 'Z'; c++) keys.Add(c.ToString());
-            for (int i = 1; i <= 12; i++) keys.Add("F" + i.ToString(CultureInfo.InvariantCulture));
+            for (int i = 1; i <= 24; i++) keys.Add("F" + i.ToString(CultureInfo.InvariantCulture));
+            foreach (string extra in KeyNames.ExtraNames())
+                if (!keys.Contains(extra)) keys.Add(extra);   // Insert, Delete, Page Up/Down, Caps Lock, numpad, punctuation, ...
             return keys.ToArray();
         }
 
@@ -90,7 +92,68 @@ namespace GamepadEnhancer
             MouseInputNames.WheelUp => "Wheel up",
             MouseInputNames.WheelDown => "Wheel down",
             "Escape" => "Esc",
+            "PageUp" => "Page Up",
+            "PageDown" => "Page Down",
+            "CapsLock" => "Caps Lock",
+            "PrintScreen" => "Print Screen",
+            "NumLock" => "Num Lock",
+            "NumpadMultiply" => "Num *",
+            "NumpadAdd" => "Num +",
+            "NumpadSubtract" => "Num -",
+            "NumpadDecimal" => "Num .",
+            "NumpadDivide" => "Num /",
+            "Minus" => "- (Minus)",
+            "Equals" => "= (Equals)",
+            "LeftBracket" => "[ (Left bracket)",
+            "RightBracket" => "] (Right bracket)",
+            "Backslash" => "\\ (Backslash)",
+            "Semicolon" => "; (Semicolon)",
+            "Quote" => "' (Quote)",
+            "Comma" => ", (Comma)",
+            "Period" => ". (Period)",
+            "Slash" => "/ (Slash)",
+            "Backtick" => "` (Backtick)",
+            _ when input != null && input.StartsWith("Numpad", StringComparison.Ordinal) && input.Length == 7 => "Num " + input[6],
             _ => input
         };
+    }
+
+    /// <summary>What a "press a key" capture saw.</summary>
+    internal enum CapturedKind { Key, MouseButton, Wheel }
+
+    /// <summary>Rules for turning a captured press into a binding. Pure, so it can be unit tested.</summary>
+    internal static class InputCapture
+    {
+        /// <summary>The binding for a pad action, or an error to show the user. The left-stick directions take keyboard keys only.</summary>
+        public static bool TryAcceptForAction(string action, CapturedKind kind, string name, out string input, out string error)
+        {
+            input = null;
+            error = null;
+            string canonical = InputChoices.Canonical(name);
+            InputKind expected = kind switch { CapturedKind.Key => InputKind.Keyboard, CapturedKind.MouseButton => InputKind.MouseButton, _ => InputKind.MouseWheel };
+            if (canonical == InputChoices.None || InputChoices.KindOf(canonical) != expected)
+            {
+                error = kind == CapturedKind.Key ? $"That key ({name}) can't be used; pick it from the list instead." : "That input can't be used.";
+                return false;
+            }
+            if (!InputChoices.IsAllowed(action, canonical)) { error = "A left stick direction takes keyboard keys only."; return false; }
+            input = canonical;
+            return true;
+        }
+
+        /// <summary>The target for a rear paddle: a keyboard key or a mouse button (a wheel notch cannot be held).</summary>
+        public static bool TryAcceptForPaddle(CapturedKind kind, string name, out PaddleTargetKind target, out string input, out string error)
+        {
+            target = PaddleTargetKind.None;
+            input = null;
+            error = null;
+            if (kind == CapturedKind.Wheel) { error = "A paddle can't press the mouse wheel."; return false; }
+            PaddleTargetKind wanted = kind == CapturedKind.Key ? PaddleTargetKind.Key : PaddleTargetKind.MouseButton;
+            string canonical = PaddleMappings.Canonical(wanted, name);
+            if (canonical == null) { error = $"That input ({name}) can't be used for a paddle."; return false; }
+            target = wanted;
+            input = canonical;
+            return true;
+        }
     }
 }

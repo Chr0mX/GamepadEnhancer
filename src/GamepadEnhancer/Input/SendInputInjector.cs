@@ -60,7 +60,7 @@ namespace GamepadEnhancer
             SendInput(1, new[] { item }, Marshal.SizeOf<Input>());
         }
 
-        private static bool IsExtended(uint vk) => (vk >= 0x21 && vk <= 0x28) || vk == 0x2D || vk == 0x2E;   // PgUp..Down, Insert, Delete (Home is 0x24)
+        private static bool IsExtended(uint vk) => (vk >= 0x21 && vk <= 0x28) || vk == 0x2C || vk == 0x2D || vk == 0x2E || vk == 0x6F || vk == 0x90;   // PgUp..Down, Print Screen, Insert, Delete, Num /, Num Lock
 
         private static bool TryMouse(string name, bool down, out uint flags, out uint data)
         {

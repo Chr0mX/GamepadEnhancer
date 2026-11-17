@@ -249,7 +249,8 @@ namespace GamepadEnhancer
         private void InitializeInputHook()
         {
             appSettings = AppSettings.Load();
-            inputManager = new InputStateManager(engine, (method, receiver) =>
+            captureSink = new CapturingSink(engine);   // passes input to the engine, except while "press a key" is waiting
+            inputManager = new InputStateManager(captureSink, (method, receiver) =>
                 method == InputCaptureMethod.RawInput
                     ? new RawInputService(receiver)
                     : CreateHookCapture(receiver));

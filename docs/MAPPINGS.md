@@ -123,6 +123,14 @@ Profiles are plain JSON in `profiles/` next to the exe. Bindings are in `Mapping
 - Missing actions are `None`. Missing fields take their defaults.
 - Profiles from earlier builds (`KeyBindings`, `TurboEnabled`, `TurboHz` dictionaries, and the removed drift / recoil fields) still load; they are saved in the new layout from then on. An older build cannot read bindings from a profile saved by this one.
 
+## Choosing your own keys
+
+Select any control on the diagram (or a row in the list view) and either:
+- click **Press a key or button...** and press the keyboard key, mouse button or wheel notch you want (Esc cancels, it also gives up after 10 seconds), or
+- pick it from the list. The list now has every common key: letters, digits, F1 to F24, the arrows, Insert / Delete / Home / End / Page Up / Page Down, Caps Lock, Print Screen, Pause, Num Lock, the whole numpad and the punctuation keys. Left and right Shift / Ctrl / Alt count as one key each.
+
+Left-stick directions take keyboard keys only, and a rear paddle takes a key or mouse button (not the wheel). A key the app has no name for (for example Scroll Lock, which is the input-blocking hotkey) is refused with a message. Your choice is saved per config, so the built-in layouts are never overwritten.
+
 ## Import, export and edit
 
 On the top bar, next to the profile box:
