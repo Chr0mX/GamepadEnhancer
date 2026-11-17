@@ -15,6 +15,7 @@
     <!-- Headless Avalonia: lets a test create the real window and load every page, so XAML/resource errors fail CI instead of the first launch. -->
     <PackageReference Include="Avalonia.Headless" Version="11.2.3" />
     <PackageReference Include="Avalonia.Headless.XUnit" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Skia" Version="11.2.3" />
   </ItemGroup>
 
   <ItemGroup>

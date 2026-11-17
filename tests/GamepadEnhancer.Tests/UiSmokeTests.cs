@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Skia;
+using System.IO;
 using Avalonia.Threading;
 using GamepadEnhancer;
 using Xunit;
@@ -12,7 +14,7 @@ namespace GamepadEnhancer.Tests
     public class TestAppBuilder
     {
         public static AppBuilder BuildAvaloniaApp() =>
-            AppBuilder.Configure<App>().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = true });
+            AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
     }
 
     /// <summary>
@@ -80,6 +82,33 @@ namespace GamepadEnhancer.Tests
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(PadFamily.DualShock4, window.DiagramForTests.Family);
             window.Close();
+        }
+
+        /// <summary>
+        /// Renders each page to a PNG (set GE_SCREENSHOT_DIR; CI uploads the folder) so the real layout can be looked at.
+        /// It never fails on pixels, only on exceptions.
+        /// </summary>
+        [AvaloniaFact]
+        public void RenderEveryPageToAnImage()
+        {
+            string dir = System.Environment.GetEnvironmentVariable("GE_SCREENSHOT_DIR");
+            if (string.IsNullOrEmpty(dir)) return;
+            Directory.CreateDirectory(dir);
+            foreach ((int w, int h) in new[] { (1280, 820), (900, 640) })
+            {
+                var window = new MainWindow { Width = w, Height = h };
+                window.Show();
+                Dispatcher.UIThread.RunJobs();
+                foreach (string key in MainWindow.PageKeys)
+                {
+                    window.ShowPageForTests(key);
+                    window.UpdateLayout();
+                    Dispatcher.UIThread.RunJobs();
+                    var frame = window.CaptureRenderedFrame();
+                    frame?.Save(Path.Combine(dir, $"{key}-{w}.png"));
+                }
+                window.Close();
+            }
         }
     }
 }

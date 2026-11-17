@@ -15,7 +15,15 @@ jobs:
       - run: dotnet restore .\GamepadEnhancer.sln
       - run: dotnet build .\GamepadEnhancer.sln --configuration Release --no-restore
       - name: Test
+        env:
+          GE_SCREENSHOT_DIR: ${{ github.workspace }}\artifacts\screens
         run: dotnet test .\GamepadEnhancer.sln --configuration Release --no-build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-screenshots
+          path: .\artifacts\screens\
+          if-no-files-found: ignore
       - name: Publish
         run: dotnet publish .\src\GamepadEnhancer\GamepadEnhancer.csproj --configuration Release --runtime win-x64 --self-contained false --output .\artifacts\publish
       - name: Smoke check output
