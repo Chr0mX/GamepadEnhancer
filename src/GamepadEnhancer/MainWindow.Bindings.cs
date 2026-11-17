@@ -141,7 +141,7 @@ namespace GamepadEnhancer
 
         /// <summary>An output that presses its own input would feed back into the binding; such an output is removed.</summary>
         private static IReadOnlyList<BindingOutput> DropSelfOutputs(string input, IReadOnlyList<BindingOutput> outputs) =>
-            outputs.Where(o => o.Kind == BindingOutputKind.PadButton || !string.Equals(o.Name, input, StringComparison.OrdinalIgnoreCase)).ToList();
+            outputs.Where(o => !(o.Kind == BindingOutputKind.Key || o.Kind == BindingOutputKind.MouseButton) || !string.Equals(o.Name, input, StringComparison.OrdinalIgnoreCase)).ToList();
 
         // ── Rows ────────────────────────────────────────────────────────────────
 
@@ -223,6 +223,19 @@ namespace GamepadEnhancer
             };
             top.Children.Add(WrapCell(toggle));
 
+            var layerBox = new ComboBox { Width = 130, ItemsSource = LayerItems(), IsEnabled = d.ActivatesLayer == 0 };
+            layerBox.SelectedItem = ((List<ComboBoxItem>)layerBox.ItemsSource).First(i => (string)i.Tag == d.Layer.ToString());
+            ToolTip.SetTip(layerBox, d.ActivatesLayer == 0
+                ? "Base layer bindings always run. A binding on Layer 1-3 runs only while that layer is switched on, and replaces a base binding of the same input meanwhile (with no outputs it un-maps the input there)."
+                : "A binding that switches a layer on stays on the base layer.");
+            layerBox.SelectionChanged += (_, _) =>
+            {
+                if (rebuildingBindings || layerBox.SelectedItem is not ComboBoxItem it || !int.TryParse(it.Tag as string, out int n) || n == d.Layer) return;
+                ReplaceBinding(d.With(layer: n));
+                BindingsChanged(rebuild: true);
+            };
+            top.Children.Add(WrapCell(layerBox));
+
             var enabled = new ToggleSwitch { OnContent = "On", OffContent = "Off", IsChecked = d.Enabled };
             ToolTip.SetTip(enabled, "Enabled means eligible to run. It does not mean running; see the status on the left.");
             enabled.IsCheckedChanged += (_, _) =>
@@ -267,11 +280,12 @@ namespace GamepadEnhancer
         private string OutputsText(BindingDef d)
         {
             if (d.IsAnalog) return "(analog)";
-            if (d.Outputs.Count == 0) return "no output";
+            if (d.Outputs.Count == 0) return d.Layer > 0 ? "un-map this input" : "no output";
             ControllerLayoutDef layout = ActiveLayout();
             return string.Join(" + ", d.Outputs.Select(o => o.Kind == BindingOutputKind.PadButton
                 ? layout.Label(o.Name) + (o.IsTrigger && o.Magnitude < 100 ? $" {o.Magnitude}%" : "")
-                : InputChoices.DisplayName(o.Name)));
+                : o.IsLayer ? "Layer " + o.Name
+                : InputChoices.DisplayName(o.Name))) + (d.TurboHz > 0 ? $" (turbo {d.TurboHz}/s)" : "");
         }
 
         // ── Details: timing and outputs ─────────────────────────────────────────
@@ -281,6 +295,7 @@ namespace GamepadEnhancer
             var panel = new StackPanel { Spacing = 8, Margin = new Thickness(0, 4, 0, 0) };
             panel.Children.Add(new TextBlock { Text = BindingConditions.Description(d.Condition), Classes = { "caption" }, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
 
+            if (!d.IsAnalog) panel.Children.Add(TimeBox("Turbo (pulses per second, 0 = off)", d.TurboHz, 0, BindingDef.MaxTurboHz, v => d.With(turboHz: v), 1));
             if (d.Condition == BindingCondition.Double) panel.Children.Add(TimeBox("Double press window (ms)", d.DoubleWindowMs, BindingEntries.MinDoubleMs, BindingEntries.MaxDoubleMs, v => d.With(doubleWindowMs: v)));
             if (d.Condition == BindingCondition.Tap) panel.Children.Add(TimeBox("Tap: release within (ms)", d.TapMaxMs, BindingEntries.MinTapMs, BindingEntries.MaxTapMs, v => d.With(tapMaxMs: v)));
             if (d.Condition == BindingCondition.Hold) panel.Children.Add(TimeBox("Hold time (ms)", d.HoldMs, BindingEntries.MinHoldMs, BindingEntries.MaxHoldMs, v => d.With(holdMs: v)));
@@ -303,11 +318,11 @@ namespace GamepadEnhancer
             return panel;
         }
 
-        private Control TimeBox(string label, int value, int min, int max, Func<int, BindingDef> make)
+        private Control TimeBox(string label, int value, int min, int max, Func<int, BindingDef> make, int increment = 10)
         {
             var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
             row.Children.Add(new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center, MinWidth = 190 });
-            var box = new NumericUpDown { Minimum = min, Maximum = max, Value = value, Increment = 10, FormatString = "0", MinWidth = 130 };
+            var box = new NumericUpDown { Minimum = min, Maximum = max, Value = value, Increment = increment, FormatString = "0", MinWidth = 130 };
             box.ValueChanged += (_, _) =>
             {
                 if (rebuildingBindings || box.Value == null || (int)box.Value.Value == value) return;
@@ -319,9 +334,15 @@ namespace GamepadEnhancer
             return row;
         }
 
+        private static List<ComboBoxItem> LayerItems() => new()
+        {
+            ChoiceItem("Base layer", "0"), ChoiceItem("Layer 1", "1"), ChoiceItem("Layer 2", "2"), ChoiceItem("Layer 3", "3")
+        };
+
         private static readonly (BindingOutputKind Kind, string Title)[] OutputKinds =
         {
-            (BindingOutputKind.PadButton, "Pad button"), (BindingOutputKind.Key, "Keyboard key"), (BindingOutputKind.MouseButton, "Mouse button")
+            (BindingOutputKind.PadButton, "Pad button"), (BindingOutputKind.Key, "Keyboard key"), (BindingOutputKind.MouseButton, "Mouse button"),
+            (BindingOutputKind.Layer, "Layer (shift)")
         };
 
         private Control OutputRow(BindingDef d, int index)
@@ -343,7 +364,7 @@ namespace GamepadEnhancer
             name.SelectionChanged += (_, _) =>
             {
                 if (rebuildingBindings || name.SelectedItem is not ComboBoxItem it || it.Tag is not string n || n == o.Name) return;
-                if (o.Kind != BindingOutputKind.PadButton && string.Equals(n, d.Input, StringComparison.OrdinalIgnoreCase))
+                if ((o.Kind == BindingOutputKind.Key || o.Kind == BindingOutputKind.MouseButton) && string.Equals(n, d.Input, StringComparison.OrdinalIgnoreCase))
                 { statusLabel.Text = "Status: An output cannot press the binding's own input"; Dispatcher.UIThread.Post(RebuildBindingList); return; }
                 SetOutput(d, index, new BindingOutput { Kind = o.Kind, Name = n, Magnitude = o.Magnitude });
             };
@@ -383,7 +404,7 @@ namespace GamepadEnhancer
             var list = d.Outputs.ToList();
             if (list.Where((x, i) => i != index).Any(x => x.Key == replacement.Key)) { statusLabel.Text = "Status: That output is already in this binding"; Dispatcher.UIThread.Post(RebuildBindingList); return; }
             list[index] = replacement;
-            ReplaceBinding(d.With(outputs: list));
+            ReplaceBinding(d.With(outputs: list, layer: list.Any(x => x.IsLayer) ? (int?)0 : null));   // only a base-layer binding can switch a layer on
             BindingsChanged(rebuild: true);
         }
 
@@ -391,11 +412,14 @@ namespace GamepadEnhancer
         {
             BindingOutputKind.PadButton => PaddleMappings.PadButtonTargets,
             BindingOutputKind.Key => InputChoices.Keyboard,
+            BindingOutputKind.Layer => new[] { "1", "2", "3" },
             _ => InputChoices.MouseButtons
         };
 
         private string OutputLabel(BindingOutputKind kind, string name) =>
-            kind == BindingOutputKind.PadButton ? ActiveLayout().Label(name) : InputChoices.DisplayName(name);
+            kind == BindingOutputKind.PadButton ? ActiveLayout().Label(name)
+            : kind == BindingOutputKind.Layer ? "Layer " + name
+            : InputChoices.DisplayName(name);
 
         // ── Live state ──────────────────────────────────────────────────────────
 
@@ -406,6 +430,7 @@ namespace GamepadEnhancer
             BindingState.ToggledActive => "Toggled active",
             BindingState.WaitingHold => "Waiting for hold",
             BindingState.WaitingDouble => "Waiting for double press",
+            BindingState.OtherLayer => "On another layer",
             _ => "Waiting for input"
         };
 
@@ -436,7 +461,9 @@ namespace GamepadEnhancer
                 row.Physical.Text = latched ? "Latched on: it keeps running until the next activation." : "";
             }
             if (bindingsSummary != null)
-                bindingsSummary.Text = live ? $"{running} of {advancedBindings.Count(b => b.Enabled)} enabled running now" : "Connect the virtual controller to run bindings.";
+                bindingsSummary.Text = live
+                    ? $"{running} of {advancedBindings.Count(b => b.Enabled)} enabled running now · active layer: {(engine.Bindings.ActiveLayer == 0 ? "base" : engine.Bindings.ActiveLayer.ToString())}"
+                    : "Connect the virtual controller to run bindings.";
         }
 
         private void RefreshAutomaticBindingsText()

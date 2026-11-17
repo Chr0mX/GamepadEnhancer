@@ -7,10 +7,11 @@ namespace GamepadEnhancer
     /// <summary>When a digital binding runs. <see cref="Held"/> and <see cref="Unheld"/> repeat; the rest run once per qualifying event.</summary>
     public enum BindingCondition { Held, Unheld, Press, Release, Double, Tap, Hold }
 
-    public enum BindingOutputKind { PadButton, Key, MouseButton }
+    /// <summary>A Layer output is not a press: while a binding running on layer 0 has a Layer output, that layer is active (a shift).</summary>
+    public enum BindingOutputKind { PadButton, Key, MouseButton, Layer }
 
     /// <summary>What a binding is doing right now. Disabled / Waiting say nothing is running; Running and ToggledActive mean its outputs are held.</summary>
-    public enum BindingState { Disabled, Waiting, Running, ToggledActive, WaitingHold, WaitingDouble }
+    public enum BindingState { Disabled, Waiting, Running, ToggledActive, WaitingHold, WaitingDouble, OtherLayer }
 
     /// <summary>One thing a binding presses: a virtual pad button, a keyboard key or a mouse button. Triggers have a magnitude (percent).</summary>
     public sealed class BindingOutput
@@ -22,6 +23,9 @@ namespace GamepadEnhancer
 
         /// <summary>The identity used for output ownership: two bindings pressing the same thing share one key.</summary>
         public string Key => Kind + ":" + Name;
+        public bool IsLayer => Kind == BindingOutputKind.Layer;
+        /// <summary>1..<see cref="BindingDef.MaxLayer"/> for a Layer output, otherwise 0.</summary>
+        public int LayerNumber => IsLayer && int.TryParse(Name, out int n) ? n : 0;
         public bool IsTrigger => Kind == BindingOutputKind.PadButton
             && (string.Equals(Name, Inputs.Lt, StringComparison.OrdinalIgnoreCase) || string.Equals(Name, Inputs.Rt, StringComparison.OrdinalIgnoreCase));
     }
@@ -32,6 +36,9 @@ namespace GamepadEnhancer
     public sealed class BindingDef
     {
         public const int DefaultDoubleWindowMs = 300, DefaultTapMaxMs = 200, DefaultHoldMs = 500;
+        /// <summary>The highest layer number. Layer 0 is the base layer that is always there.</summary>
+        public const int MaxLayer = 3;
+        public const int MaxTurboHz = 30;
         /// <summary>How long a run-once binding's outputs stay down, so the game can see a press that would otherwise last under one tick.</summary>
         public const int PulseMs = 60;
 
@@ -44,9 +51,19 @@ namespace GamepadEnhancer
         public int DoubleWindowMs { get; init; } = DefaultDoubleWindowMs;
         public int TapMaxMs { get; init; } = DefaultTapMaxMs;
         public int HoldMs { get; init; } = DefaultHoldMs;
+        /// <summary>0 = off. Otherwise the outputs pulse on and off this many times per second while the binding runs (rapid fire).</summary>
+        public int TurboHz { get; init; }
+        /// <summary>
+        /// 0 = the base layer (always eligible). 1..3 = the binding only runs while that layer is the active one, and it replaces any
+        /// base-layer binding of the same input meanwhile. A binding with no outputs on a layer simply un-maps its input there.
+        /// </summary>
+        public int Layer { get; init; }
         public IReadOnlyList<BindingOutput> Outputs { get; init; } = Array.Empty<BindingOutput>();
 
         public bool IsAnalog => BindingInputs.IsAnalog(Input);
+
+        /// <summary>The highest layer this binding switches on while it runs (0 = none). Only base-layer bindings can do that.</summary>
+        public int ActivatesLayer => Layer == 0 ? Outputs.Select(o => o.LayerNumber).DefaultIfEmpty(0).Max() : 0;
 
         /// <summary>Toggle only means something for the run-once conditions (it turns them into a latch); Held and Unheld ignore it.</summary>
         public bool EffectiveToggle => Toggle && BindingConditions.IsRunOnce(Condition) && !IsAnalog;
@@ -55,7 +72,7 @@ namespace GamepadEnhancer
         public bool SameBehaviour(BindingDef other)
         {
             if (other == null || Input != other.Input || Condition != other.Condition || EffectiveToggle != other.EffectiveToggle
-                || Enabled != other.Enabled || DoubleWindowMs != other.DoubleWindowMs || TapMaxMs != other.TapMaxMs || HoldMs != other.HoldMs
+                || Enabled != other.Enabled || Layer != other.Layer || TurboHz != other.TurboHz || DoubleWindowMs != other.DoubleWindowMs || TapMaxMs != other.TapMaxMs || HoldMs != other.HoldMs
                 || Outputs.Count != other.Outputs.Count)
                 return false;
             for (int i = 0; i < Outputs.Count; i++)
@@ -64,7 +81,8 @@ namespace GamepadEnhancer
         }
 
         public BindingDef With(string input = null, BindingCondition? condition = null, bool? toggle = null, bool? enabled = null,
-            IReadOnlyList<BindingOutput> outputs = null, int? doubleWindowMs = null, int? tapMaxMs = null, int? holdMs = null) => new()
+            IReadOnlyList<BindingOutput> outputs = null, int? doubleWindowMs = null, int? tapMaxMs = null, int? holdMs = null,
+            int? turboHz = null, int? layer = null) => new()
         {
             Id = Id,
             Input = input ?? Input,
@@ -74,14 +92,16 @@ namespace GamepadEnhancer
             Outputs = outputs ?? Outputs,
             DoubleWindowMs = doubleWindowMs ?? DoubleWindowMs,
             TapMaxMs = tapMaxMs ?? TapMaxMs,
-            HoldMs = holdMs ?? HoldMs
+            HoldMs = holdMs ?? HoldMs,
+            TurboHz = turboHz ?? TurboHz,
+            Layer = layer ?? Layer
         };
 
         /// <summary>A copy with a new id (copy / paste).</summary>
         public BindingDef Clone() => new()
         {
             Input = Input, Condition = Condition, Toggle = Toggle, Enabled = Enabled, Outputs = Outputs,
-            DoubleWindowMs = DoubleWindowMs, TapMaxMs = TapMaxMs, HoldMs = HoldMs
+            DoubleWindowMs = DoubleWindowMs, TapMaxMs = TapMaxMs, HoldMs = HoldMs, TurboHz = TurboHz, Layer = Layer
         };
     }
 

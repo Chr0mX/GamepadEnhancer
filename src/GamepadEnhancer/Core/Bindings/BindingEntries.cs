@@ -7,7 +7,7 @@ namespace GamepadEnhancer
     /// <summary>One output of a binding as stored in a profile file.</summary>
     internal sealed class BindingOutputEntry
     {
-        /// <summary>"PadButton", "Key" or "MouseButton".</summary>
+        /// <summary>"PadButton", "Key", "MouseButton" or "Layer" (the name is then the layer number, 1..3).</summary>
         public string Kind { get; set; } = "PadButton";
         public string Name { get; set; } = "None";
         public int Magnitude { get; set; } = 100;
@@ -25,6 +25,10 @@ namespace GamepadEnhancer
         public int DoubleWindowMs { get; set; } = BindingDef.DefaultDoubleWindowMs;
         public int TapMaxMs { get; set; } = BindingDef.DefaultTapMaxMs;
         public int HoldMs { get; set; } = BindingDef.DefaultHoldMs;
+        /// <summary>0 = off; otherwise outputs pulse this many times per second while the binding runs.</summary>
+        public int TurboHz { get; set; }
+        /// <summary>0 = base layer; 1..3 = runs only while that layer is active.</summary>
+        public int Layer { get; set; }
         public List<BindingOutputEntry> Outputs { get; set; } = new();
     }
 
@@ -38,6 +42,7 @@ namespace GamepadEnhancer
         {
             "key" => BindingOutputKind.Key,
             "mousebutton" => BindingOutputKind.MouseButton,
+            "layer" => BindingOutputKind.Layer,
             _ => BindingOutputKind.PadButton
         };
 
@@ -46,6 +51,8 @@ namespace GamepadEnhancer
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
             string t = name.Trim();
+            if (kind == BindingOutputKind.Layer)
+                return int.TryParse(t, out int layer) && layer >= 1 && layer <= BindingDef.MaxLayer ? layer.ToString() : null;
             if (kind == BindingOutputKind.PadButton) t = LegacyIds.ToCanonical(t) ?? t;
             string[] list = kind switch
             {
@@ -88,12 +95,20 @@ namespace GamepadEnhancer
                     BindingOutputKind kind = ParseKind(o.Kind);
                     string name = CanonicalOutput(kind, o.Name);
                     if (name == null) { warnings?.Add($"{InputChoices.DisplayName(input)}: unknown output \"{o.Name}\" was removed"); continue; }
-                    if (kind != BindingOutputKind.PadButton && string.Equals(name, input, StringComparison.OrdinalIgnoreCase))
+                    if ((kind == BindingOutputKind.Key || kind == BindingOutputKind.MouseButton) && string.Equals(name, input, StringComparison.OrdinalIgnoreCase))
                     { warnings?.Add($"{InputChoices.DisplayName(input)}: an output that presses its own input was removed"); continue; }
                     var def = new BindingOutput { Kind = kind, Name = name, Magnitude = Math.Clamp(o.Magnitude, 1, 100) };
                     if (outputs.Any(x => x.Key == def.Key)) continue;
                     outputs.Add(def);
                 }
+
+                int layerNo = Math.Clamp(e.Layer, 0, BindingDef.MaxLayer);
+                if (layerNo > 0 && outputs.Any(x => x.IsLayer))
+                {
+                    warnings?.Add($"{InputChoices.DisplayName(input)}: only a base-layer binding can switch a layer on, so it was moved to the base layer");
+                    layerNo = 0;
+                }
+                if (BindingInputs.IsAnalog(input) && outputs.Any(x => x.IsLayer)) outputs.RemoveAll(x => x.IsLayer);
 
                 string id = string.IsNullOrWhiteSpace(e.Id) || !ids.Add(e.Id.Trim()) ? NewId(ids) : e.Id.Trim();
                 result.Add(new BindingDef
@@ -106,6 +121,8 @@ namespace GamepadEnhancer
                     DoubleWindowMs = Math.Clamp(e.DoubleWindowMs, MinDoubleMs, MaxDoubleMs),
                     TapMaxMs = Math.Clamp(e.TapMaxMs, MinTapMs, MaxTapMs),
                     HoldMs = Math.Clamp(e.HoldMs, MinHoldMs, MaxHoldMs),
+                    TurboHz = e.TurboHz <= 0 ? 0 : Math.Clamp(e.TurboHz, 1, BindingDef.MaxTurboHz),
+                    Layer = layerNo,
                     Outputs = outputs
                 });
             }
@@ -132,6 +149,8 @@ namespace GamepadEnhancer
                 DoubleWindowMs = d.DoubleWindowMs,
                 TapMaxMs = d.TapMaxMs,
                 HoldMs = d.HoldMs,
+                TurboHz = d.TurboHz,
+                Layer = d.Layer,
                 Outputs = d.Outputs.Select(o => new BindingOutputEntry { Kind = o.Kind.ToString(), Name = o.Name, Magnitude = o.Magnitude }).ToList()
             }).ToList();
             return list.Count == 0 ? null : list;
@@ -146,7 +165,7 @@ namespace GamepadEnhancer
             for (int i = 0; i < a.Count; i++)
             {
                 if (a[i].Input != b[i].Input || a[i].Condition != b[i].Condition || a[i].Toggle != b[i].Toggle || a[i].Enabled != b[i].Enabled
-                    || a[i].DoubleWindowMs != b[i].DoubleWindowMs || a[i].TapMaxMs != b[i].TapMaxMs || a[i].HoldMs != b[i].HoldMs
+                    || a[i].Layer != b[i].Layer || a[i].TurboHz != b[i].TurboHz || a[i].DoubleWindowMs != b[i].DoubleWindowMs || a[i].TapMaxMs != b[i].TapMaxMs || a[i].HoldMs != b[i].HoldMs
                     || a[i].Outputs.Count != b[i].Outputs.Count) return false;
                 for (int j = 0; j < a[i].Outputs.Count; j++)
                     if (a[i].Outputs[j].Key != b[i].Outputs[j].Key || a[i].Outputs[j].Magnitude != b[i].Outputs[j].Magnitude) return false;

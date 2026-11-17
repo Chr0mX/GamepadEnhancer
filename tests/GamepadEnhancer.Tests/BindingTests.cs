@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -516,6 +516,237 @@ namespace GamepadEnhancer.Tests
             var def = new BindingDef { Input = "Q", Outputs = new[] { new BindingOutput { Kind = BindingOutputKind.PadButton, Name = "TOUCHPAD" } } };
             Assert.NotNull(BindingEntries.CompatibilityWarning(def, ControllerLayouts.Get("xbox360")));
             Assert.Null(BindingEntries.CompatibilityWarning(def, ControllerLayouts.Get("dualshock4")));
+        }
+    }
+
+    public class TurboAndLayerTests
+    {
+        private static BindingOutput Pad(string n) => new() { Kind = BindingOutputKind.PadButton, Name = n };
+        private static BindingOutput Key(string n) => new() { Kind = BindingOutputKind.Key, Name = n };
+        private static BindingOutput Layer(int n) => new() { Kind = BindingOutputKind.Layer, Name = n.ToString() };
+        private static int Bit(string action) => 1 << Array.IndexOf(ControllerEngine.BindingActions, action);
+        private static BindingDef Def(string id, string input, BindingCondition c, int layer, bool toggle = false, int turbo = 0, BindingOutput outs = null) =>
+            new() { Id = id, Input = input, Condition = c, Layer = layer, Toggle = toggle, TurboHz = turbo,
+                    Outputs = outs == null ? Array.Empty<BindingOutput>() : new[] { outs } };
+        private static void Down(BindingRuntime r, string input, long t) { r.OnEdge(input, true, t); }
+        private static void Up(BindingRuntime r, string input, long t) { r.OnEdge(input, false, t); }
+
+        // ── turbo ───────────────────────────────────────────────────────────────
+
+        [Fact]
+        public void TurboPulsesTheOutputWhileHeldAndKeepsTheBindingRunning()
+        {
+            var r = new BindingRuntime();
+            r.SetBindings(new[] { Def("a", "Mouse Left", BindingCondition.Held, 0, turbo: 10, outs: Pad("FACE_SOUTH")) });   // 10 per second: 100 ms cycle
+            Down(r, "Mouse Left", 0); r.Update(0);
+            Assert.Equal(Bit("FACE_SOUTH"), r.PadMask);                    // on phase (0-50 ms)
+            r.Update(60);
+            Assert.Equal(0, r.PadMask);                                     // off phase (50-100 ms) ...
+            Assert.True(r.Snapshot()[0].Running);                           // ... but the binding is still running
+            r.Update(110);
+            Assert.Equal(Bit("FACE_SOUTH"), r.PadMask);                    // next cycle
+            Up(r, "Mouse Left", 120); r.Update(120);
+            Assert.Equal(0, r.PadMask);
+            Assert.False(r.Snapshot()[0].Running);
+        }
+
+        [Fact]
+        public void TurboGoesAwayWhenSwitchedOff()
+        {
+            var a = Def("a", "Q", BindingCondition.Held, 0, turbo: 10, outs: Pad("LB"));
+            var r = new BindingRuntime();
+            r.SetBindings(new[] { a });
+            Down(r, "Q", 0); r.Update(0); r.Update(60);
+            Assert.Equal(0, r.PadMask);
+            r.SetBindings(new[] { a.With(turboHz: 0) });                   // turbo off: the binding restarts solid
+            r.Update(70);
+            Assert.Equal(Bit("LB"), r.PadMask);
+        }
+
+        [Fact]
+        public void TurboIsClampedOnLoad()
+        {
+            var list = BindingEntries.Resolve(new[] { new BindingEntry { Input = "Q", TurboHz = 500 }, new BindingEntry { Input = "W", TurboHz = -3 } });
+            Assert.Equal(BindingDef.MaxTurboHz, list[0].TurboHz);
+            Assert.Equal(0, list[1].TurboHz);
+        }
+
+        // ── layers ──────────────────────────────────────────────────────────────
+
+        [Fact]
+        public void AHeldShiftSwitchesTheLayerOnAndReleasingItRevertsToBase()
+        {
+            var r = new BindingRuntime();
+            r.SetBindings(new[]
+            {
+                Def("shift", "4", BindingCondition.Held, 0, outs: Layer(2)),
+                Def("base", "Space", BindingCondition.Held, 0, outs: Pad("FACE_SOUTH")),
+                Def("l2", "Space", BindingCondition.Held, 2, outs: Pad("FACE_EAST")),
+            });
+            Down(r, "Space", 5); r.Update(10);
+            Assert.Equal(Bit("FACE_SOUTH"), r.PadMask);                    // base layer
+            Up(r, "Space", 15); Down(r, "4", 16); r.Update(20);
+            Assert.Equal(2, r.ActiveLayer);
+            Down(r, "Space", 25); r.Update(30);
+            Assert.Equal(Bit("FACE_EAST"), r.PadMask);                      // layer 2 replaces the base binding of Space
+            Up(r, "4", 35); r.Update(40);
+            Assert.Equal(0, r.ActiveLayer);
+            Assert.Equal(Bit("FACE_SOUTH"), r.PadMask);                    // back to the base layer: the held Space is the base binding again
+        }
+
+        [Fact]
+        public void ALayerBindingDoesNothingWhileItsLayerIsOff()
+        {
+            var r = new BindingRuntime();
+            r.SetBindings(new[] { Def("l2", "Space", BindingCondition.Held, 2, outs: Pad("FACE_EAST")) });
+            Down(r, "Space", 5); r.Update(10);
+            Assert.Equal(0, r.PadMask);
+            Assert.Equal(BindingState.OtherLayer, r.Snapshot()[0].State);
+        }
+
+        [Fact]
+        public void TabStyleToggleSwitchesALayerOnAndOff()
+        {
+            var r = new BindingRuntime();
+            r.SetBindings(new[]
+            {
+                Def("tab", "Tab", BindingCondition.Press, 0, toggle: true, outs: Layer(1)),
+                Def("l1", "Q", BindingCondition.Held, 1, outs: Pad("LB")),
+            });
+            Down(r, "Tab", 5); Up(r, "Tab", 25); r.Update(30);
+            Assert.Equal(1, r.ActiveLayer);                                 // stays on after Tab is released
+            Down(r, "Q", 40); r.Update(50);
+            Assert.Equal(Bit("LB"), r.PadMask);
+            Up(r, "Q", 60); Down(r, "Tab", 100); Up(r, "Tab", 120); r.Update(130);
+            Assert.Equal(0, r.ActiveLayer);                                 // the next Tab press reverts to base
+            Down(r, "Q", 140); r.Update(150);
+            Assert.Equal(0, r.PadMask);
+        }
+
+        [Fact]
+        public void TheHighestActiveLayerWinsAndReleasingItFallsBackToTheLowerOne()
+        {
+            var r = new BindingRuntime();
+            r.SetBindings(new[]
+            {
+                Def("tab", "Tab", BindingCondition.Press, 0, toggle: true, outs: Layer(1)),
+                Def("four", "4", BindingCondition.Held, 0, outs: Layer(2)),
+                Def("five", "5", BindingCondition.Held, 0, outs: Layer(2)),
+            });
+            Down(r, "Tab", 1); Up(r, "Tab", 5); r.Update(10);
+            Assert.Equal(1, r.ActiveLayer);
+            Down(r, "4", 20); r.Update(30);
+            Assert.Equal(2, r.ActiveLayer);
+            Down(r, "5", 35); Up(r, "4", 40); r.Update(50);
+            Assert.Equal(2, r.ActiveLayer);                                 // 5 still holds layer 2
+            Up(r, "5", 60); r.Update(70);
+            Assert.Equal(1, r.ActiveLayer);                                 // Tab's latch is still there
+        }
+
+        [Fact]
+        public void AnUnmapBindingSilencesTheAutomaticMappingOnlyOnItsLayer()
+        {
+            var r = new BindingRuntime();
+            r.SetBindings(new[]
+            {
+                Def("shift", "4", BindingCondition.Held, 0, outs: Layer(2)),
+                Def("unmapW", "W", BindingCondition.Held, 2),                // no outputs: W does nothing on layer 2
+            });
+            Assert.False(r.Suppresses("W"));                                 // base layer: the automatic W mapping works
+            Down(r, "4", 5); r.Update(10);
+            Assert.True(r.Suppresses("W"));                                  // layer 2: un-mapped
+            Up(r, "4", 20); r.Update(30);
+            Assert.False(r.Suppresses("W"));
+        }
+
+        [Fact]
+        public void ABaseUnmapSilencesTheInputEverywhere()
+        {
+            var r = new BindingRuntime();
+            r.SetBindings(new[] { Def("unmap", "W", BindingCondition.Held, 0) });
+            Assert.True(r.Suppresses("W"));
+        }
+
+        [Fact]
+        public void ALatchedBindingDoesNotSurviveItsLayerEnding()
+        {
+            var r = new BindingRuntime();
+            r.SetBindings(new[]
+            {
+                Def("shift", "4", BindingCondition.Held, 0, outs: Layer(2)),
+                Def("latch", "F", BindingCondition.Press, 2, toggle: true, outs: Pad("RB")),
+            });
+            Down(r, "4", 1); r.Update(5);
+            Down(r, "F", 10); Up(r, "F", 20); r.Update(30);
+            Assert.Equal(Bit("RB"), r.PadMask);
+            Up(r, "4", 40); r.Update(50);
+            Assert.Equal(0, r.PadMask);                                      // layer gone: released
+            Down(r, "4", 60); r.Update(70);
+            Assert.Equal(0, r.PadMask);                                      // and not latched any more when the layer returns
+        }
+
+        [Fact]
+        public void LayerAndInputKeysSharingANumberAreNotConfused()
+        {
+            // the keyboard key "2" and "Layer 2" are different things
+            var list = BindingEntries.Resolve(new[]
+            {
+                new BindingEntry { Input = "2", Outputs = new List<BindingOutputEntry> { new() { Kind = "Layer", Name = "2" } } }
+            });
+            Assert.Single(list);
+            Assert.Single(list[0].Outputs);
+            Assert.Equal(2, list[0].Outputs[0].LayerNumber);
+        }
+
+        [Fact]
+        public void OnlyBaseLayerBindingsCanSwitchALayer()
+        {
+            var warnings = new List<string>();
+            var list = BindingEntries.Resolve(new[]
+            {
+                new BindingEntry { Input = "Q", Layer = 2, Outputs = new List<BindingOutputEntry> { new() { Kind = "Layer", Name = "1" } } },
+                new BindingEntry { Input = "E", Layer = 9, Outputs = new List<BindingOutputEntry> { new() { Kind = "Layer", Name = "7" } } }
+            }, warnings);
+            Assert.Equal(0, list[0].Layer);
+            Assert.Equal(1, list[0].ActivatesLayer);
+            Assert.Empty(list[1].Outputs);                                   // layer 7 does not exist
+            Assert.NotEmpty(warnings);
+        }
+
+        [Fact]
+        public void DisconnectDropsTheActiveLayer()
+        {
+            var r = new BindingRuntime();
+            r.SetBindings(new[] { Def("shift", "4", BindingCondition.Held, 0, outs: Layer(2)) });
+            Down(r, "4", 1); r.Update(5);
+            Assert.Equal(2, r.ActiveLayer);
+            r.ReleaseAll();
+            Assert.Equal(0, r.ActiveLayer);
+        }
+
+        [Fact]
+        public void TheDescribedControllerSetupWorksAsBindings()
+        {
+            // Tab toggles layer 1, 4 or 5 shifts to layer 2, W/A/S/D are un-mapped on layer 2, Mouse Left on layer 2 pulls the right trigger with turbo
+            var r = new BindingRuntime();
+            r.SetBindings(new[]
+            {
+                Def("tab", "Tab", BindingCondition.Press, 0, toggle: true, outs: Layer(1)),
+                Def("k4", "4", BindingCondition.Held, 0, outs: Layer(2)),
+                Def("k5", "5", BindingCondition.Held, 0, outs: Layer(2)),
+                Def("w", "W", BindingCondition.Held, 2), Def("a", "A", BindingCondition.Held, 2),
+                Def("s", "S", BindingCondition.Held, 2), Def("d", "D", BindingCondition.Held, 2),
+                Def("fire", "Mouse Left", BindingCondition.Held, 2, turbo: 10, outs: Pad("RT")),
+            });
+            Down(r, "5", 1); r.Update(5);
+            Assert.True(r.Suppresses("W") && r.Suppresses("A") && r.Suppresses("S") && r.Suppresses("D"));
+            Down(r, "Mouse Left", 10); r.Update(10);
+            Assert.NotEqual(0, r.PadMask & Bit("RT"));
+            r.Update(70);
+            Assert.Equal(0, r.PadMask & Bit("RT"));                          // turbo off phase
+            Up(r, "5", 80); r.Update(90);
+            Assert.False(r.Suppresses("W"));
+            Assert.Equal(0, r.PadMask);
         }
     }
 }

@@ -29,9 +29,13 @@ namespace GamepadEnhancer
 
     /// <summary>
     /// Runs the binding list. The input threads only enqueue timestamped edges (<see cref="OnEdge"/>); the engine tick calls
-    /// <see cref="Update"/>, which feeds every binding's <see cref="ConditionEvaluator"/>, claims and releases outputs through
-    /// <see cref="OutputOwnership"/>, and publishes a status snapshot the UI reads without any lock. Nothing here sleeps or starts a
-    /// timer: time is whatever the caller passes in, so tests drive it with a fake clock.
+    /// <see cref="Update"/>, which feeds every binding's <see cref="ConditionEvaluator"/>, decides which layer is active, claims and
+    /// releases outputs through <see cref="OutputOwnership"/> (with turbo pulsing), and publishes a status snapshot the UI reads without
+    /// any lock. Nothing here sleeps or starts a timer: time is whatever the caller passes in, so tests drive it with a fake clock.
+    ///
+    /// Layers: every binding belongs to layer 0 (base) or 1..3. A running base-layer binding with a Layer output makes that layer
+    /// active (the highest one wins). Base bindings stay eligible unless an active-layer binding takes their input; a layer binding is
+    /// eligible only while its layer is the active one, and when it stops being eligible it is reset and releases everything it held.
     /// </summary>
     internal sealed class BindingRuntime
     {
@@ -40,6 +44,9 @@ namespace GamepadEnhancer
             public BindingDef Def;
             public readonly ConditionEvaluator Eval = new();
             public bool Running;
+            /// <summary>The outputs are currently down (differs from Running only during the off phase of turbo).</summary>
+            public bool OutputsHeld;
+            public long StartedMs;
         }
 
         private readonly object gate = new();
@@ -49,10 +56,12 @@ namespace GamepadEnhancer
         private readonly OutputOwnership ownership = new();
         private readonly List<PendingInjection> injections = new();
         private readonly Dictionary<string, long> injectedUntilTicks = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<object, BindingStatus> statuses = new();
         private volatile BindingStatus[] snapshot = Array.Empty<BindingStatus>();
         private volatile HashSet<string> suppressed = new(StringComparer.OrdinalIgnoreCase);
         private int padMask;
         private byte leftTrigger, rightTrigger;
+        private int activeLayer;
 
         /// <summary>How long after a release an injected key still counts as ours (its echo from the hook arrives a little later).</summary>
         private const long InjectedGraceTicksMs = 300;
@@ -64,9 +73,15 @@ namespace GamepadEnhancer
         /// <summary>The level of the pad triggers held by bindings, 0..255 (0 = none).</summary>
         public byte TriggerLevel(bool left) { lock (gate) return left ? leftTrigger : rightTrigger; }
 
+        /// <summary>The layer that is active now: 0 (base) or the highest layer a running base-layer binding switches on.</summary>
+        public int ActiveLayer { get { lock (gate) return activeLayer; } }
+
         public BindingStatus[] Snapshot() => snapshot;
 
-        /// <summary>True when an enabled, non-analog binding uses this input: the automatic mapping of that input must stay silent.</summary>
+        /// <summary>
+        /// True when an enabled binding on the base layer or on the active layer uses this input: the automatic mapping of that input must
+        /// stay silent. A layer binding with no outputs is how an input is un-mapped on that layer.
+        /// </summary>
         public bool Suppresses(string input) => input != null && suppressed.Contains(input);
 
         /// <summary>True for a key / mouse button a binding is (or has just been) pressing itself, so the engine does not treat it as user input.</summary>
@@ -95,17 +110,17 @@ namespace GamepadEnhancer
                 foreach (BindingDef d in defs ?? Array.Empty<BindingDef>())
                 {
                     if (d == null || string.IsNullOrEmpty(d.Id) || !seen.Add(d.Id)) continue;
-                    Entry old = entries.FirstOrDefault(e => e.Def.Id == d.Id);
+                    Entry old = entries.FirstOrDefault(x => x.Def.Id == d.Id);
                     if (old != null && old.Def.SameBehaviour(d)) { old.Def = d; next.Add(old); continue; }
                     if (old != null) StopLocked(old);
                     var fresh = new Entry { Def = d };
                     fresh.Eval.SeedLevel(levels.TryGetValue(d.Input ?? "", out bool lv) && lv);
                     next.Add(fresh);
                 }
-                foreach (Entry gone in entries.Where(e => !seen.Contains(e.Def.Id)).ToList()) StopLocked(gone);
+                foreach (Entry gone in entries.Where(x => !seen.Contains(x.Def.Id)).ToList()) StopLocked(gone);
                 entries.Clear();
                 entries.AddRange(next);
-                suppressed = new HashSet<string>(entries.Where(e => e.Def.Enabled && !e.Def.IsAnalog && e.Def.Input != null).Select(e => e.Def.Input), StringComparer.OrdinalIgnoreCase);
+                RecomputeSuppressedLocked();
                 RecomputeLocked();
                 PublishLocked();
             }
@@ -124,7 +139,7 @@ namespace GamepadEnhancer
             }
         }
 
-        /// <summary>One engine tick: applies the queued edges and the clock to every binding and updates outputs and the snapshot.</summary>
+        /// <summary>One engine tick: applies the queued edges and the clock to every binding and updates layers, outputs and the snapshot.</summary>
         public void Update(long nowMs)
         {
             lock (gate)
@@ -141,22 +156,63 @@ namespace GamepadEnhancer
                 }
                 queue.Clear();
 
-                foreach (Entry e in entries)
+                // pass A: every binding's state machine sees every edge, so none of them ever misses a press because of a layer change
+                var raw = new EvaluationResult[entries.Count];
+                for (int i = 0; i < entries.Count; i++)
                 {
+                    Entry e = entries[i];
                     List<InputEdge> edges = null;
                     if (e.Def.Input != null) perInput.TryGetValue(e.Def.Input, out edges);
-                    EvaluationResult r = e.Eval.Update(e.Def, nowMs, edges);
-                    if (r.Running && !e.Running) StartLocked(e);
-                    else if (!r.Running && e.Running) StopOutputsLocked(e);
-                    e.Running = r.Running;
-                    statuses[e] = new BindingStatus(e.Def.Id, r.State, r.Running, r.Latched, e.Eval.Down);
+                    raw[i] = e.Eval.Update(e.Def, nowMs, edges);
+                }
+
+                // the active layer comes from the base-layer bindings that are running (their raw state, so shadowing cannot make it flap)
+                int active = 0;
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    BindingDef d = entries[i].Def;
+                    if (d.Enabled && d.Layer == 0 && raw[i].Running) active = Math.Max(active, d.ActivatesLayer);
+                }
+                bool layerChanged = active != activeLayer;
+                activeLayer = active;
+                if (layerChanged) RecomputeSuppressedLocked();
+
+                HashSet<string> taken = null;   // inputs the active layer binds, which hide the base layer's bindings of them
+                if (active > 0)
+                    taken = new HashSet<string>(entries.Where(x => x.Def.Enabled && !x.Def.IsAnalog && x.Def.Layer == active && x.Def.Input != null)
+                        .Select(x => x.Def.Input), StringComparer.OrdinalIgnoreCase);
+
+                // pass B: apply
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    Entry e = entries[i];
+                    BindingDef d = e.Def;
+                    EvaluationResult r = raw[i];
+                    bool eligible = d.Layer == 0
+                        ? taken == null || d.IsAnalog || d.Input == null || !taken.Contains(d.Input)
+                        : d.Layer == active;
+                    BindingState state = r.State;
+                    bool running = r.Running, latched = r.Latched;
+
+                    if (!eligible && d.Enabled)
+                    {
+                        // not on the active layer: it does nothing, holds nothing, and a latch does not survive leaving its layer
+                        if (e.Running) ReleaseOutputsLocked(e);
+                        e.Eval.Reset(keepLevel: true);
+                        running = false; latched = false;
+                        state = BindingState.OtherLayer;
+                    }
+                    else if (running && !e.Running) { e.StartedMs = nowMs; ClaimOutputsLocked(e); }
+                    else if (!running && e.Running) ReleaseOutputsLocked(e);
+                    else if (running && d.TurboHz > 0) ApplyTurboLocked(e, nowMs);
+
+                    e.Running = running;
+                    statuses[e] = new BindingStatus(d.Id, state, running, latched, e.Eval.Down);
                 }
                 RecomputeLocked();
                 PublishLocked();
             }
         }
-
-        private readonly Dictionary<object, BindingStatus> statuses = new();
 
         private void PublishLocked()
         {
@@ -170,25 +226,44 @@ namespace GamepadEnhancer
             snapshot = list;
         }
 
+        private void RecomputeSuppressedLocked()
+        {
+            suppressed = new HashSet<string>(entries
+                .Where(x => x.Def.Enabled && !x.Def.IsAnalog && x.Def.Input != null && (x.Def.Layer == 0 || x.Def.Layer == activeLayer))
+                .Select(x => x.Def.Input), StringComparer.OrdinalIgnoreCase);
+        }
+
         // ── Outputs ─────────────────────────────────────────────────────────────
 
-        private void StartLocked(Entry e)
+        private void ClaimOutputsLocked(Entry e)
         {
+            e.OutputsHeld = true;
             if (e.Def.IsAnalog) return;   // analog bindings report "running"; the analog path itself (mouse look) does the work
             foreach (BindingOutput o in e.Def.Outputs)
             {
+                if (o.IsLayer) continue;   // a layer is switched on by the binding running, it is not an output to hold
                 if (ownership.Claim(e.Def.Id, o.Key, o.IsTrigger ? o.Magnitude : 100)) OutputChangedLocked(o.Kind, o.Name, o.Key);
             }
         }
 
-        private void StopOutputsLocked(Entry e)
+        private void ReleaseOutputsLocked(Entry e)
         {
+            e.OutputsHeld = false;
             foreach (string key in ownership.ReleaseAll(e.Def.Id)) OutputChangedKeyLocked(key);
+        }
+
+        /// <summary>Rapid fire: while the binding runs its outputs are down for the first half of every cycle and up for the second.</summary>
+        private void ApplyTurboLocked(Entry e, long nowMs)
+        {
+            double cycleMs = 1000.0 / Math.Clamp(e.Def.TurboHz, 1, BindingDef.MaxTurboHz);
+            bool on = ((nowMs - e.StartedMs) % cycleMs) < cycleMs / 2.0;
+            if (on && !e.OutputsHeld) ClaimOutputsLocked(e);
+            else if (!on && e.OutputsHeld) ReleaseOutputsLocked(e);
         }
 
         private void StopLocked(Entry e)
         {
-            StopOutputsLocked(e);
+            ReleaseOutputsLocked(e);
             e.Eval.Reset();
             e.Running = false;
             statuses.Remove(e);
@@ -205,7 +280,7 @@ namespace GamepadEnhancer
         /// <summary>A key or mouse button went down or up: queue the injection and remember the name as ours.</summary>
         private void OutputChangedLocked(BindingOutputKind kind, string name, string key)
         {
-            if (kind == BindingOutputKind.PadButton) return;   // pad buttons are read by the engine through PadMask / TriggerLevel
+            if (kind == BindingOutputKind.PadButton || kind == BindingOutputKind.Layer) return;   // pad buttons are read by the engine through PadMask / TriggerLevel
             bool down = ownership.IsHeld(key);
             injections.Add(new PendingInjection(kind, name, down));
             injectedUntilTicks[name] = down ? long.MaxValue : Environment.TickCount64 + InjectedGraceTicksMs;
@@ -266,8 +341,8 @@ namespace GamepadEnhancer
         // ── Stop everything ─────────────────────────────────────────────────────
 
         /// <summary>
-        /// Disconnect, device loss, shutdown: every output is released, every binding is reset (no latch survives), queued edges and
-        /// physical levels are forgotten. The binding list itself stays. Call <see cref="Flush"/> afterwards to send the releases.
+        /// Disconnect, device loss, shutdown: every output is released, every binding is reset (no latch and no layer survives), queued
+        /// edges and physical levels are forgotten. The binding list itself stays. Call <see cref="Flush"/> afterwards to send the releases.
         /// </summary>
         public void ReleaseAll()
         {
@@ -276,8 +351,10 @@ namespace GamepadEnhancer
                 queue.Clear();
                 levels.Clear();
                 foreach (string key in ownership.ReleaseEverything()) OutputChangedKeyAfterClearLocked(key);
-                foreach (Entry e in entries) { e.Eval.Reset(); e.Running = false; }
+                foreach (Entry e in entries) { e.Eval.Reset(); e.Running = false; e.OutputsHeld = false; }
                 statuses.Clear();
+                activeLayer = 0;
+                RecomputeSuppressedLocked();
                 RecomputeLocked();
                 PublishLocked();
             }
@@ -287,7 +364,7 @@ namespace GamepadEnhancer
         private void OutputChangedKeyAfterClearLocked(string key)
         {
             int colon = key.IndexOf(':');
-            if (colon < 0 || !Enum.TryParse(key.Substring(0, colon), out BindingOutputKind kind) || kind == BindingOutputKind.PadButton) return;
+            if (colon < 0 || !Enum.TryParse(key.Substring(0, colon), out BindingOutputKind kind) || kind == BindingOutputKind.PadButton || kind == BindingOutputKind.Layer) return;
             string name = key.Substring(colon + 1);
             injections.Add(new PendingInjection(kind, name, false));
             injectedUntilTicks[name] = Environment.TickCount64 + InjectedGraceTicksMs;
