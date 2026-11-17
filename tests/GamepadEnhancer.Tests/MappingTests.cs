@@ -135,9 +135,12 @@ namespace GamepadEnhancer.Tests
         }
 
         [Fact]
-        public void DefaultAndApexAreDifferentConfigs()
+        public void DefaultAndApexAreSeparateConfigsWithTheSameKeys()
         {
-            Assert.False(GameProfiles.Equivalent(DefaultProfile.Create(), DefaultProfile.CreateApex()));
+            // Apex ships the same PC keys as the Default (the owner's layout); they stay separate configs with their own names and saved changes
+            Assert.True(GameProfiles.Equivalent(DefaultProfile.Create(), DefaultProfile.CreateApex()));
+            Assert.Equal("apex", DefaultProfile.CreateApex().Game);
+            Assert.Null(DefaultProfile.Create().Game);
             Assert.Equal("Apex Legends", GameProfiles.BuiltIn(GameCatalog.Get("apex")).Name);
             Assert.Equal("Default (PS4)", GameProfiles.BuiltIn(GameCatalog.Generic).Name);   // the profile carries the display name
         }
