@@ -74,7 +74,7 @@ namespace GamepadEnhancer
             dashTimer.Tick += (_, _) => UpdateDash();
             versionText.Text = "v" + (typeof(MainWindow).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
                 .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "").Split('+')[0];
-            if (versionText.Text.EndsWith(".0", StringComparison.Ordinal) && versionText.Text.Count(c => c == '.') == 2) versionText.Text = versionText.Text[..^2];   // v2.3.0 is shown as v2.3 (the release tag)
+            versionText.Text = System.Text.RegularExpressions.Regex.Replace(versionText.Text, @"^v(\d+\.\d+)\.0(-.*)?$", "v$1$2");   // v2.4.0 shows as v2.4, v2.5.0-mix as v2.5-mix (the release tag)
             dataPathLabel.Text = $"Profiles: {profilesDirectory}{Environment.NewLine}Settings: {AppSettings.DefaultPath}";
 
             shellTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -342,13 +342,13 @@ namespace GamepadEnhancer
             if (sidebar == null) return;
             double content = windowWidth - sidebar.Width;
             // Header items appear only when they fit (measured by WindowedSizesKeepTheHeaderAndTheDiagramsReadable): the name needs
-            // about 880 px, the output / capture / network tags 1040 px, the profile pill 1240 px. Narrower windows use the Profile
+            // about 880 px, the version 960 px, the output / capture / network tags 1060 px, the profile pill 1260 px. Narrower windows use the Profile
             // menu button on the Games page.
             brandText.IsVisible = windowWidth >= 880;
-            versionText.IsVisible = windowWidth >= 900;
-            headerConfigPill.IsVisible = windowWidth >= 1240;
-            tagCapture.IsVisible = windowWidth >= 1040;
-            tagNetwork.IsVisible = windowWidth >= 1040;
+            versionText.IsVisible = windowWidth >= 960;
+            headerConfigPill.IsVisible = windowWidth >= 1260;
+            tagCapture.IsVisible = windowWidth >= 1060;
+            tagNetwork.IsVisible = windowWidth >= 1060;
             bool wide = content >= 980;
             wideLayout = wide;
             ArrangeDashboard(content);
