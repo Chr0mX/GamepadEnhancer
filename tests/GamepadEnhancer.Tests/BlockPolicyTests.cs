@@ -116,11 +116,11 @@ namespace GamepadEnhancer.Tests
                 MouseLookEnabled = true,
                 Bindings = new Dictionary<string, BindingSetting>(System.StringComparer.OrdinalIgnoreCase)
                 {
-                    ["A / Cross"] = new BindingSetting { Key = "Space" },
-                    ["RT / R2"] = new BindingSetting { Key = "Mouse Left" },
-                    ["LT / L2"] = new BindingSetting { Key = "Mouse Right" },
-                    ["X / Square"] = new BindingSetting { Key = "Shift" },
-                    ["B / Circle"] = new BindingSetting { Key = "None" }
+                    ["FACE_SOUTH"] = new BindingSetting { Key = "Space" },
+                    ["RT"] = new BindingSetting { Key = "Mouse Left" },
+                    ["LT"] = new BindingSetting { Key = "Mouse Right" },
+                    ["FACE_WEST"] = new BindingSetting { Key = "Shift" },
+                    ["FACE_EAST"] = new BindingSetting { Key = "None" }
                 }
             };
             BlockSettings s = BlockSettings.From(engine, true, 0x91);

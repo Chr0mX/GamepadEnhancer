@@ -24,17 +24,22 @@ namespace GamepadEnhancer
     internal static class PaddleSlots
     {
         public const int Count = 4;
-        public static readonly string[] Names = { "LeftUpper", "LeftLower", "RightUpper", "RightLower" };
-        public static readonly string[] Titles = { "Left Upper Paddle", "Left Lower Paddle", "Right Upper Paddle", "Right Lower Paddle" };
-        public const string IdPrefix = "Paddle:";
+        /// <summary>The canonical ids of the four slots (PADDLE_LEFT_UPPER, ...); these are also the diagram slot ids and the profile keys.</summary>
+        public static readonly string[] Names = Inputs.Paddles;
+        /// <summary>Neutral titles; a controller layout may label its paddles differently (see <see cref="ControllerLayoutDef.Label"/>).</summary>
+        public static readonly string[] Titles = { Inputs.NeutralLabel(Inputs.PaddleLeftUpper), Inputs.NeutralLabel(Inputs.PaddleLeftLower),
+                                                   Inputs.NeutralLabel(Inputs.PaddleRightUpper), Inputs.NeutralLabel(Inputs.PaddleRightLower) };
 
-        public static string Id(int slot) => IdPrefix + Names[slot];
+        public static string Id(int slot) => Names[slot];
 
+        /// <summary>The slot for a canonical id (case-insensitive); older spellings ("LeftUpper", "Paddle:LeftUpper") are accepted too.</summary>
         public static bool TryParseId(string id, out int slot)
         {
             slot = -1;
-            if (id == null || !id.StartsWith(IdPrefix, StringComparison.Ordinal)) return false;
-            slot = Array.IndexOf(Names, id.Substring(IdPrefix.Length));
+            if (string.IsNullOrWhiteSpace(id)) return false;
+            if (id.StartsWith("Paddle:", StringComparison.Ordinal)) id = id.Substring(7);
+            string canonical = LegacyIds.ToCanonical(id) ?? id;
+            slot = Array.FindIndex(Names, n => string.Equals(n, canonical, StringComparison.OrdinalIgnoreCase));
             return slot >= 0;
         }
 
@@ -83,6 +88,7 @@ namespace GamepadEnhancer
         public static string Canonical(PaddleTargetKind kind, string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return null;
+            if (kind == PaddleTargetKind.PadButton) input = LegacyIds.ToCanonical(input) ?? input;   // older profiles stored "A / Cross" style ids
             string[] list = kind switch
             {
                 PaddleTargetKind.PadButton => PadButtonTargets,
@@ -107,7 +113,7 @@ namespace GamepadEnhancer
             {
                 PaddleEntry e = null;
                 foreach (var pair in profile.Paddles)
-                    if (string.Equals(pair.Key, PaddleSlots.Names[i], StringComparison.OrdinalIgnoreCase)) { e = pair.Value; break; }
+                    if (TryGetSlot(pair.Key, out int keySlot) && keySlot == i) { e = pair.Value; break; }
                 if (e == null) continue;
 
                 PaddleTargetKind kind = ParseKind(e.Kind);
@@ -130,6 +136,8 @@ namespace GamepadEnhancer
                     }
             return result;
         }
+
+        private static bool TryGetSlot(string key, out int slot) => PaddleSlots.TryParseId(key, out slot);
 
         private static string PaddleKindText(PaddleTargetKind k) => k switch
         {

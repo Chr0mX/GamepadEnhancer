@@ -18,11 +18,11 @@ namespace GamepadEnhancer.Tests
         public void SlotsHaveStableNamesAndIds()
         {
             Assert.Equal(4, PaddleSlots.Count);
-            Assert.Equal(new[] { "LeftUpper", "LeftLower", "RightUpper", "RightLower" }, PaddleSlots.Names);
-            Assert.True(PaddleSlots.TryParseId("Paddle:RightLower", out int slot));
+            Assert.Equal(new[] { "PADDLE_LEFT_UPPER", "PADDLE_LEFT_LOWER", "PADDLE_RIGHT_UPPER", "PADDLE_RIGHT_LOWER" }, PaddleSlots.Names);
+            Assert.True(PaddleSlots.TryParseId("RightLower", out int slot));
             Assert.Equal(3, slot);
-            Assert.False(PaddleSlots.TryParseId("Paddle:Nope", out _));
-            Assert.False(PaddleSlots.TryParseId("A / Cross", out _));
+            Assert.False(PaddleSlots.TryParseId("Nope", out _));
+            Assert.False(PaddleSlots.TryParseId("FACE_SOUTH", out _));
         }
 
         [Fact]

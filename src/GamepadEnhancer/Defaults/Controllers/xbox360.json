@@ -1,0 +1,30 @@
+{
+  "Id": "xbox360",
+  "Name": "Xbox 360",
+  "Title": "Xbox 360 Controller",
+  "Aliases": [ "Xbox 360", "Xbox", "X360" ],
+  "Device": "Xbox360",
+  "FaceStyle": "letters",
+  "Labels": {
+    "FACE_SOUTH": "A",
+    "FACE_EAST": "B",
+    "FACE_WEST": "X",
+    "FACE_NORTH": "Y",
+    "LB": "LB",
+    "RB": "RB",
+    "LT": "LT",
+    "RT": "RT",
+    "SELECT": "View",
+    "START": "Menu",
+    "LS_CLICK": "L3",
+    "RS_CLICK": "R3",
+    "HOME": "Guide"
+  },
+  "Unsupported": [ "TOUCHPAD" ],
+  "FaceColors": {
+    "FACE_SOUTH": "#4CD787",
+    "FACE_EAST": "#FF5C5C",
+    "FACE_WEST": "#5C8CFF",
+    "FACE_NORTH": "#FFD24C"
+  }
+}

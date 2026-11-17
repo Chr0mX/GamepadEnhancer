@@ -18,41 +18,34 @@ namespace GamepadEnhancer
     /// </summary>
     internal sealed class ControllerEngine : IDisposable, IInputSink
     {
-        public const string ActionACross = "A / Cross";
-        public const string ActionBCircle = "B / Circle";
-        public const string ActionXSquare = "X / Square";
-        public const string ActionYTriangle = "Y / Triangle";
-        public const string ActionLbL1 = "LB / L1";
-        public const string ActionRbR1 = "RB / R1";
-        public const string ActionLtL2 = "LT / L2";
-        public const string ActionRtR2 = "RT / R2";
-        public const string ActionBackShare = "Back / Share";
-        public const string ActionStartOptions = "Start / Options";
-        public const string ActionLsL3 = "LS / L3";
-        public const string ActionRsR3 = "RS / R3";
-        public const string ActionDPadUp = "DPad Up";
-        public const string ActionDPadDown = "DPad Down";
-        public const string ActionDPadLeft = "DPad Left";
-        public const string ActionDPadRight = "DPad Right";
+        public const string ActionACross = Inputs.FaceSouth;
+        public const string ActionBCircle = Inputs.FaceEast;
+        public const string ActionXSquare = Inputs.FaceWest;
+        public const string ActionYTriangle = Inputs.FaceNorth;
+        public const string ActionLbL1 = Inputs.Lb;
+        public const string ActionRbR1 = Inputs.Rb;
+        public const string ActionLtL2 = Inputs.Lt;
+        public const string ActionRtR2 = Inputs.Rt;
+        public const string ActionBackShare = Inputs.Select;
+        public const string ActionStartOptions = Inputs.Start;
+        public const string ActionLsL3 = Inputs.LsClick;
+        public const string ActionRsR3 = Inputs.RsClick;
+        public const string ActionDPadUp = Inputs.DpadUp;
+        public const string ActionDPadDown = Inputs.DpadDown;
+        public const string ActionDPadLeft = Inputs.DpadLeft;
+        public const string ActionDPadRight = Inputs.DpadRight;
         /// <summary>Xbox Guide / PlayStation PS button. Appended last so every existing action keeps its bit index.</summary>
-        public const string ActionGuidePs = "Guide / PS";
+        public const string ActionGuidePs = Inputs.Home;
         /// <summary>DualShock 4 touchpad click (no Xbox 360 equivalent; ignored there).</summary>
-        public const string ActionTouchpad = "Touchpad Click";
+        public const string ActionTouchpad = Inputs.Touchpad;
         /// <summary>Keyboard-driven left stick directions. They are not buttons: opposite keys cancel, diagonals are normalized.</summary>
-        public const string ActionLeftStickUp = "Left Stick Up";
-        public const string ActionLeftStickDown = "Left Stick Down";
-        public const string ActionLeftStickLeft = "Left Stick Left";
-        public const string ActionLeftStickRight = "Left Stick Right";
+        public const string ActionLeftStickUp = Inputs.LsUp;
+        public const string ActionLeftStickDown = Inputs.LsDown;
+        public const string ActionLeftStickLeft = Inputs.LsLeft;
+        public const string ActionLeftStickRight = Inputs.LsRight;
 
-        public static readonly string[] BindingActions =
-        {
-            ActionACross, ActionBCircle, ActionXSquare, ActionYTriangle,
-            ActionLbL1, ActionRbR1, ActionLtL2, ActionRtR2,
-            ActionBackShare, ActionStartOptions, ActionLsL3, ActionRsR3,
-            ActionDPadUp, ActionDPadDown, ActionDPadLeft, ActionDPadRight,
-            ActionGuidePs, ActionTouchpad,
-            ActionLeftStickUp, ActionLeftStickDown, ActionLeftStickLeft, ActionLeftStickRight
-        };
+        /// <summary>The engine's buttons in bit order: exactly the canonical physical inputs (see <see cref="Inputs"/>).</summary>
+        public static readonly string[] BindingActions = Inputs.Buttons;
 
         private const double NormalPeriodMs = 10.0;
         /// <summary>An unchanged report is re-sent at least this often so the virtual pad never looks idle/stale.</summary>
@@ -91,7 +84,7 @@ namespace GamepadEnhancer
         public RemoteControlState Remote { get; } = new();
 
         public bool IsConnected => running;
-        public string ControllerName => useXbox ? "Xbox 360" : "PS4";
+        public string ControllerName => ControllerLayouts.ForDevice(Family).Name;
         /// <summary>True while the pad is being sent to another PC instead of a local ViGEm pad.</summary>
         public bool IsRemote { get; private set; }
         public PadFamily Family => useXbox ? PadFamily.Xbox360 : PadFamily.DualShock4;

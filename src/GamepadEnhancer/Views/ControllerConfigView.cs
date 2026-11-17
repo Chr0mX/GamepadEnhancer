@@ -249,7 +249,7 @@ namespace GamepadEnhancer
 
         private void DrawHeader(DrawingContext c)
         {
-            DrawText(c, family == PadFamily.Xbox360 ? "XBOX 360 CONTROLLER" : "DUALSHOCK 4 CONTROLLER", 13, TextBright, new Point(440, 30), true, true);
+            DrawText(c, ControllerLayouts.ForDevice(family).Title.ToUpperInvariant(), 13, TextBright, new Point(440, 30), true, true);
             DrawText(c, "Select a control to see and change what it does", 10, TextDim, new Point(440, 50), true, false);
         }
 
@@ -382,7 +382,7 @@ namespace GamepadEnhancer
             c.DrawEllipse(WellFill, PenFor(EdgeBrush(selected, pressed, bound), selected ? 2.6 : 2), p, r, r);
             c.DrawEllipse(pressed ? Accent : CapFill, PenFor(PartEdge, 1.4), p, r - 9, r - 9);
             c.DrawEllipse(null, PenFor(RidgeBrush, 1), p, r - 16, r - 16);
-            DrawText(c, s.Id == ControllerEngine.ActionLsL3 ? "L3" : "R3", 8, pressed ? BackdropTop : TextDim, new Point(s.MX, s.MY + r - 14), true, true);
+            DrawText(c, ControllerLayouts.ForDevice(family).Label(s.Id), 8, pressed ? BackdropTop : TextDim, new Point(s.MX, s.MY + r - 14), true, true);
         }
 
         private void DrawMouseMarker(DrawingContext c, LayoutSlot s, bool selected, bool bound)
@@ -394,32 +394,43 @@ namespace GamepadEnhancer
             c.DrawLine(PenFor(ink, 1.2, true), new Point(p.X, p.Y - 7), new Point(p.X, p.Y - 1.5));
         }
 
+        private readonly Dictionary<string, IBrush> colourCache = new(StringComparer.OrdinalIgnoreCase);
+
+        private IBrush LayoutColour(string hex, IBrush fallback)
+        {
+            if (string.IsNullOrEmpty(hex)) return fallback;
+            if (!colourCache.TryGetValue(hex, out IBrush brush))
+            {
+                try { brush = B(hex); } catch { brush = fallback; }
+                colourCache[hex] = brush;
+            }
+            return brush;
+        }
+
+        /// <summary>The four face buttons. Their colours, and whether they are drawn as symbols or lettered, come from the controller layout.</summary>
         private void DrawFace(DrawingContext c, LayoutSlot s, bool selected, bool pressed)
         {
-            bool xbox = family == PadFamily.Xbox360;
-            IBrush colour = s.Id == ControllerEngine.ActionACross ? (xbox ? XboxA : PsCross)
-                : s.Id == ControllerEngine.ActionBCircle ? (xbox ? XboxB : PsCircle)
-                : s.Id == ControllerEngine.ActionXSquare ? (xbox ? XboxX : PsSquare)
-                : (xbox ? XboxY : PsTriangle);
+            ControllerLayoutDef layout = ControllerLayouts.ForDevice(family);
+            layout.FaceColors.TryGetValue(s.Id, out string hex);
+            IBrush colour = LayoutColour(hex, TextBright);
             Point p = new(s.MX, s.MY);
             double r = s.MW / 2;
             c.DrawEllipse(pressed ? colour : PadFill, PenFor(selected ? WhiteBrush : colour, selected ? 2.6 : 1.8), p, r, r);
             IBrush ink = pressed ? BackdropTop : colour;
 
-            if (xbox)
+            if (!string.Equals(layout.FaceStyle, "symbols", StringComparison.OrdinalIgnoreCase))
             {
-                string letter = s.Id == ControllerEngine.ActionACross ? "A" : s.Id == ControllerEngine.ActionBCircle ? "B" : s.Id == ControllerEngine.ActionXSquare ? "X" : "Y";
-                DrawText(c, letter, 13, ink, p, true, true);
+                DrawText(c, layout.Label(s.Id), 13, ink, p, true, true);
                 return;
             }
             Pen pen = PenFor(ink, 2.2, true);
-            if (s.Id == ControllerEngine.ActionACross)
+            if (s.Id == Inputs.FaceSouth)
             {
                 c.DrawLine(pen, new Point(p.X - 5, p.Y - 5), new Point(p.X + 5, p.Y + 5));
                 c.DrawLine(pen, new Point(p.X + 5, p.Y - 5), new Point(p.X - 5, p.Y + 5));
             }
-            else if (s.Id == ControllerEngine.ActionBCircle) c.DrawEllipse(null, pen, p, 5.6, 5.6);
-            else if (s.Id == ControllerEngine.ActionXSquare) c.DrawRectangle(null, pen, new Rect(p.X - 5.3, p.Y - 5.3, 10.6, 10.6), 1.5, 1.5);
+            else if (s.Id == Inputs.FaceEast) c.DrawEllipse(null, pen, p, 5.6, 5.6);
+            else if (s.Id == Inputs.FaceWest) c.DrawRectangle(null, pen, new Rect(p.X - 5.3, p.Y - 5.3, 10.6, 10.6), 1.5, 1.5);
             else using (c.PushTransform(Matrix.CreateTranslation(p.X, p.Y))) c.DrawGeometry(null, pen, TriangleGlyph);
         }
 
@@ -460,15 +471,15 @@ namespace GamepadEnhancer
 
         private string Glyph(LayoutSlot s)
         {
-            if (s.Id == ControllerEngine.ActionLtL2) return family == PadFamily.Xbox360 ? "LT" : "L2";
-            if (s.Id == ControllerEngine.ActionRtR2) return family == PadFamily.Xbox360 ? "RT" : "R2";
-            if (s.Id == ControllerEngine.ActionLbL1) return family == PadFamily.Xbox360 ? "LB" : "L1";
-            if (s.Id == ControllerEngine.ActionRbR1) return family == PadFamily.Xbox360 ? "RB" : "R1";
-            if (s.Id == ControllerEngine.ActionDPadUp || s.Id == ControllerEngine.ActionLeftStickUp) return "↑";
-            if (s.Id == ControllerEngine.ActionDPadDown || s.Id == ControllerEngine.ActionLeftStickDown) return "↓";
-            if (s.Id == ControllerEngine.ActionDPadLeft || s.Id == ControllerEngine.ActionLeftStickLeft) return "←";
-            if (s.Id == ControllerEngine.ActionDPadRight || s.Id == ControllerEngine.ActionLeftStickRight) return "→";
-            if (s.Id == ControllerEngine.ActionGuidePs) return family == PadFamily.Xbox360 ? "" : "PS";
+            if (s.Id == Inputs.DpadUp || s.Id == Inputs.LsUp) return "↑";
+            if (s.Id == Inputs.DpadDown || s.Id == Inputs.LsDown) return "↓";
+            if (s.Id == Inputs.DpadLeft || s.Id == Inputs.LsLeft) return "←";
+            if (s.Id == Inputs.DpadRight || s.Id == Inputs.LsRight) return "→";
+            if (s.Id == Inputs.Lb || s.Id == Inputs.Rb || s.Id == Inputs.Lt || s.Id == Inputs.Rt || s.Id == Inputs.Home)
+            {
+                string label = ControllerLayouts.ForDevice(family).Label(s.Id);
+                return label.Length <= 3 ? label : "";   // a long label does not fit inside the marker; the chip carries it
+            }
             return "";
         }
 

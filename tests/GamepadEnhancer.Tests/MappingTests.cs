@@ -12,28 +12,28 @@ namespace GamepadEnhancer.Tests
     {
         private static readonly Dictionary<string, string> Expected = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["A / Cross"] = "Space",
-            ["B / Circle"] = "Ctrl",
-            ["X / Square"] = "R",
-            ["Y / Triangle"] = "E",
-            ["LB / L1"] = "Q",
-            ["RB / R1"] = "Mouse X1",
-            ["LT / L2"] = "Mouse Right",
-            ["RT / R2"] = "Mouse Left",
-            ["LS / L3"] = "Shift",
-            ["RS / R3"] = "Mouse Middle",
-            ["DPad Up"] = "4",
-            ["DPad Down"] = "F1",
-            ["DPad Left"] = "B",
-            ["DPad Right"] = "G",
-            ["Start / Options"] = "Escape",
-            ["Back / Share"] = "Tab",
-            ["Guide / PS"] = "Home",
-            ["Touchpad Click"] = "None",
-            ["Left Stick Up"] = "W",
-            ["Left Stick Down"] = "S",
-            ["Left Stick Left"] = "A",
-            ["Left Stick Right"] = "D"
+            ["FACE_SOUTH"] = "Space",
+            ["FACE_EAST"] = "Ctrl",
+            ["FACE_WEST"] = "R",
+            ["FACE_NORTH"] = "E",
+            ["LB"] = "Q",
+            ["RB"] = "Mouse X1",
+            ["LT"] = "Mouse Right",
+            ["RT"] = "Mouse Left",
+            ["LS_CLICK"] = "Shift",
+            ["RS_CLICK"] = "Mouse Middle",
+            ["DPAD_UP"] = "4",
+            ["DPAD_DOWN"] = "F1",
+            ["DPAD_LEFT"] = "B",
+            ["DPAD_RIGHT"] = "G",
+            ["START"] = "Escape",
+            ["SELECT"] = "Tab",
+            ["HOME"] = "Home",
+            ["TOUCHPAD"] = "None",
+            ["LS_UP"] = "W",
+            ["LS_DOWN"] = "S",
+            ["LS_LEFT"] = "A",
+            ["LS_RIGHT"] = "D"
         };
 
         [Fact]
@@ -47,7 +47,7 @@ namespace GamepadEnhancer.Tests
         {
             InputProfile d = DefaultProfile.CreateApex();
             Assert.Equal("Apex Legends", d.Name);
-            Assert.Equal("PS4", d.ControllerType);
+            Assert.Equal("dualshock4", d.ControllerType);
             Assert.True(d.MouseLookEnabled);     // right stick = mouse movement
             var warnings = new List<string>();
             Dictionary<string, MappingEntry> map = ProfileMappings.Resolve(d, warnings);
@@ -63,37 +63,37 @@ namespace GamepadEnhancer.Tests
         [Fact]
         public void ApexKindsMatchTheInputs()
         {
-            InputProfile d = DefaultProfile.CreateApex();
-            Assert.Equal("MouseButton", d.Mappings["RB / R1"].Kind);
-            Assert.Equal("MouseButton", d.Mappings["RS / R3"].Kind);
-            Assert.Equal("Keyboard", d.Mappings["A / Cross"].Kind);
-            Assert.Equal("Keyboard", d.Mappings["Left Stick Up"].Kind);
+            var map = ProfileMappings.Resolve(DefaultProfile.CreateApex(), null);
+            Assert.Equal("MouseButton", map["RB"].Kind);
+            Assert.Equal("MouseButton", map["RS_CLICK"].Kind);
+            Assert.Equal("Keyboard", map["FACE_SOUTH"].Kind);
+            Assert.Equal("Keyboard", map["LS_UP"].Kind);
         }
 
         private static readonly Dictionary<string, string> DefaultExpected = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["A / Cross"] = "Space",
-            ["B / Circle"] = "C",
-            ["X / Square"] = "R",
-            ["Y / Triangle"] = "Wheel Up",
-            ["LB / L1"] = "Q",
-            ["RB / R1"] = "G",
-            ["LT / L2"] = "Mouse Right",
-            ["RT / R2"] = "Mouse Left",
-            ["LS / L3"] = "Shift",
-            ["RS / R3"] = "V",
-            ["DPad Up"] = "1",
-            ["DPad Down"] = "2",
-            ["DPad Left"] = "3",
-            ["DPad Right"] = "4",
-            ["Touchpad Click"] = "M",
-            ["Start / Options"] = "Escape",
-            ["Back / Share"] = "F12",
-            ["Guide / PS"] = "None",
-            ["Left Stick Up"] = "W",
-            ["Left Stick Down"] = "S",
-            ["Left Stick Left"] = "A",
-            ["Left Stick Right"] = "D"
+            ["FACE_SOUTH"] = "Space",
+            ["FACE_EAST"] = "C",
+            ["FACE_WEST"] = "R",
+            ["FACE_NORTH"] = "Wheel Up",
+            ["LB"] = "Q",
+            ["RB"] = "G",
+            ["LT"] = "Mouse Right",
+            ["RT"] = "Mouse Left",
+            ["LS_CLICK"] = "Shift",
+            ["RS_CLICK"] = "V",
+            ["DPAD_UP"] = "1",
+            ["DPAD_DOWN"] = "2",
+            ["DPAD_LEFT"] = "3",
+            ["DPAD_RIGHT"] = "4",
+            ["TOUCHPAD"] = "M",
+            ["START"] = "Escape",
+            ["SELECT"] = "F12",
+            ["HOME"] = "None",
+            ["LS_UP"] = "W",
+            ["LS_DOWN"] = "S",
+            ["LS_LEFT"] = "A",
+            ["LS_RIGHT"] = "D"
         };
 
         [Fact]
@@ -101,7 +101,7 @@ namespace GamepadEnhancer.Tests
         {
             InputProfile d = DefaultProfile.Create();
             Assert.Equal("Default", d.Name);
-            Assert.Equal("PS4", d.ControllerType);
+            Assert.Equal("dualshock4", d.ControllerType);
             Assert.True(d.MouseLookEnabled);                          // right stick = mouse movement
             var warnings = new List<string>();
             var map = ProfileMappings.Resolve(d, warnings);
@@ -116,16 +116,16 @@ namespace GamepadEnhancer.Tests
         public void TheXboxDefaultIsThePs4DefaultWithViewAsBackAndNoShare()
         {
             GameDefinition xbox = GameCatalog.Get("default-xbox");
-            Assert.Equal("Default (Xbox 360)", xbox.Name);
+            Assert.Equal("Default (Xbox 360)", xbox.DisplayName);
             InputProfile x = GameProfiles.BuiltIn(xbox);
-            Assert.Equal("Xbox 360", x.ControllerType);
+            Assert.Equal("xbox360", x.ControllerType);
             Assert.True(x.MouseLookEnabled);
             var warnings = new List<string>();
             var map = ProfileMappings.Resolve(x, warnings);
             Assert.Empty(warnings);
             foreach (var pair in DefaultExpected)
             {
-                string want = pair.Key == "Back / Share" ? "M" : pair.Key == "Touchpad Click" ? "None" : pair.Value;
+                string want = pair.Key == "SELECT" ? "M" : pair.Key == "TOUCHPAD" ? "None" : pair.Value;
                 Assert.Equal(want, map[pair.Key].Input);
             }
             var keys = map.Values.Select(e => e.Input).Where(i => i != "None").ToList();
@@ -138,17 +138,17 @@ namespace GamepadEnhancer.Tests
         {
             Assert.False(GameProfiles.Equivalent(DefaultProfile.Create(), DefaultProfile.CreateApex()));
             Assert.Equal("Apex Legends", GameProfiles.BuiltIn(GameCatalog.Get("apex")).Name);
-            Assert.Equal("Default (PS4)", GameProfiles.BuiltIn(GameCatalog.Generic).Name);
+            Assert.Equal("Default (PS4)", GameProfiles.BuiltIn(GameCatalog.Generic).Name);   // the profile carries the display name
         }
 
         [Fact]
         public void LeftStickDefaultsAreKeyboardOnly()
         {
-            foreach (string a in new[] { "Left Stick Up", "Left Stick Down", "Left Stick Left", "Left Stick Right" })
+            foreach (string a in new[] { "LS_UP", "LS_DOWN", "LS_LEFT", "LS_RIGHT" })
                 Assert.True(InputChoices.IsStickAction(a));
-            Assert.False(InputChoices.IsAllowed("Left Stick Up", MouseInputNames.Left));
-            Assert.True(InputChoices.IsAllowed("Left Stick Up", "W"));
-            Assert.True(InputChoices.IsAllowed("A / Cross", MouseInputNames.Left));
+            Assert.False(InputChoices.IsAllowed("LS_UP", MouseInputNames.Left));
+            Assert.True(InputChoices.IsAllowed("LS_UP", "W"));
+            Assert.True(InputChoices.IsAllowed("FACE_SOUTH", MouseInputNames.Left));
         }
     }
 
@@ -204,21 +204,21 @@ namespace GamepadEnhancer.Tests
         [Fact]
         public void MappingsRoundTripThroughJson()
         {
-            var rows = new[] { ("A / Cross", "Space", true, 20), ("RB / R1", "Mouse X1", false, 12) };
+            var rows = new[] { ("FACE_SOUTH", "Space", true, 20), ("RB", "Mouse X1", false, 12) };
             var p = new InputProfile { Name = "T", Mappings = ProfileMappings.Build(rows) };
             InputProfile back = JsonSerializer.Deserialize<InputProfile>(JsonSerializer.Serialize(p));
             var map = ProfileMappings.Resolve(back);
-            Assert.Equal("Space", map["A / Cross"].Input);
-            Assert.True(map["A / Cross"].Turbo);
-            Assert.Equal(20, map["A / Cross"].TurboHz);
-            Assert.Equal("Mouse X1", map["RB / R1"].Input);
-            Assert.Equal("None", map["Guide / PS"].Input);
+            Assert.Equal("Space", map["FACE_SOUTH"].Input);
+            Assert.True(map["FACE_SOUTH"].Turbo);
+            Assert.Equal(20, map["FACE_SOUTH"].TurboHz);
+            Assert.Equal("Mouse X1", map["RB"].Input);
+            Assert.Equal("None", map["HOME"].Input);
         }
 
         [Fact]
         public void SavedProfileWritesMappingsNotTheLegacyDictionaries()
         {
-            string json = JsonSerializer.Serialize(new InputProfile { Mappings = ProfileMappings.Build(new[] { ("A / Cross", "Space", false, 12) }) });
+            string json = JsonSerializer.Serialize(new InputProfile { Mappings = ProfileMappings.Build(new[] { ("FACE_SOUTH", "Space", false, 12) }) });
             Assert.Contains("\"Mappings\"", json);
             Assert.DoesNotContain("KeyBindings", json);
             Assert.DoesNotContain("TurboEnabled", json);
@@ -230,16 +230,16 @@ namespace GamepadEnhancer.Tests
         {
             var p = new InputProfile
             {
-                KeyBindings = new Dictionary<string, string> { ["A / Cross"] = "Space", ["RT / R2"] = "Mouse Left" },
-                TurboEnabled = new Dictionary<string, bool> { ["A / Cross"] = true },
-                TurboHz = new Dictionary<string, int> { ["A / Cross"] = 99 }
+                KeyBindings = new Dictionary<string, string> { ["FACE_SOUTH"] = "Space", ["RT"] = "Mouse Left" },
+                TurboEnabled = new Dictionary<string, bool> { ["FACE_SOUTH"] = true },
+                TurboHz = new Dictionary<string, int> { ["FACE_SOUTH"] = 99 }
             };
             var map = ProfileMappings.Resolve(p);
-            Assert.Equal("Space", map["A / Cross"].Input);
-            Assert.True(map["A / Cross"].Turbo);
-            Assert.Equal(30, map["A / Cross"].TurboHz);   // clamped
-            Assert.Equal("Mouse Left", map["RT / R2"].Input);
-            Assert.Equal("None", map["B / Circle"].Input);
+            Assert.Equal("Space", map["FACE_SOUTH"].Input);
+            Assert.True(map["FACE_SOUTH"].Turbo);
+            Assert.Equal(30, map["FACE_SOUTH"].TurboHz);   // clamped
+            Assert.Equal("Mouse Left", map["RT"].Input);
+            Assert.Equal("None", map["FACE_EAST"].Input);
         }
 
         [Fact]
@@ -247,7 +247,7 @@ namespace GamepadEnhancer.Tests
         {
             const string json = "{\"Mappings\":{\"A / Cross\":{\"Input\":\"Space\",\"Kind\":\"MouseButton\"}}}";
             var map = ProfileMappings.Resolve(JsonSerializer.Deserialize<InputProfile>(json));
-            Assert.Equal("Keyboard", map["A / Cross"].Kind);
+            Assert.Equal("Keyboard", map["FACE_SOUTH"].Kind);
         }
 
         [Fact]
@@ -256,9 +256,9 @@ namespace GamepadEnhancer.Tests
             const string json = "{\"Mappings\":{\"A / Cross\":{\"Input\":\"Banana\"},\"Left Stick Up\":{\"Input\":\"Mouse Left\"},\"B / Circle\":{\"Input\":\"ctrl\"}}}";
             var warnings = new List<string>();
             var map = ProfileMappings.Resolve(JsonSerializer.Deserialize<InputProfile>(json), warnings);
-            Assert.Equal("None", map["A / Cross"].Input);
-            Assert.Equal("None", map["Left Stick Up"].Input);
-            Assert.Equal("Ctrl", map["B / Circle"].Input);    // case-insensitive, canonical casing
+            Assert.Equal("None", map["FACE_SOUTH"].Input);
+            Assert.Equal("None", map["LS_UP"].Input);
+            Assert.Equal("Ctrl", map["FACE_EAST"].Input);    // case-insensitive, canonical casing
             Assert.Equal(2, warnings.Count);
         }
     }
@@ -281,11 +281,11 @@ namespace GamepadEnhancer.Tests
             InputProfile p = ProfileImport.Parse(json, out string error, out List<string> warnings);
             Assert.Null(error);
             Assert.Equal("Imported", p.Name);
-            Assert.Equal("PS4", p.ControllerType);
+            Assert.Equal("dualshock4", p.ControllerType);
             Assert.Equal(100.0, p.MouseSensitivityX);
             Assert.Equal(0, p.MouseReleaseMs);
-            Assert.Equal("Space", p.Mappings["A / Cross"].Input);
-            Assert.Equal("None", p.Mappings["B / Circle"].Input);
+            Assert.Equal("Space", p.Mappings["FACE_SOUTH"].Input);
+            Assert.Equal("None", p.Mappings["FACE_EAST"].Input);
             Assert.Equal(ControllerEngine.BindingActions.Length, p.Mappings.Count);
             Assert.Contains(warnings, w => w.Contains("unknown action"));
             Assert.Contains(warnings, w => w.Contains("Nope"));
@@ -296,7 +296,7 @@ namespace GamepadEnhancer.Tests
         {
             InputProfile p = ProfileImport.Parse("{\"KeyBindings\":{\"A / Cross\":\"Space\"}}", out _, out _);
             Assert.Null(p.KeyBindings);
-            Assert.Equal("Space", p.Mappings["A / Cross"].Input);
+            Assert.Equal("Space", p.Mappings["FACE_SOUTH"].Input);
         }
     }
 

@@ -53,8 +53,8 @@ namespace GamepadEnhancer
         {
             InitializeComponent();
 
-            controllerTypeBox.ItemsSource = new[] { "Xbox 360", "PS4" };
-            controllerTypeBox.SelectedItem = "PS4";
+            controllerTypeBox.ItemsSource = ControllerLayouts.All.ToList();   // shown by each layout's own short name
+            controllerTypeBox.SelectedItem = ControllerLayouts.Get(null);
             foreach (string action in ControllerEngine.BindingActions)
                 (InputChoices.IsStickAction(action) ? leftStickGrid : bindingsGrid).Children.Add(CreateBindingSelector(action));
 
@@ -138,12 +138,8 @@ namespace GamepadEnhancer
             combo.SelectedItem = match ?? (combo.ItemsSource as IEnumerable<ComboBoxItem>)?.First();
         }
 
-        private static string ActionTitle(string actionName)
-        {
-            int i = Array.IndexOf(ControllerEngine.BindingActions, actionName);
-            if (i < 0) return actionName;
-            return PadLabels.For(PadFamily.DualShock4, i);
-        }
+        /// <summary>The binding's display name on the controller layout currently in use (Cross on PlayStation, A on Xbox).</summary>
+        private string ActionTitle(string actionName) => ActiveLayout().Label(actionName);
 
         private Control CreateBindingSelector(string actionName)
         {
@@ -176,7 +172,9 @@ namespace GamepadEnhancer
             bindingControls[actionName] = new BindingControlSet { KeySelector = combo, KindTag = tag, TurboToggle = turbo, TurboHzBox = hz };
 
             var panel = new StackPanel { Spacing = 4 };
-            panel.Children.Add(new TextBlock { Text = ActionTitle(actionName), FontWeight = Avalonia.Media.FontWeight.SemiBold });
+            var title = new TextBlock { Text = ActionTitle(actionName), FontWeight = Avalonia.Media.FontWeight.SemiBold };
+            bindingTitleLabels[actionName] = title;
+            panel.Children.Add(title);
             var gameHint = new TextBlock { Classes = { "muted" }, TextWrapping = Avalonia.Media.TextWrapping.Wrap, IsVisible = false };
             gameHintLabels[actionName] = gameHint;   // text is filled in per selected game (RefreshGameHints)
             panel.Children.Add(gameHint);
@@ -565,7 +563,7 @@ namespace GamepadEnhancer
             try
             {
                 PushSettings();
-                bool xbox360 = controllerTypeBox.SelectedItem as string == "Xbox 360";
+                bool xbox360 = SelectedControllerLayout().Family == PadFamily.Xbox360;
                 if (appSettings.RemoteSendEnabled)
                 {
                     SaveRemoteSettings();
@@ -593,7 +591,7 @@ namespace GamepadEnhancer
         private async void ControllerTypeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!ready) return;
-            bool wantXbox = controllerTypeBox.SelectedItem as string == "Xbox 360";
+            bool wantXbox = SelectedControllerLayout().Family == PadFamily.Xbox360;
             if (engine.IsConnected && wantXbox != (engine.Family == PadFamily.Xbox360)) await ConnectNowAsync();
             else UpdateActiveControllerLabel();
         }
@@ -601,7 +599,8 @@ namespace GamepadEnhancer
         /// <summary>Shows which virtual controller is exposed right now (or that none is) in the header and the window title.</summary>
         private void UpdateActiveControllerLabel()
         {
-            string selected = PadLabels.FamilyName(controllerTypeBox.SelectedItem as string == "Xbox 360" ? PadFamily.Xbox360 : PadFamily.DualShock4);
+            RefreshControllerLabels();
+            string selected = SelectedControllerLayout().Title;
             if (engine.IsConnected)
             {
                 string name = PadLabels.FamilyName(engine.Family);
@@ -674,7 +673,9 @@ namespace GamepadEnhancer
         private InputProfile BuildProfileFromUi(string name) => new InputProfile
         {
             Name = name,
-            ControllerType = controllerTypeBox.SelectedItem as string ?? "PS4",
+            Schema = 2,
+            ControllerType = SelectedControllerLayout().Id,
+            Game = activeGame.Id == GameCatalog.GenericId ? null : activeGame.Id,
             MouseLookEnabled = mouseLookBox.IsChecked == true,
             MouseSensitivityX = (double)(mouseSensXBox.Value ?? 8m),
             MouseSensitivityY = (double)(mouseSensYBox.Value ?? 8m),
@@ -802,8 +803,7 @@ namespace GamepadEnhancer
         {
             profileNameBox.Text = profile.Name;
 
-            string type = profile.ControllerType == "Xbox 360" ? "Xbox 360" : "PS4";
-            if (!engine.IsConnected) controllerTypeBox.SelectedItem = type;   // never swap a live pad just because a profile was loaded
+            if (!engine.IsConnected) controllerTypeBox.SelectedItem = ControllerLayouts.Get(profile.ControllerType);   // never swap a live pad just because a profile was loaded
 
             mouseLookBox.IsChecked = profile.MouseLookEnabled;
             mouseSensXBox.Value = (decimal)Math.Clamp(profile.MouseSensitivityX, 0.5, 100.0);

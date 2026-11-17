@@ -27,7 +27,13 @@ namespace GamepadEnhancer
     internal sealed class InputProfile
     {
         public string Name { get; set; } = "Default";
-        public string ControllerType { get; set; } = "PS4";
+        /// <summary>Profile layout version: 2 = canonical ids (see <see cref="Inputs"/>). Older files have none; their ids are converted when read.</summary>
+        public int Schema { get; set; }
+        /// <summary>The controller layout this profile targets: a layout id such as "dualshock4" (older files store "PS4" / "Xbox 360", still read).</summary>
+        public string ControllerType { get; set; } = ControllerLayouts.DefaultId;
+        /// <summary>The game whose action catalog the <c>Mappings</c> keys may use (JUMP, RELOAD, ...); null = controller inputs only.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Game { get; set; }
         /// <summary>Mouse movement drives the right stick (needs Raw Input; works with either capture method).</summary>
         public bool MouseLookEnabled { get; set; }
         public double MouseSensitivityX { get; set; } = 8.0;
@@ -58,42 +64,98 @@ namespace GamepadEnhancer
     /// <summary>Reading and building a profile's bindings. Pure.</summary>
     internal static class ProfileMappings
     {
-        /// <summary>The binding for every action: from <c>Mappings</c> when present, else from the legacy dictionaries. Never null; unknown inputs become "None".</summary>
+        private sealed class Raw { public string Input = "None"; public bool Turbo; public int Hz = 12; }
+
+        /// <summary>
+        /// The binding for every physical input (the engine's buttons), keyed by canonical id and always complete. A profile may key its
+        /// bindings by <b>physical input</b> (FACE_SOUTH) or by <b>game action</b> (JUMP); a game action is resolved through the profile's
+        /// game and that game's native layout, so the same profile works whatever the controller is. Older profiles keyed by
+        /// "A / Cross" style ids are converted. A physical entry wins over an action that lands on the same input; two actions on one
+        /// input keep the first (alphabetically). Unknown or unusable entries are cleared and reported in <paramref name="warnings"/>.
+        /// </summary>
         public static Dictionary<string, MappingEntry> Resolve(InputProfile p, List<string> warnings = null)
         {
+            GameDefinition game = GameCatalog.Get(p.Game);
+            var raw = CollectRaw(p);
+
+            var winners = new Dictionary<string, (string Source, Raw Entry)>(StringComparer.OrdinalIgnoreCase);
+            foreach (string key in raw.Keys.OrderBy(k => k, StringComparer.Ordinal).Where(k => !Inputs.IsButton(k)))
+            {
+                string physical = game.ResolvePhysical(key);
+                if (physical == null)
+                {
+                    if (Inputs.IsPaddle(key) || key == Inputs.RightStickMove) continue;   // not a button binding
+                    warnings?.Add($"{key}: not an action of {game.DisplayName} and not a controller input; ignored");
+                    continue;
+                }
+                if (winners.TryGetValue(physical, out var other))
+                {
+                    warnings?.Add($"{key} and {other.Source} both drive {physical}; {other.Source} is used");
+                    continue;
+                }
+                winners[physical] = (key, raw[key]);
+            }
+            foreach (string key in raw.Keys.Where(Inputs.IsButton))
+            {
+                string physical = Inputs.Canonical(key);
+                if (winners.TryGetValue(physical, out var other)) warnings?.Add($"{key} overrides {other.Source}");
+                winners[physical] = (physical, raw[key]);
+            }
+
             var result = new Dictionary<string, MappingEntry>(StringComparer.OrdinalIgnoreCase);
             foreach (string action in ControllerEngine.BindingActions)
             {
                 string input = "None";
                 bool turbo = false;
                 int hz = 12;
-                if (p.Mappings != null)
-                {
-                    if (TryGet(p.Mappings, action, out MappingEntry e) && e != null)
-                    {
-                        input = e.Input ?? "None";
-                        turbo = e.Turbo;
-                        hz = e.TurboHz;
-                    }
-                }
-                else
-                {
-                    if (p.KeyBindings != null && TryGet(p.KeyBindings, action, out string k) && !string.IsNullOrWhiteSpace(k)) input = k;
-                    if (p.TurboEnabled != null && TryGet(p.TurboEnabled, action, out bool te)) turbo = te;
-                    if (p.TurboHz != null && TryGet(p.TurboHz, action, out int h)) hz = h;
-                }
+                string label = action;
+                if (winners.TryGetValue(action, out var w)) { input = w.Entry.Input; turbo = w.Entry.Turbo; hz = w.Entry.Hz; label = w.Source; }
 
                 string canonical = InputChoices.Canonical(input);
                 if (canonical == "None" && !string.Equals(input, "None", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(input))
-                    warnings?.Add($"{action}: unknown input \"{input}\" was cleared");
+                    warnings?.Add($"{label}: unknown input \"{input}\" was cleared");
                 else if (!InputChoices.IsAllowed(action, canonical))
                 {
-                    warnings?.Add($"{action}: \"{input}\" is not allowed here (keyboard keys only) and was cleared");
+                    warnings?.Add($"{label}: \"{input}\" is not allowed here (keyboard keys only) and was cleared");
                     canonical = "None";
                 }
                 result[action] = new MappingEntry { Input = canonical, Kind = KindName(canonical), Turbo = turbo, TurboHz = Math.Clamp(hz, 1, 30) };
             }
             return result;
+        }
+
+        /// <summary>Every binding in the profile under its canonical key (legacy ids converted), from <c>Mappings</c> or the oldest dictionaries.</summary>
+        private static Dictionary<string, Raw> CollectRaw(InputProfile p)
+        {
+            var raw = new Dictionary<string, Raw>(StringComparer.OrdinalIgnoreCase);
+            if (p.Mappings != null)
+            {
+                foreach (var pair in p.Mappings)
+                    if (pair.Value != null) raw[ActionIds.Normalize(pair.Key)] = new Raw { Input = pair.Value.Input ?? "None", Turbo = pair.Value.Turbo, Hz = pair.Value.TurboHz };
+                return raw;
+            }
+            if (p.KeyBindings != null)
+                foreach (var pair in p.KeyBindings)
+                {
+                    if (string.IsNullOrWhiteSpace(pair.Value)) continue;
+                    string id = ActionIds.Normalize(pair.Key);
+                    raw[id] = new Raw { Input = pair.Value };
+                }
+            if (p.TurboEnabled != null)
+                foreach (var pair in p.TurboEnabled)
+                    if (raw.TryGetValue(ActionIds.Normalize(pair.Key), out Raw r)) r.Turbo = pair.Value;
+            if (p.TurboHz != null)
+                foreach (var pair in p.TurboHz)
+                    if (raw.TryGetValue(ActionIds.Normalize(pair.Key), out Raw r)) r.Hz = pair.Value;
+            return raw;
+        }
+
+        /// <summary>The ids found in a profile that are neither controller inputs, legacy ids nor actions of its game (they are ignored when loading).</summary>
+        public static IEnumerable<string> UnknownIds(InputProfile p)
+        {
+            GameDefinition game = GameCatalog.Get(p.Game);
+            foreach (string key in CollectRaw(p).Keys)
+                if (!Inputs.IsKnown(key) && game.ResolvePhysical(key) == null) yield return key;
         }
 
         /// <summary>Builds the writable <c>Mappings</c> for a profile from (action, input, turbo, hz) rows.</summary>
@@ -116,14 +178,6 @@ namespace GamepadEnhancer
             _ => "None"
         };
 
-        private static bool TryGet<T>(Dictionary<string, T> d, string key, out T value)
-        {
-            if (d.TryGetValue(key, out value)) return true;
-            foreach (var pair in d)
-                if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase)) { value = pair.Value; return true; }
-            value = default;
-            return false;
-        }
     }
 
     /// <summary>Validation for a profile file picked by the user (import). Pure, so it can be unit tested.</summary>
@@ -147,11 +201,8 @@ namespace GamepadEnhancer
             catch (JsonException) { error = "The file is not valid JSON."; return null; }
             if (p == null) { error = "The file does not contain a profile."; return null; }
 
-            if (p.Mappings != null)
-            {
-                int unknown = p.Mappings.Keys.Count(k => !ControllerEngine.BindingActions.Contains(k, StringComparer.OrdinalIgnoreCase));
-                if (unknown > 0) warnings.Add($"{unknown} unknown action(s) were ignored");
-            }
+            int unknown = ProfileMappings.UnknownIds(p).Count();
+            if (unknown > 0) warnings.Add($"{unknown} unknown action(s) were ignored");
 
             var resolved = ProfileMappings.Resolve(p, warnings);
             p.Mappings = resolved;
@@ -161,7 +212,8 @@ namespace GamepadEnhancer
 
             if (p.Paddles != null) p.Paddles = PaddleMappings.Build(PaddleMappings.Resolve(p, warnings));
 
-            p.ControllerType = p.ControllerType == "Xbox 360" ? "Xbox 360" : "PS4";
+            p.Schema = 2;
+            p.ControllerType = ControllerLayouts.Get(p.ControllerType).Id;
             p.MouseSensitivityX = Math.Clamp(p.MouseSensitivityX, 0.5, 100.0);
             p.MouseSensitivityY = Math.Clamp(p.MouseSensitivityY, 0.5, 100.0);
             p.MouseCurve = Math.Clamp(p.MouseCurve, 0.5, 4.0);

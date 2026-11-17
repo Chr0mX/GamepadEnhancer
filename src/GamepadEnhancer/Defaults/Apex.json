@@ -1,6 +1,8 @@
 {
+  "Schema": 2,
   "Name": "Apex Legends",
-  "ControllerType": "PS4",
+  "Game": "apex",
+  "ControllerType": "dualshock4",
   "MouseLookEnabled": true,
   "MouseSensitivityX": 8.0,
   "MouseSensitivityY": 8.0,
@@ -9,133 +11,133 @@
   "MouseReleaseMs": 30,
   "MouseInvertY": false,
   "Mappings": {
-    "A / Cross": {
+    "JUMP": {
       "Input": "Space",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "B / Circle": {
+    "CROUCH": {
       "Input": "Ctrl",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "X / Square": {
+    "RELOAD": {
       "Input": "R",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Y / Triangle": {
+    "CYCLE_WEAPON": {
       "Input": "E",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "LB / L1": {
+    "TACTICAL": {
       "Input": "Q",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "RB / R1": {
+    "PING": {
       "Input": "Mouse X1",
       "Kind": "MouseButton",
       "Turbo": false,
       "TurboHz": 12
     },
-    "LT / L2": {
+    "ADS": {
       "Input": "Mouse Right",
       "Kind": "MouseButton",
       "Turbo": false,
       "TurboHz": 12
     },
-    "RT / R2": {
+    "FIRE": {
       "Input": "Mouse Left",
       "Kind": "MouseButton",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Back / Share": {
+    "MAP": {
       "Input": "Tab",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Start / Options": {
+    "INVENTORY": {
       "Input": "Escape",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "LS / L3": {
+    "SPRINT": {
       "Input": "Shift",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "RS / R3": {
+    "MELEE": {
       "Input": "Mouse Middle",
       "Kind": "MouseButton",
       "Turbo": false,
       "TurboHz": 12
     },
-    "DPad Up": {
+    "HEAL": {
       "Input": "4",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "DPad Down": {
+    "GRENADE": {
       "Input": "F1",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "DPad Left": {
+    "CHARACTER_ACTION": {
       "Input": "B",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "DPad Right": {
+    "FIRE_MODE": {
       "Input": "G",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Guide / PS": {
+    "HOME": {
       "Input": "Home",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Touchpad Click": {
+    "TOUCHPAD": {
       "Input": "None",
       "Kind": "None",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Left Stick Up": {
+    "LS_UP": {
       "Input": "W",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Left Stick Down": {
+    "LS_DOWN": {
       "Input": "S",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Left Stick Left": {
+    "LS_LEFT": {
       "Input": "A",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Left Stick Right": {
+    "LS_RIGHT": {
       "Input": "D",
       "Kind": "Keyboard",
       "Turbo": false,

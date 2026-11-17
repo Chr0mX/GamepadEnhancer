@@ -1,0 +1,31 @@
+{
+  "Id": "dualshock4",
+  "Name": "PS4",
+  "Title": "PlayStation 4 DualShock 4 Controller",
+  "Aliases": [ "PS4", "DualShock 4", "DS4" ],
+  "Device": "DualShock4",
+  "FaceStyle": "symbols",
+  "Labels": {
+    "FACE_SOUTH": "Cross",
+    "FACE_EAST": "Circle",
+    "FACE_WEST": "Square",
+    "FACE_NORTH": "Triangle",
+    "LB": "L1",
+    "RB": "R1",
+    "LT": "L2",
+    "RT": "R2",
+    "SELECT": "Share",
+    "START": "Options",
+    "LS_CLICK": "L3",
+    "RS_CLICK": "R3",
+    "HOME": "PS",
+    "TOUCHPAD": "Touchpad"
+  },
+  "Unsupported": [],
+  "FaceColors": {
+    "FACE_SOUTH": "#6C9CFF",
+    "FACE_EAST": "#FF6E6E",
+    "FACE_WEST": "#FF8AD4",
+    "FACE_NORTH": "#4CD7A8"
+  }
+}

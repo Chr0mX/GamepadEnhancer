@@ -3,32 +3,147 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace GamepadEnhancer
 {
+    /// <summary>A canonical game action (JUMP, RELOAD, TACTICAL, ...): a stable id plus the game's own name for it.</summary>
+    internal sealed class GameActionDef
+    {
+        /// <summary>Upper-case id, unique within the game. Profiles reference actions by this id, never by a controller button.</summary>
+        public string Id { get; set; } = "";
+        /// <summary>The game's wording ("Interact / Pickup").</summary>
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+    }
+
+    /// <summary>Where a game puts an action on its own default controller layout.</summary>
+    internal sealed class NativeBinding
+    {
+        /// <summary>A single canonical physical input (FACE_SOUTH, LB, ...).</summary>
+        public string Input { get; set; }
+        /// <summary>Several inputs held together (a combo such as LB + RB); used instead of <see cref="Input"/>.</summary>
+        public List<string> Inputs { get; set; } = new();
+        /// <summary>"tap" (default), "hold", "toggle" ... informational: the virtual pad cannot tell them apart, the game decides by duration.</summary>
+        public string Gesture { get; set; } = "tap";
+
+        [JsonIgnore] public bool IsCombo => Inputs.Count > 1;
+        [JsonIgnore] public string Primary => Inputs.Count > 0 ? Inputs[0] : null;
+        [JsonIgnore] public bool IsHold => string.Equals(Gesture, "hold", StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>
-    /// One supported game. Loaded from an embedded <c>Defaults/Games/&lt;id&gt;.json</c>, so a game's data can be updated
-    /// without touching code and a new game is one new file. <see cref="Native"/> holds what the game's own default
-    /// controller layout does on each pad button (display only: the game owns those assignments). <see cref="ProfileResource"/>
-    /// optionally names an embedded profile with this app's default PC-input bindings for the game.
+    /// One supported game, loaded from an embedded <c>Defaults/Games/&lt;id&gt;.json</c> (a new game is one new file). It holds the
+    /// game's <b>action catalog</b> (canonical ids with the game's names) and its <b>native controller layouts</b>: for each preset,
+    /// which physical input triggers each action. Nothing here names a controller brand: labels such as "Cross" or "A" are resolved
+    /// from the controller layout at display time. <see cref="ProfileResource"/> optionally names an embedded profile with this app's
+    /// default PC-input bindings for the game.
     /// </summary>
     internal sealed class GameDefinition
     {
+        private IReadOnlyDictionary<string, string> native;
+
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
-        /// <summary>Where the native labels come from (a verifiable description, never a guess).</summary>
+        /// <summary>Where the native layout comes from (a verifiable description, never a guess).</summary>
         public string Source { get; set; } = "";
-        /// <summary>False while the native layout has not been transcribed from a real source; such a game shows no labels.</summary>
+        /// <summary>False while the native layout has not been transcribed from a real source; such a game exposes no actions or labels.</summary>
         public bool Verified { get; set; }
         public string Layout { get; set; } = "";
         public string Notes { get; set; } = "";
         public string ProfileResource { get; set; }
-        /// <summary>Pad action name (<see cref="ControllerEngine.BindingActions"/>) -> what the game does on it.</summary>
-        public Dictionary<string, string> Native { get; set; } = new();
+        /// <summary>The controller layout this config is written for (a layout id); null = works with any controller.</summary>
+        public string Controller { get; set; }
+        public List<GameActionDef> Actions { get; set; } = new();
+        /// <summary>Which entry of <see cref="NativeLayouts"/> is the game's default.</summary>
+        public string NativePreset { get; set; } = "default";
+        /// <summary>Preset name, then action id to where the game puts it.</summary>
+        public Dictionary<string, Dictionary<string, NativeBinding>> NativeLayouts { get; set; } = new();
 
-        public string NativeLabel(string action) =>
-            Native != null && action != null && Native.TryGetValue(action, out string text) && !string.IsNullOrWhiteSpace(text) ? text : null;
+        /// <summary>Physical input id to the label of what the game does on it (derived, never hand-written).</summary>
+        [JsonIgnore]
+        public IReadOnlyDictionary<string, string> Native => native ??= BuildNative();
+
+        /// <summary>The name shown in the config list: the name, plus the controller layout's own short name when the config targets one.</summary>
+        [JsonIgnore]
+        public string DisplayName => string.IsNullOrEmpty(Controller) ? Name : $"{Name} ({ControllerLayouts.Get(Controller).Name})";
+
+        public GameActionDef Action(string actionId) =>
+            Actions.FirstOrDefault(a => string.Equals(a.Id, ActionIds.Normalize(actionId), StringComparison.OrdinalIgnoreCase));
+
+        public string ActionName(string actionId) => Action(actionId)?.Name;
+
+        private Dictionary<string, NativeBinding> DefaultPreset() =>
+            NativeLayouts.TryGetValue(NativePreset ?? "default", out var preset) ? preset
+            : NativeLayouts.Values.FirstOrDefault() ?? new Dictionary<string, NativeBinding>();
+
+        public NativeBinding NativeBindingFor(string actionId) =>
+            DefaultPreset().TryGetValue(ActionIds.Normalize(actionId), out NativeBinding b) ? b : null;
+
+        /// <summary>
+        /// The physical input that triggers <paramref name="id"/>: the id itself when it already is a physical input, otherwise where
+        /// this game's native layout puts that action. Null for an unknown action or a combo (which has no single input).
+        /// </summary>
+        public string ResolvePhysical(string id)
+        {
+            string physical = Inputs.Canonical(id);
+            if (physical != null && Inputs.IsButton(physical)) return physical;
+            NativeBinding b = NativeBindingFor(id);
+            return b != null && !b.IsCombo ? Inputs.Canonical(b.Primary) : null;
+        }
+
+        /// <summary>What the game does on a physical input, for example "Jump", or "Ping  ·  hold: Ping Wheel"; null when nothing is bound to it.</summary>
+        public string NativeLabel(string physicalInput)
+        {
+            string key = Inputs.Canonical(physicalInput);
+            return key != null && Native.TryGetValue(key, out string text) ? text : null;
+        }
+
+        private IReadOnlyDictionary<string, string> BuildNative()
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, NativeBinding> preset = DefaultPreset();
+            foreach (string input in Inputs.Buttons)
+            {
+                var taps = new List<string>();
+                var holds = new List<string>();
+                foreach (GameActionDef action in Actions)   // catalog order decides the wording order
+                {
+                    if (!preset.TryGetValue(action.Id, out NativeBinding b) || b.IsCombo || !string.Equals(b.Primary, input, StringComparison.OrdinalIgnoreCase)) continue;
+                    (b.IsHold ? holds : taps).Add(action.Name);
+                }
+                if (taps.Count == 0 && holds.Count == 0) continue;
+                string text = string.Join(" / ", taps);
+                if (holds.Count > 0) text += (text.Length > 0 ? "  ·  " : "") + "hold: " + string.Join(" / ", holds);
+                result[input] = text;
+            }
+            return result;
+        }
+
+        /// <summary>Upper-cases ids, drops unusable entries and fills in <see cref="NativeBinding.Inputs"/>. Unverified games expose nothing.</summary>
+        internal void Normalize()
+        {
+            if (!Verified) { Actions = new(); NativeLayouts = new(); native = null; return; }
+            Actions = Actions.Where(a => !string.IsNullOrWhiteSpace(a.Id)).Select(a => new GameActionDef { Id = ActionIds.Normalize(a.Id), Name = string.IsNullOrWhiteSpace(a.Name) ? a.Id : a.Name, Category = a.Category ?? "" }).ToList();
+            var fixedLayouts = new Dictionary<string, Dictionary<string, NativeBinding>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var preset in NativeLayouts)
+            {
+                var map = new Dictionary<string, NativeBinding>(StringComparer.OrdinalIgnoreCase);
+                foreach (var entry in preset.Value)
+                {
+                    var inputs = new List<string>();
+                    if (!string.IsNullOrWhiteSpace(entry.Value.Input)) inputs.Add(entry.Value.Input);
+                    inputs.AddRange(entry.Value.Inputs ?? new());
+                    inputs = inputs.Select(i => Inputs.Canonical(LegacyIds.ToCanonical(i) ?? i)).Where(i => i != null).Distinct().ToList();
+                    if (inputs.Count == 0) continue;
+                    map[ActionIds.Normalize(entry.Key)] = new NativeBinding { Input = inputs[0], Inputs = inputs, Gesture = string.IsNullOrWhiteSpace(entry.Value.Gesture) ? "tap" : entry.Value.Gesture };
+                }
+                fixedLayouts[preset.Key] = map;
+            }
+            NativeLayouts = fixedLayouts;
+            native = null;
+        }
     }
 
     /// <summary>The list of supported games plus the global fallback ("Other").</summary>
@@ -45,9 +160,10 @@ namespace GamepadEnhancer
         public static GameDefinition Generic { get; } = new GameDefinition
         {
             Id = GenericId,
-            Name = "Default (PS4)",
+            Name = "Default",
+            Controller = ControllerLayouts.DefaultId,
             Verified = true,
-            Source = "Built-in PS4 to keyboard + mouse default (docs/MAPPINGS.md). Any game without its own layout uses it.",
+            Source = "Built-in keyboard + mouse default (docs/MAPPINGS.md). Any game without its own layout uses it.",
             Layout = "n/a",
             ProfileResource = DefaultProfile.ResourceName
         };
@@ -71,8 +187,7 @@ namespace GamepadEnhancer
                 if (g == null) { error = "empty game file"; return null; }
                 if (!IsValidId(g.Id)) { error = "invalid game id"; return null; }
                 if (string.IsNullOrWhiteSpace(g.Name)) g.Name = g.Id;
-                g.Native = new Dictionary<string, string>(g.Native ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-                if (!g.Verified) g.Native.Clear();   // unverified data is never shown
+                g.Normalize();
                 return g;
             }
             catch (JsonException ex) { error = ex.Message; return null; }
@@ -117,7 +232,7 @@ namespace GamepadEnhancer
         {
             if (game == null || string.IsNullOrEmpty(game.ProfileResource)) return null;
             InputProfile p = DefaultProfile.LoadResource(game.ProfileResource);
-            if (p != null) p.Name = game.Name;
+            if (p != null) p.Name = game.DisplayName;
             return p;
         }
 
@@ -143,7 +258,7 @@ namespace GamepadEnhancer
         public static bool Equivalent(InputProfile a, InputProfile b)
         {
             if (a == null || b == null) return a == b;
-            if (a.ControllerType != b.ControllerType || a.MouseLookEnabled != b.MouseLookEnabled || a.MouseInvertY != b.MouseInvertY
+            if (ControllerLayouts.Get(a.ControllerType).Id != ControllerLayouts.Get(b.ControllerType).Id || a.MouseLookEnabled != b.MouseLookEnabled || a.MouseInvertY != b.MouseInvertY
                 || a.MouseSensitivityX != b.MouseSensitivityX || a.MouseSensitivityY != b.MouseSensitivityY || a.MouseCurve != b.MouseCurve
                 || a.MouseGameDeadZonePercent != b.MouseGameDeadZonePercent || a.MouseReleaseMs != b.MouseReleaseMs)
                 return false;

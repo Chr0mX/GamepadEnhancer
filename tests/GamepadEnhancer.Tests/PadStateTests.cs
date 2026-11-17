@@ -222,8 +222,8 @@ namespace GamepadEnhancer.Tests
             Assert.Equal("Guide", PadLabels.For(PadFamily.Xbox360, 16));
             Assert.Equal("PS", PadLabels.For(PadFamily.DualShock4, 16));
             Assert.Equal("Touchpad", PadLabels.For(PadFamily.DualShock4, 17));
-            Assert.Equal("Left Stick Up", PadLabels.For(PadFamily.DualShock4, 18));
-            Assert.Equal("Left Stick Right", PadLabels.For(PadFamily.Xbox360, count - 1));
+            Assert.Equal("LS_UP", PadLabels.For(PadFamily.DualShock4, 18));
+            Assert.Equal("LS_RIGHT", PadLabels.For(PadFamily.Xbox360, count - 1));
         }
     }
 

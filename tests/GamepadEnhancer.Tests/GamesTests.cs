@@ -19,22 +19,22 @@ namespace GamepadEnhancer.Tests
     {
         private static readonly Dictionary<string, string> ApexExpected = new()
         {
-            ["A / Cross"] = "Jump",
-            ["B / Circle"] = "Crouch (toggle)",
-            ["X / Square"] = "Interact / Pickup / Reload  ·  hold: Interact / Pickup",
-            ["Y / Triangle"] = "Cycle Weapon / Holster  ·  hold: Holster",
-            ["LB / L1"] = "Tactical Ability",
-            ["RB / R1"] = "Ping  ·  hold: Ping Wheel",
-            ["LT / L2"] = "Aim Down Sight",
-            ["RT / R2"] = "Attack",
-            ["LS / L3"] = "Sprint / Toggle Zoom",
-            ["RS / R3"] = "Melee",
-            ["DPad Up"] = "Use Health/Shield Kit  ·  hold: Health Wheel",
-            ["DPad Right"] = "Toggle Fire Mode  ·  hold: Equip Survival Item",
-            ["DPad Down"] = "Equip Grenade  ·  hold: Grenade Wheel",
-            ["DPad Left"] = "Extra Character Action  ·  hold: Emote Wheel",
-            ["Back / Share"] = "Map (toggle)",
-            ["Start / Options"] = "Inventory (toggle)"
+            ["FACE_SOUTH"] = "Jump",
+            ["FACE_EAST"] = "Crouch (toggle)",
+            ["FACE_WEST"] = "Interact / Pickup / Reload  ·  hold: Interact / Pickup",
+            ["FACE_NORTH"] = "Cycle Weapon / Holster  ·  hold: Holster",
+            ["LB"] = "Tactical Ability",
+            ["RB"] = "Ping  ·  hold: Ping Wheel",
+            ["LT"] = "Aim Down Sight",
+            ["RT"] = "Attack",
+            ["LS_CLICK"] = "Sprint / Toggle Zoom",
+            ["RS_CLICK"] = "Melee",
+            ["DPAD_UP"] = "Use Health/Shield Kit  ·  hold: Health Wheel",
+            ["DPAD_RIGHT"] = "Toggle Fire Mode  ·  hold: Equip Survival Item",
+            ["DPAD_DOWN"] = "Equip Grenade  ·  hold: Grenade Wheel",
+            ["DPAD_LEFT"] = "Extra Character Action  ·  hold: Emote Wheel",
+            ["SELECT"] = "Map (toggle)",
+            ["START"] = "Inventory (toggle)"
         };
 
         [Fact]
@@ -87,7 +87,7 @@ namespace GamepadEnhancer.Tests
             var ids = GameCatalog.All.Select(g => g.Id).ToList();
             Assert.Equal(ids.Count, ids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
             Assert.Equal(GameCatalog.GenericId, ids[0]);
-            Assert.Equal("Default (PS4)", GameCatalog.Generic.Name);
+            Assert.Equal("Default (PS4)", GameCatalog.Generic.DisplayName);
             Assert.Equal("default-xbox", ids[1]);
             Assert.Contains("Apex Legends", GameCatalog.All.Select(g => g.Name));
             Assert.All(ids, id => Assert.True(GameCatalog.IsValidId(id)));
@@ -98,11 +98,15 @@ namespace GamepadEnhancer.Tests
         {
             Assert.Null(GameCatalog.Parse("not json", out string e1)); Assert.NotNull(e1);
             Assert.Null(GameCatalog.Parse("{\"Id\":\"../x\",\"Name\":\"X\"}", out string e2)); Assert.NotNull(e2);
-            GameDefinition g = GameCatalog.Parse("{\"Id\":\"newgame\",\"Name\":\"New\",\"Verified\":false,\"Native\":{\"A / Cross\":\"Jump\"}}", out _);
+            const string body = ",\"Actions\":[{\"Id\":\"jump\",\"Name\":\"Jump\"}],\"NativeLayouts\":{\"default\":{\"JUMP\":{\"Input\":\"FACE_SOUTH\"}}}}";
+            GameDefinition g = GameCatalog.Parse("{\"Id\":\"newgame\",\"Name\":\"New\",\"Verified\":false" + body, out _);
             Assert.NotNull(g);
-            Assert.Null(g.NativeLabel("A / Cross"));
-            GameDefinition v = GameCatalog.Parse("{\"Id\":\"newgame\",\"Name\":\"New\",\"Verified\":true,\"Native\":{\"A / Cross\":\"Jump\"}}", out _);
-            Assert.Equal("Jump", v.NativeLabel("a / cross"));   // case-insensitive
+            Assert.Null(g.NativeLabel("FACE_SOUTH"));
+            Assert.Empty(g.Actions);
+            GameDefinition v = GameCatalog.Parse("{\"Id\":\"newgame\",\"Name\":\"New\",\"Verified\":true" + body, out _);
+            Assert.Equal("Jump", v.NativeLabel("face_south"));   // case-insensitive
+            Assert.Equal("Jump", v.ActionName("jump"));
+            Assert.Equal("FACE_SOUTH", v.ResolvePhysical("JUMP"));
         }
     }
 
@@ -111,7 +115,7 @@ namespace GamepadEnhancer.Tests
         private static InputProfile Custom(string cross)
         {
             InputProfile p = DefaultProfile.CreateApex();
-            p.Mappings["A / Cross"].Input = cross;
+            p.Mappings["JUMP"].Input = cross;
             return p;
         }
 
@@ -127,7 +131,7 @@ namespace GamepadEnhancer.Tests
             // 2) no user file: built-in default for Apex
             InputProfile p = GameProfiles.Resolve(apex, store, GlobalMarker, out ProfileSource src);
             Assert.Equal(ProfileSource.BuiltIn, src);
-            Assert.Equal("Space", ProfileMappings.Resolve(p)["A / Cross"].Input);
+            Assert.Equal("Space", ProfileMappings.Resolve(p)["FACE_SOUTH"].Input);
 
             // 3) a game with no built-in profile falls back to the global one
             p = GameProfiles.Resolve(wz, store, GlobalMarker, out src);
@@ -138,7 +142,7 @@ namespace GamepadEnhancer.Tests
             Assert.True(store.SaveUser("apex", Custom("Z")));
             p = GameProfiles.Resolve(apex, store, GlobalMarker, out src);
             Assert.Equal(ProfileSource.User, src);
-            Assert.Equal("Z", ProfileMappings.Resolve(p)["A / Cross"].Input);
+            Assert.Equal("Z", ProfileMappings.Resolve(p)["FACE_SOUTH"].Input);
         }
 
         [Fact]
@@ -151,16 +155,16 @@ namespace GamepadEnhancer.Tests
             Assert.False(store.HasUser("warzone"));
 
             InputProfile wzCustom = DefaultProfile.Create();
-            wzCustom.Mappings["B / Circle"].Input = "X";
+            wzCustom.Mappings["FACE_EAST"].Input = "X";
             Assert.True(store.SaveUser("warzone", wzCustom));
 
-            Assert.Equal("Z", ProfileMappings.Resolve(store.LoadUser("apex"))["A / Cross"].Input);
-            Assert.Equal("Space", ProfileMappings.Resolve(store.LoadUser("warzone"))["A / Cross"].Input);   // started from the Default config, unlike Apex's Z
-            Assert.Equal("X", ProfileMappings.Resolve(store.LoadUser("warzone"))["B / Circle"].Input);
+            Assert.Equal("Z", ProfileMappings.Resolve(store.LoadUser("apex"))["FACE_SOUTH"].Input);
+            Assert.Equal("Space", ProfileMappings.Resolve(store.LoadUser("warzone"))["FACE_SOUTH"].Input);   // started from the Default config, unlike Apex's Z
+            Assert.Equal("X", ProfileMappings.Resolve(store.LoadUser("warzone"))["FACE_EAST"].Input);
 
             Assert.True(store.DeleteUser("apex"));                  // restoring Apex defaults...
             Assert.True(store.HasUser("warzone"));                  // ...leaves Warzone's customization alone
-            Assert.Equal("Space", ProfileMappings.Resolve(GameProfiles.Resolve(GameCatalog.Get("apex"), store, GlobalMarker, out _))["A / Cross"].Input);
+            Assert.Equal("Space", ProfileMappings.Resolve(GameProfiles.Resolve(GameCatalog.Get("apex"), store, GlobalMarker, out _))["FACE_SOUTH"].Input);
         }
 
         [Fact]
@@ -179,7 +183,7 @@ namespace GamepadEnhancer.Tests
             var reopened = new GameProfileStore(dir.Path);   // a new store on the same folder = a new app run
             InputProfile loaded = reopened.LoadUser("apex");
             Assert.NotNull(loaded);
-            Assert.Equal("Z", ProfileMappings.Resolve(loaded)["A / Cross"].Input);
+            Assert.Equal("Z", ProfileMappings.Resolve(loaded)["FACE_SOUTH"].Input);
             PaddleSetting[] pads = PaddleMappings.Resolve(loaded);
             Assert.True(pads[0].Enabled); Assert.Equal(PaddleTargetKind.Key, pads[0].Kind); Assert.Equal("R", pads[0].Input);
             Assert.False(pads[1].Enabled);
@@ -207,7 +211,7 @@ namespace GamepadEnhancer.Tests
         {
             InputProfile a = DefaultProfile.CreateApex(), b = DefaultProfile.CreateApex();
             Assert.True(GameProfiles.Equivalent(a, b));
-            b.Mappings["A / Cross"].Input = "Z";
+            b.Mappings["JUMP"].Input = "Z";
             Assert.False(GameProfiles.Equivalent(a, b));
             b = DefaultProfile.CreateApex();
             b.Paddles = PaddleMappings.Build(new[] { new PaddleSetting { Enabled = true, Kind = PaddleTargetKind.Key, Input = "R" }, PaddleSetting.Off, PaddleSetting.Off, PaddleSetting.Off });
@@ -247,14 +251,14 @@ namespace GamepadEnhancer.Tests
             Assert.Null(err);
             Assert.Null(p.Paddles);                                      // untouched: no paddle block invented
             Assert.All(PaddleMappings.Resolve(p), s => Assert.False(s.Enabled));
-            Assert.Equal("Space", p.Mappings["A / Cross"].Input);
-            Assert.True(p.Mappings["A / Cross"].Turbo);
+            Assert.Equal("Space", p.Mappings["FACE_SOUTH"].Input);
+            Assert.True(p.Mappings["FACE_SOUTH"].Turbo);
 
             using var dir = new TempDir();
             var store = new GameProfileStore(dir.Path);
             Assert.True(store.SaveUser("generic", p));
             Assert.Contains("\"Mappings\"", File.ReadAllText(store.PathFor("generic")));
-            Assert.Equal("Space", ProfileMappings.Resolve(store.LoadUser("generic"))["A / Cross"].Input);
+            Assert.Equal("Space", ProfileMappings.Resolve(store.LoadUser("generic"))["FACE_SOUTH"].Input);
         }
 
         [Fact]

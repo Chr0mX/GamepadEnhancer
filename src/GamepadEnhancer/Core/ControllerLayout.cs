@@ -9,7 +9,7 @@ namespace GamepadEnhancer
 
     /// <summary>
     /// One selectable control on the configuration diagram: a marker on the controller drawing plus a label chip beside it.
-    /// <see cref="Id"/> is the pad action name, <c>"RightStick"</c> (mouse movement) or <c>"Paddle:&lt;Slot&gt;"</c>.
+    /// <see cref="Id"/> is the pad action name, <c>RS_MOVE</c> (the right stick, mouse movement) or a paddle id such as <c>PADDLE_LEFT_UPPER</c>.
     /// </summary>
     internal sealed class LayoutSlot
     {
@@ -51,7 +51,7 @@ namespace GamepadEnhancer
     internal static class ControllerLayout
     {
         public const double Width = 880, Height = 620, ChipW = 196, ChipH = 32, ChipGap = 6;
-        public const string RightStickId = "RightStick";
+        public const string RightStickId = Inputs.RightStickMove;
 
         private static readonly Dictionary<PadFamily, IReadOnlyList<LayoutSlot>> Cache = new();
 
@@ -124,7 +124,7 @@ namespace GamepadEnhancer
                 Slot(ControllerEngine.ActionXSquare, Rt, 6, 506, 240, 24, 24, C);
                 Slot(ControllerEngine.ActionACross, Rt, 7, 530, 264, 24, 24, C);
                 Slot(ControllerEngine.ActionGuidePs, Rt, 8, 440, 300, 16, 16, C);
-                list.Add(new LayoutSlot { Id = RightStickId, Title = "Right Stick", Side = Rt, Row = 9, MX = 480, MY = 300, MW = 36, MH = 36, Shape = C });
+                list.Add(new LayoutSlot { Id = RightStickId, Title = Inputs.NeutralLabel(Inputs.RightStickMove), Side = Rt, Row = 9, MX = 480, MY = 300, MW = 36, MH = 36, Shape = C });
                 Slot(ControllerEngine.ActionRsR3, Rt, 10, 480, 300, 60, 60, C);
             }
             else
@@ -150,7 +150,7 @@ namespace GamepadEnhancer
                 Slot(ControllerEngine.ActionBCircle, Rt, 5, 556, 230, 24, 24, C);
                 Slot(ControllerEngine.ActionXSquare, Rt, 6, 508, 230, 24, 24, C);
                 Slot(ControllerEngine.ActionACross, Rt, 7, 532, 254, 24, 24, C);
-                list.Add(new LayoutSlot { Id = RightStickId, Title = "Right Stick", Side = Rt, Row = 8, MX = 484, MY = 300, MW = 36, MH = 36, Shape = C });
+                list.Add(new LayoutSlot { Id = RightStickId, Title = Inputs.NeutralLabel(Inputs.RightStickMove), Side = Rt, Row = 8, MX = 484, MY = 300, MW = 36, MH = 36, Shape = C });
                 Slot(ControllerEngine.ActionRsR3, Rt, 9, 484, 300, 60, 60, C);
             }
 
@@ -160,7 +160,7 @@ namespace GamepadEnhancer
             for (int i = 0; i < PaddleSlots.Count; i++)
                 list.Add(new LayoutSlot
                 {
-                    Id = PaddleSlots.Id(i), Title = PaddleSlots.Titles[i], Side = SlotSide.Bottom, Row = i,
+                    Id = PaddleSlots.Id(i), Title = ControllerLayouts.ForDevice(family).Label(PaddleSlots.Names[i]), Side = SlotSide.Bottom, Row = i,
                     MX = px[i], MY = py[i], MW = 16, MH = 30, Shape = R
                 });
             return list;

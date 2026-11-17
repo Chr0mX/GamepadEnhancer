@@ -272,31 +272,14 @@ namespace GamepadEnhancer
         }
     }
 
-    /// <summary>Button names for each layout. Pure.</summary>
+    /// <summary>Button names for each layout, resolved from the controller layouts (no names are hardcoded here). Pure.</summary>
     internal static class PadLabels
     {
-        private static readonly string[] Xbox =
-        {
-            "A", "B", "X", "Y", "LB", "RB", "LT", "RT", "View", "Menu", "L3", "R3",
-            "D-Pad Up", "D-Pad Down", "D-Pad Left", "D-Pad Right", "Guide",
-            "Touchpad (n/a)", "Left Stick Up", "Left Stick Down", "Left Stick Left", "Left Stick Right"
-        };
+        /// <summary>The label of the engine action at index <paramref name="action"/> on the controller layout that drives <paramref name="family"/>.</summary>
+        public static string For(PadFamily family, int action) =>
+            action >= 0 && action < Inputs.Buttons.Length ? ControllerLayouts.ForDevice(family).Label(Inputs.Buttons[action]) : "Button " + action;
 
-        private static readonly string[] Ds4 =
-        {
-            "Cross", "Circle", "Square", "Triangle", "L1", "R1", "L2", "R2", "Share", "Options", "L3", "R3",
-            "D-Pad Up", "D-Pad Down", "D-Pad Left", "D-Pad Right", "PS",
-            "Touchpad", "Left Stick Up", "Left Stick Down", "Left Stick Left", "Left Stick Right"
-        };
-
-        public static string For(PadFamily family, int action)
-        {
-            string[] t = family == PadFamily.Xbox360 ? Xbox : Ds4;
-            return action >= 0 && action < t.Length ? t[action] : "Button " + action;
-        }
-
-        public static string FamilyName(PadFamily family) =>
-            family == PadFamily.Xbox360 ? "Xbox 360 Controller" : "PlayStation 4 DualShock 4 Controller";
+        public static string FamilyName(PadFamily family) => ControllerLayouts.ForDevice(family).Title;
 
         public static string ViewName(PadView view) => view switch
         {

@@ -1,6 +1,7 @@
 {
+  "Schema": 2,
   "Name": "Default",
-  "ControllerType": "PS4",
+  "ControllerType": "dualshock4",
   "MouseLookEnabled": true,
   "MouseSensitivityX": 8.0,
   "MouseSensitivityY": 8.0,
@@ -9,133 +10,133 @@
   "MouseReleaseMs": 30,
   "MouseInvertY": false,
   "Mappings": {
-    "A / Cross": {
+    "FACE_SOUTH": {
       "Input": "Space",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "B / Circle": {
+    "FACE_EAST": {
       "Input": "C",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "X / Square": {
+    "FACE_WEST": {
       "Input": "R",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Y / Triangle": {
+    "FACE_NORTH": {
       "Input": "Wheel Up",
       "Kind": "MouseWheel",
       "Turbo": false,
       "TurboHz": 12
     },
-    "LB / L1": {
+    "LB": {
       "Input": "Q",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "RB / R1": {
+    "RB": {
       "Input": "G",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "LT / L2": {
+    "LT": {
       "Input": "Mouse Right",
       "Kind": "MouseButton",
       "Turbo": false,
       "TurboHz": 12
     },
-    "RT / R2": {
+    "RT": {
       "Input": "Mouse Left",
       "Kind": "MouseButton",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Back / Share": {
+    "SELECT": {
       "Input": "F12",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Start / Options": {
+    "START": {
       "Input": "Escape",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "LS / L3": {
+    "LS_CLICK": {
       "Input": "Shift",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "RS / R3": {
+    "RS_CLICK": {
       "Input": "V",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "DPad Up": {
+    "DPAD_UP": {
       "Input": "1",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "DPad Down": {
+    "DPAD_DOWN": {
       "Input": "2",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "DPad Left": {
+    "DPAD_LEFT": {
       "Input": "3",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "DPad Right": {
+    "DPAD_RIGHT": {
       "Input": "4",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Guide / PS": {
+    "HOME": {
       "Input": "None",
       "Kind": "None",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Touchpad Click": {
+    "TOUCHPAD": {
       "Input": "M",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Left Stick Up": {
+    "LS_UP": {
       "Input": "W",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Left Stick Down": {
+    "LS_DOWN": {
       "Input": "S",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Left Stick Left": {
+    "LS_LEFT": {
       "Input": "A",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
-    "Left Stick Right": {
+    "LS_RIGHT": {
       "Input": "D",
       "Kind": "Keyboard",
       "Turbo": false,

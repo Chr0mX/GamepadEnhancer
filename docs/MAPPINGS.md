@@ -143,3 +143,7 @@ On the top bar, next to the profile box:
 ## The shipped default and upgrades
 
 `Default.json` (PS4, nothing bound) ships inside the app and is written to `profiles/Default.json` on first run; Apex is read from the app itself and never written to `profiles/`. When a release changes the shipped Default, the existing `profiles/Default.json` is replaced **once** (the old file is kept as `Default.json.bak`, or `.bak2`, ... so a backup is never overwritten); `settings.json` remembers that the upgrade was applied (`DefaultMappingVersion`). Your own profiles are never touched. To get the empty Default back later, delete `profiles/Default.json` and restart.
+
+
+## Ids in files
+Profiles now use canonical physical ids (`FACE_SOUTH`, `LB`, `DPAD_UP`, ...) and, for game configs, that game's action ids (`JUMP`). Old names such as `A / Cross` still load. See [ARCHITECTURE.md](ARCHITECTURE.md).

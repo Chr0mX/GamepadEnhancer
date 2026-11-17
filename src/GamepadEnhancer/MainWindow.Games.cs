@@ -49,9 +49,24 @@ namespace GamepadEnhancer
             return a;
         }
 
-        private PadFamily SelectedFamily() =>
-            engine.IsConnected ? engine.Family
-                : (controllerTypeBox.SelectedItem as string) == "Xbox 360" ? PadFamily.Xbox360 : PadFamily.DualShock4;
+        /// <summary>The controller layout chosen in the dropdown (the default layout while nothing is selected yet).</summary>
+        private ControllerLayoutDef SelectedControllerLayout() =>
+            controllerTypeBox.SelectedItem as ControllerLayoutDef ?? ControllerLayouts.Get(null);
+
+        /// <summary>The layout whose labels are shown: the connected pad's, else the selected one.</summary>
+        private ControllerLayoutDef ActiveLayout() =>
+            engine.IsConnected ? ControllerLayouts.ForDevice(engine.Family) : SelectedControllerLayout();
+
+        private PadFamily SelectedFamily() => ActiveLayout().Family;
+
+        private readonly Dictionary<string, TextBlock> bindingTitleLabels = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Re-resolves every controller-specific label (binding titles, diagram) for the layout now in use.</summary>
+        private void RefreshControllerLabels()
+        {
+            foreach (var pair in bindingTitleLabels) pair.Value.Text = ActionTitle(pair.Key);
+            if (diagram != null) { diagram.Family = SelectedFamily(); diagram.InvalidateVisual(); }
+        }
 
         /// <summary>The global fallback: the Default config (your saved changes to it, else the built-in default).</summary>
         private Func<InputProfile> GlobalProfile => () => GameProfiles.Resolve(GameCatalog.Generic, gameStore, null, out _);
@@ -95,7 +110,7 @@ namespace GamepadEnhancer
             slotTurboBox.IsCheckedChanged += OnSlotTurboChanged;
             slotTurboHz.ValueChanged += (_, _) => OnSlotTurboChanged(null, null);
 
-            gameComboBox.ItemsSource = GameCatalog.All.Select(g => new ComboBoxItem { Content = g.Verified ? g.Name : g.Name + " (defaults not verified yet)", Tag = g.Id }).ToList();
+            gameComboBox.ItemsSource = GameCatalog.All.Select(g => new ComboBoxItem { Content = g.Verified ? g.DisplayName : g.DisplayName + " (defaults not verified yet)", Tag = g.Id }).ToList();
 
             gameSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
             gameSaveTimer.Tick += (_, _) => SaveActiveGameNow();
@@ -157,7 +172,7 @@ namespace GamepadEnhancer
             foreach (var pair in gameHintLabels)
             {
                 string native = activeGame.NativeLabel(pair.Key);
-                pair.Value.Text = native == null ? "" : activeGame.Name + ": " + native;
+                pair.Value.Text = native == null ? "" : activeGame.DisplayName + ": " + native;
                 pair.Value.IsVisible = native != null;
             }
         }
@@ -182,7 +197,7 @@ namespace GamepadEnhancer
             if (gameStore == null || !GameCatalog.IsValidId(activeGame.Id)) return;
             try
             {
-                InputProfile current = BuildProfileFromUi(activeGame.Name);
+                InputProfile current = BuildProfileFromUi(activeGame.DisplayName);
                 if (GameProfiles.Equivalent(current, GameProfiles.Defaults(activeGame, GlobalProfile))) gameStore.DeleteUser(activeGame.Id);
                 else gameStore.SaveUser(activeGame.Id, current);
             }
@@ -192,19 +207,19 @@ namespace GamepadEnhancer
         private async void RestoreGameDefaults_Click(object sender, RoutedEventArgs e)
         {
             bool yes = await Dialogs.ConfirmAsync(this, "Restore defaults",
-                $"Discard your changes to the {activeGame.Name} config and go back to its built-in defaults? Other configs are not affected.");
+                $"Discard your changes to the {activeGame.DisplayName} config and go back to its built-in defaults? Other configs are not affected.");
             if (!yes) return;
             gameSaveTimer.Stop();
             gameStore.DeleteUser(activeGame.Id);
             InputProfile defaults = GameProfiles.Defaults(activeGame, GlobalProfile);
             ApplyGameProfile(activeGame, defaults, GameProfiles.BuiltIn(activeGame) != null ? ProfileSource.BuiltIn : ProfileSource.Global);
-            statusLabel.Text = $"Status: {activeGame.Name} config restored to its defaults";
+            statusLabel.Text = $"Status: {activeGame.DisplayName} config restored to its defaults";
         }
 
         private void UpdateGameLabels()
         {
             bool modified = false;
-            try { modified = !GameProfiles.Equivalent(BuildProfileFromUi(activeGame.Name), GameProfiles.Defaults(activeGame, GlobalProfile)); }
+            try { modified = !GameProfiles.Equivalent(BuildProfileFromUi(activeGame.DisplayName), GameProfiles.Defaults(activeGame, GlobalProfile)); }
             catch { }
             string src = activeSource switch
             {
@@ -212,7 +227,7 @@ namespace GamepadEnhancer
                 ProfileSource.BuiltIn => "built-in default",
                 _ => "the Default config (no layout of its own for this game)"
             };
-            activeGameLabel.Text = $"Config: {activeGame.Name}   ·   Loaded: {src}" + (modified ? "   ·   modified" : "   ·   unchanged");
+            activeGameLabel.Text = $"Config: {activeGame.DisplayName}   ·   Loaded: {src}" + (modified ? "   ·   modified" : "   ·   unchanged");
             activeGameSourceLabel.Text = activeGame.Verified
                 ? (string.IsNullOrEmpty(activeGame.Layout) || activeGame.Layout == "n/a" ? activeGame.Source : $"Native layout: {activeGame.Layout}. Source: {activeGame.Source}")
                 : activeGame.Source;
@@ -307,8 +322,8 @@ namespace GamepadEnhancer
 
                 slotTitle.Text = slot?.Title ?? "Select a control";
                 string native = isAction ? activeGame.NativeLabel(id) : null;
-                slotNative.Text = native != null ? $"In {activeGame.Name}: {native}"
-                    : isAction && !activeGame.Verified && activeGame.Id != GameCatalog.GenericId ? $"{activeGame.Name}: native layout not verified yet, so no game action is shown."
+                slotNative.Text = native != null ? $"In {activeGame.DisplayName}: {native}"
+                    : isAction && !activeGame.Verified && activeGame.Id != GameCatalog.GenericId ? $"{activeGame.DisplayName}: native layout not verified yet, so no game action is shown."
                     : "";
 
                 buttonPicker.IsVisible = isAction && !isStick;
