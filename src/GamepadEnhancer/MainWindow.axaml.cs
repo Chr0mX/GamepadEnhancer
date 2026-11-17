@@ -177,8 +177,9 @@ namespace GamepadEnhancer
 
             var panel = new StackPanel { Spacing = 4 };
             panel.Children.Add(new TextBlock { Text = ActionTitle(actionName), FontWeight = Avalonia.Media.FontWeight.SemiBold });
-            string apex = ApexHints.For(actionName);
-            if (apex != null) panel.Children.Add(new TextBlock { Text = "Apex: " + apex, Classes = { "muted" }, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+            var gameHint = new TextBlock { Classes = { "muted" }, TextWrapping = Avalonia.Media.TextWrapping.Wrap, IsVisible = false };
+            gameHintLabels[actionName] = gameHint;   // text is filled in per selected game (RefreshGameHints)
+            panel.Children.Add(gameHint);
             panel.Children.Add(row);
             return new Border { Classes = { "card" }, Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(10), Child = panel };
         }

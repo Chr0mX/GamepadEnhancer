@@ -35,6 +35,7 @@ namespace GamepadEnhancer
         private int learnSlot = -1;
 
         private string selectedSlot;
+        private readonly Dictionary<string, TextBlock> gameHintLabels = new(StringComparer.OrdinalIgnoreCase);
         private ComboBox buttonPicker, stickPicker, paddlePicker;
         private TextBlock buttonKindTag;
 
@@ -65,7 +66,7 @@ namespace GamepadEnhancer
                 MappingText = SlotMappingText,
                 NativeText = id => activeGame.NativeLabel(id),
                 IsAvailable = SlotAvailable,
-                IsEnabled = id => PaddleSlots.TryParseId(id, out int slot) && paddleSettings[slot].Enabled,
+                IsSlotEnabled = id => PaddleSlots.TryParseId(id, out int slot) && paddleSettings[slot].Enabled,
                 Family = SelectedFamily()
             };
             diagram.SlotSelected += OnSlotSelected;
@@ -137,9 +138,21 @@ namespace GamepadEnhancer
                 appSettings.Save();
             }
             diagram.Family = SelectedFamily();
+            RefreshGameHints();
             UpdateGameLabels();
             diagram.Refresh();
             SyncEditor();
+        }
+
+        /// <summary>Shows what the selected game does on each pad button under the matching row of the list view.</summary>
+        private void RefreshGameHints()
+        {
+            foreach (var pair in gameHintLabels)
+            {
+                string native = activeGame.NativeLabel(pair.Key);
+                pair.Value.Text = native == null ? "" : activeGame.Name + ": " + native;
+                pair.Value.IsVisible = native != null;
+            }
         }
 
         /// <summary>Called from PushSettings: schedules a (debounced) save of the selected game's customization.</summary>

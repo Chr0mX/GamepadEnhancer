@@ -38,7 +38,7 @@ namespace GamepadEnhancer
         /// <summary>False dims a slot (a paddle the connected controller does not have).</summary>
         public Func<string, bool> IsAvailable { get; set; } = _ => true;
         /// <summary>False shows a slot as off (a disabled paddle).</summary>
-        public Func<string, bool> IsEnabled { get; set; } = _ => true;
+        public Func<string, bool> IsSlotEnabled { get; set; } = _ => true;
         /// <summary>Pad actions held right now (bit i = BindingActions[i]).</summary>
         public int PressedActionMask { get; set; }
         /// <summary>Paddle slots held right now (bit i = slot i).</summary>
@@ -237,7 +237,7 @@ namespace GamepadEnhancer
             var chip = s.Chip;
             bool selected = string.Equals(s.Id, selectedId, StringComparison.OrdinalIgnoreCase);
             bool available = !s.IsPaddle || IsAvailable(s.Id);
-            bool enabled = !s.IsPaddle || IsEnabled(s.Id);
+            bool enabled = !s.IsPaddle || IsSlotEnabled(s.Id);
             string mapping = MappingText(s.Id);
             string native = NativeText(s.Id);
             string line2 = mapping;
