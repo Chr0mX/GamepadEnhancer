@@ -70,18 +70,54 @@ namespace GamepadEnhancer.Tests
             Assert.Equal("Keyboard", d.Mappings["Left Stick Up"].Kind);
         }
 
+        private static readonly Dictionary<string, string> DefaultExpected = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["A / Cross"] = "Space",
+            ["B / Circle"] = "C",
+            ["X / Square"] = "R",
+            ["Y / Triangle"] = "Wheel Up",
+            ["LB / L1"] = "Q",
+            ["RB / R1"] = "G",
+            ["LT / L2"] = "Mouse Right",
+            ["RT / R2"] = "Mouse Left",
+            ["LS / L3"] = "Shift",
+            ["RS / R3"] = "V",
+            ["DPad Up"] = "1",
+            ["DPad Down"] = "2",
+            ["DPad Left"] = "3",
+            ["DPad Right"] = "4",
+            ["Touchpad Click"] = "M",
+            ["Start / Options"] = "Escape",
+            ["Back / Share"] = "F12",
+            ["Guide / PS"] = "None",
+            ["Left Stick Up"] = "W",
+            ["Left Stick Down"] = "S",
+            ["Left Stick Left"] = "A",
+            ["Left Stick Right"] = "D"
+        };
+
         [Fact]
-        public void ShippedDefaultIsAnEmptyPs4ToBeRemapped()
+        public void TheDefaultConfigIsThePs4ToKeyboardMouseTable()
         {
             InputProfile d = DefaultProfile.Create();
             Assert.Equal("Default", d.Name);
             Assert.Equal("PS4", d.ControllerType);
-            Assert.False(d.MouseLookEnabled);
+            Assert.True(d.MouseLookEnabled);                          // right stick = mouse movement
             var warnings = new List<string>();
             var map = ProfileMappings.Resolve(d, warnings);
             Assert.Empty(warnings);
-            Assert.Equal(ControllerEngine.BindingActions.Length, map.Count);
-            Assert.All(map.Values, e => { Assert.Equal("None", e.Input); Assert.False(e.Turbo); });
+            Assert.Equal(DefaultExpected.Count, map.Count);
+            foreach (var pair in DefaultExpected) { Assert.Equal(pair.Value, map[pair.Key].Input); Assert.False(map[pair.Key].Turbo); }
+            var keys = map.Values.Select(e => e.Input).Where(i => i != "None").ToList();
+            Assert.Equal(keys.Count, keys.Distinct(StringComparer.OrdinalIgnoreCase).Count());   // no key drives two pad buttons
+        }
+
+        [Fact]
+        public void DefaultAndApexAreDifferentConfigs()
+        {
+            Assert.False(GameProfiles.Equivalent(DefaultProfile.Create(), DefaultProfile.CreateApex()));
+            Assert.Equal("Apex Legends", GameProfiles.BuiltIn(GameCatalog.Get("apex")).Name);
+            Assert.Equal("Default", GameProfiles.BuiltIn(GameCatalog.Generic).Name);
         }
 
         [Fact]
@@ -278,7 +314,7 @@ namespace GamepadEnhancer.Tests
                 Assert.Equal("{\"Name\":\"Mine\"}", System.IO.File.ReadAllText(System.IO.Path.Combine(dir, "Default.json.bak")));
                 string written = System.IO.File.ReadAllText(path);
                 Assert.Contains("\"Name\": \"Default\"", written);
-                Assert.DoesNotContain("\"Space\"", written);    // the shipped Default is empty; Apex lives inside the app
+                Assert.Contains("\"Space\"", written);          // the shipped Default config (PS4 to keyboard + mouse)
 
                 System.IO.File.WriteAllText(path, "{\"Name\":\"EditedAgain\"}");
                 Assert.False(DefaultProfile.PrepareStartup(dir, DefaultProfile.MappingVersion));   // already upgraded: left alone

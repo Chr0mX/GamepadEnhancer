@@ -70,6 +70,7 @@ namespace GamepadEnhancer.Tests
             Assert.NotEqual(apex.Id, wz.Id);
             Assert.NotNull(GameProfiles.BuiltIn(apex));      // Apex ships PC-input defaults
             Assert.Null(GameProfiles.BuiltIn(wz));           // Warzone ships none until verified, it does not borrow Apex's
+            Assert.NotNull(GameProfiles.BuiltIn(GameCatalog.Generic));   // the Default config ships its own
         }
 
         [Theory]
@@ -81,11 +82,13 @@ namespace GamepadEnhancer.Tests
             Assert.Equal(GameCatalog.GenericId, GameCatalog.Get(id).Id);
 
         [Fact]
-        public void CatalogListsEveryGameOnceAndGenericLast()
+        public void CatalogListsEveryGameOnceWithDefaultFirst()
         {
             var ids = GameCatalog.All.Select(g => g.Id).ToList();
             Assert.Equal(ids.Count, ids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-            Assert.Equal(GameCatalog.GenericId, ids[^1]);
+            Assert.Equal(GameCatalog.GenericId, ids[0]);
+            Assert.Equal("Default", GameCatalog.Generic.Name);
+            Assert.Contains("Apex Legends", GameCatalog.All.Select(g => g.Name));
             Assert.All(ids, id => Assert.True(GameCatalog.IsValidId(id)));
         }
 
@@ -151,7 +154,7 @@ namespace GamepadEnhancer.Tests
             Assert.True(store.SaveUser("warzone", wzCustom));
 
             Assert.Equal("Z", ProfileMappings.Resolve(store.LoadUser("apex"))["A / Cross"].Input);
-            Assert.Equal("None", ProfileMappings.Resolve(store.LoadUser("warzone"))["A / Cross"].Input);
+            Assert.Equal("Space", ProfileMappings.Resolve(store.LoadUser("warzone"))["A / Cross"].Input);   // started from the Default config, unlike Apex's Z
             Assert.Equal("X", ProfileMappings.Resolve(store.LoadUser("warzone"))["B / Circle"].Input);
 
             Assert.True(store.DeleteUser("apex"));                  // restoring Apex defaults...

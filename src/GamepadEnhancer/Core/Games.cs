@@ -39,14 +39,17 @@ namespace GamepadEnhancer
 
         private static readonly Regex IdPattern = new("^[a-z0-9][a-z0-9_-]{0,39}$", RegexOptions.Compiled);
 
-        /// <summary>Unsupported games use this: its built-in default is the global fallback profile (profiles/Default.json).</summary>
+        /// <summary>
+        /// The "Default" config: PS4 to keyboard + mouse for any game. It is also the fallback for a game that ships no layout of its own.
+        /// </summary>
         public static GameDefinition Generic { get; } = new GameDefinition
         {
             Id = GenericId,
-            Name = "Other game (global default)",
+            Name = "Default",
             Verified = true,
-            Source = "Global fallback: your profiles/Default.json (PS4, nothing bound unless you remapped it).",
-            Layout = "n/a"
+            Source = "Built-in PS4 to keyboard + mouse default (docs/MAPPINGS.md). Any game without its own layout uses it.",
+            Layout = "n/a",
+            ProfileResource = DefaultProfile.ResourceName
         };
 
         private static IReadOnlyList<GameDefinition> all;
@@ -94,7 +97,7 @@ namespace GamepadEnhancer
                 catch { /* a broken game file must not stop the app: that game is just missing */ }
             }
             list.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
-            list.Add(Generic);
+            list.Insert(0, Generic);   // "Default" is listed first, then the games alphabetically
             return list;
         }
     }
@@ -113,7 +116,7 @@ namespace GamepadEnhancer
             return p;
         }
 
-        /// <summary>Priority 1: saved user customization; 2: built-in default for the game; 3: the global fallback.</summary>
+        /// <summary>Priority 1: saved user customization; 2: built-in default for the game; 3: the global fallback (the Default config).</summary>
         public static InputProfile Resolve(GameDefinition game, GameProfileStore store, Func<InputProfile> global, out ProfileSource source)
         {
             if (game != null && store != null && GameCatalog.IsValidId(game.Id))

@@ -188,7 +188,7 @@ namespace GamepadEnhancer
         public const string ApexName = "Apex";
 
         /// <summary>Revision of the shipped default profile; stored in settings.json once the upgrade has been applied.</summary>
-        public const int MappingVersion = 4;
+        public const int MappingVersion = 5;
 
         /// <summary>The embedded Default profile: PS4, nothing bound.</summary>
         public static InputProfile Create() => Load(ResourceName, new InputProfile { Name = "Default" });

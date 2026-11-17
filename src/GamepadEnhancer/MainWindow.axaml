@@ -28,10 +28,10 @@
         <Button Content="Import..." Margin="0,4,6,4" Click="ImportProfileButton_Click" ToolTip.Tip="Load a profile file (.json) and add it to the list" />
         <Button Content="Export..." Margin="0,4,6,4" Click="ExportProfileButton_Click" ToolTip.Tip="Save the current mapping to a file you can share or edit" />
         <Button Content="Folder" Margin="0,4,10,4" Click="OpenProfilesFolderButton_Click" ToolTip.Tip="Open the profiles folder" />
-        <TextBlock Text="Game" VerticalAlignment="Center" Margin="0,4,8,4" />
+        <TextBlock Text="Config" VerticalAlignment="Center" Margin="0,4,8,4" />
         <ComboBox x:Name="gameComboBox" MinWidth="200" Margin="0,4,6,4" VerticalAlignment="Center" SelectionChanged="GameComboBox_SelectionChanged"
-                  ToolTip.Tip="Each game has its own default layout and its own saved customizations." />
-        <Button Content="Restore game defaults" Margin="0,4,18,4" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes for the selected game and go back to its built-in defaults." />
+                  ToolTip.Tip="Pick a config: Default, or a game with its own layout. Each keeps its own saved changes." />
+        <Button Content="Restore config defaults" Margin="0,4,18,4" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes to the selected config and go back to its built-in defaults." />
 
         <ToggleButton x:Name="darkModeToggle" Content="Dark mode" IsChecked="True" Margin="0,4,18,4" Click="DarkModeToggle_Click" />
 

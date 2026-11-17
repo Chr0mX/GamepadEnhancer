@@ -1,7 +1,7 @@
 {
   "Name": "Default",
   "ControllerType": "PS4",
-  "MouseLookEnabled": false,
+  "MouseLookEnabled": true,
   "MouseSensitivityX": 8.0,
   "MouseSensitivityY": 8.0,
   "MouseCurve": 1.0,
@@ -10,98 +10,98 @@
   "MouseInvertY": false,
   "Mappings": {
     "A / Cross": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "Space",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "B / Circle": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "C",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "X / Square": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "R",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "Y / Triangle": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "Wheel Up",
+      "Kind": "MouseWheel",
       "Turbo": false,
       "TurboHz": 12
     },
     "LB / L1": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "Q",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "RB / R1": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "G",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "LT / L2": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "Mouse Right",
+      "Kind": "MouseButton",
       "Turbo": false,
       "TurboHz": 12
     },
     "RT / R2": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "Mouse Left",
+      "Kind": "MouseButton",
       "Turbo": false,
       "TurboHz": 12
     },
     "Back / Share": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "F12",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "Start / Options": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "Escape",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "LS / L3": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "Shift",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "RS / R3": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "V",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "DPad Up": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "1",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "DPad Down": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "2",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "DPad Left": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "3",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "DPad Right": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "4",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
@@ -112,32 +112,32 @@
       "TurboHz": 12
     },
     "Touchpad Click": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "M",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "Left Stick Up": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "W",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "Left Stick Down": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "S",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "Left Stick Left": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "A",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "Left Stick Right": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "D",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     }

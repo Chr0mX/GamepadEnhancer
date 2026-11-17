@@ -1,6 +1,6 @@
-# Game profiles
+# Configs and game profiles
 
-GamepadEnhancer is game-aware: choose a game on the top bar and it loads that game's own layout. Every game keeps its own saved customization, so changing one game never touches another.
+GamepadEnhancer is game-aware: choose a **config** (Default, or a game) on the top bar and it loads that game's own layout. Every game keeps its own saved customization, so changing one game never touches another.
 
 ## What a "game profile" is
 Two different things are kept apart:
@@ -11,9 +11,9 @@ Two different things are kept apart:
 ## Which profile loads (priority)
 1. **Your saved customization** for the selected game (`profiles/games/<game>.json`).
 2. **The game's built-in default** (shipped inside the app).
-3. **The global fallback**: your `profiles/Default.json` (PS4, nothing bound unless you remapped it).
+3. **The global fallback**: the **Default** config (your saved changes to it, else its built-in layout).
 
-An unsupported game ("Other game") simply uses level 3. A game with no built-in default (Warzone, until verified) also falls to level 3. It never borrows another game's mappings.
+**Default** is itself a selectable config (the first entry in the **Config** list) and is the layout for any game that has none of its own. A game with no built-in default (Warzone, until verified) also falls to level 3. It never borrows another game's mappings.
 
 ## How customizations are kept
 - Built-in defaults live in the app and are never written to `profiles/`, so your edits cannot overwrite them and an update can improve them.
@@ -27,7 +27,7 @@ An unsupported game ("Other game") simply uses level 3. A game with no built-in 
 |---|---|---|---|
 | Apex Legends | the Apex layout in [MAPPINGS.md](MAPPINGS.md) | verified | Apex's in-game *Controller Presets* screen, preset **Default**, stick layout **Default** (screenshot supplied by the project owner; it shows the Xbox One pad with PlayStation icons). Other presets and stick layouts are not modelled. |
 | Call of Duty: Warzone | none yet | **not verified yet, nothing is shown** | The native layout could not be read from an authoritative source while building this. Guides suggest Circle = crouch / prone / slide, R3 = melee, touchpad = map, Options = pause menu, but the rest is unconfirmed, so no label or binding is shipped. |
-| Other game | your `profiles/Default.json` | none | global fallback |
+| Default | the PS4 to keyboard + mouse layout in [MAPPINGS.md](MAPPINGS.md) | none | global fallback for every game without its own layout |
 
 ## Adding or updating a game
 Each game is one JSON file in `src/GamepadEnhancer/Defaults/Games/<id>.json`, embedded automatically:

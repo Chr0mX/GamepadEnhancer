@@ -50,7 +50,8 @@ namespace GamepadEnhancer
             engine.IsConnected ? engine.Family
                 : (controllerTypeBox.SelectedItem as string) == "Xbox 360" ? PadFamily.Xbox360 : PadFamily.DualShock4;
 
-        private Func<InputProfile> GlobalProfile => () => DefaultProfile.LoadDefaultFile(profilesDirectory);
+        /// <summary>The global fallback: the Default config (your saved changes to it, else the built-in default).</summary>
+        private Func<InputProfile> GlobalProfile => () => GameProfiles.Resolve(GameCatalog.Generic, gameStore, null, out _);
 
         // ── Startup ─────────────────────────────────────────────────────────────
 
@@ -185,13 +186,13 @@ namespace GamepadEnhancer
         private async void RestoreGameDefaults_Click(object sender, RoutedEventArgs e)
         {
             bool yes = await Dialogs.ConfirmAsync(this, "Restore defaults",
-                $"Discard your changes for {activeGame.Name} and go back to its built-in defaults? Other games are not affected.");
+                $"Discard your changes to the {activeGame.Name} config and go back to its built-in defaults? Other configs are not affected.");
             if (!yes) return;
             gameSaveTimer.Stop();
             gameStore.DeleteUser(activeGame.Id);
             InputProfile defaults = GameProfiles.Defaults(activeGame, GlobalProfile);
             ApplyGameProfile(activeGame, defaults, GameProfiles.BuiltIn(activeGame) != null ? ProfileSource.BuiltIn : ProfileSource.Global);
-            statusLabel.Text = $"Status: {activeGame.Name} restored to its defaults";
+            statusLabel.Text = $"Status: {activeGame.Name} config restored to its defaults";
         }
 
         private void UpdateGameLabels()
@@ -203,9 +204,9 @@ namespace GamepadEnhancer
             {
                 ProfileSource.User => "your saved customization",
                 ProfileSource.BuiltIn => "built-in default",
-                _ => "global default (profiles/Default.json)"
+                _ => "the Default config (no layout of its own for this game)"
             };
-            activeGameLabel.Text = $"Game: {activeGame.Name}   ·   Loaded: {src}" + (modified ? "   ·   modified" : "   ·   unchanged");
+            activeGameLabel.Text = $"Config: {activeGame.Name}   ·   Loaded: {src}" + (modified ? "   ·   modified" : "   ·   unchanged");
             activeGameSourceLabel.Text = activeGame.Verified
                 ? (string.IsNullOrEmpty(activeGame.Layout) || activeGame.Layout == "n/a" ? activeGame.Source : $"Native layout: {activeGame.Layout}. Source: {activeGame.Source}")
                 : activeGame.Source;

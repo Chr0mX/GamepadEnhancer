@@ -1,6 +1,6 @@
 # Input mappings and profiles
 
-A profile maps **PC input to a virtual PS4 / Xbox 360 pad**. Profiles are per game now (see [GAMES.md](GAMES.md)): **Apex Legends** ships the keyboard + mouse layout below as its built-in default, and any other game uses your global `profiles/Default.json` (a PS4 pad with nothing bound, to remap yourself). Rear paddles are described in [PADDLES.md](PADDLES.md) and are stored in a `Paddles` block of the same profile file. Every pad action has its own stored name, so a profile written for one pad type works for the other (L1 is LB, Share is Back, Options is Start, PS is Guide; the Touchpad has no Xbox equivalent and is ignored there).
+A profile maps **PC input to a virtual PS4 / Xbox 360 pad**. Configs are selectable from the top bar (see [GAMES.md](GAMES.md)): **Default** (the PS4 to keyboard + mouse layout below), **Apex Legends** (its own layout, further down) and, once verified, other games. Rear paddles are described in [PADDLES.md](PADDLES.md) and are stored in a `Paddles` block of the same profile file.
 
 Three kinds of PC input are kept clearly apart, in the picker groups, in the small tag next to each picker, and in the file:
 
@@ -11,7 +11,32 @@ Three kinds of PC input are kept clearly apart, in the picker groups, in the sma
 | **Mouse wheel** | `Wheel Up`, `Wheel Down` (one notch = one press) | Any button (not the left-stick directions) |
 | **Mouse movement** | Moving the mouse | The **right stick**, not a binding: turn on *Mouse movement drives the right stick* |
 
-## Apex mapping (built in)
+## Default config (PS4 to keyboard + mouse)
+
+Where a binding had alternatives, the first one is used and the rest stay one click away in the picker.
+
+| Pad control | Keyboard / mouse | Role |
+|---|---|---|
+| Left stick | `W` `A` `S` `D` | Move |
+| Right stick | Mouse movement | Look / aim |
+| L3 | `Shift` | Sprint / run |
+| R3 | `V` (or Middle Mouse) | Melee / lock-on |
+| R2 | Left Mouse | Fire |
+| L2 | Right Mouse | Aim down sights |
+| R1 | `G` (or `E`) | Tactical / lethal / ability |
+| L1 | `Q` | Ability / grenade / weapon wheel |
+| Cross | `Space` | Jump / confirm / dodge |
+| Circle | `C` (or Left Ctrl) | Crouch / slide |
+| Square | `R` (or `E` / `F`) | Reload / interact |
+| Triangle | Mouse wheel up (or `1` `2` `3`) | Switch weapon |
+| D-Pad Up / Down / Left / Right | `1` / `2` / `3` / `4` | Weapons / gadgets |
+| Touchpad click | `M` (or `Tab`) | Map / inventory |
+| Options | `Esc` | Pause / menu |
+| Share | `F12` (or PrtSc) | Screenshot / clip |
+
+The Action / RPG variant of the triggers and bumpers (Left/Right click on R1/L1 and so on) is not shipped as its own config; pick those keys in the editor. PrtSc is not a bindable key.
+
+## Apex Legends config (built in)
 
 | Pad action (PS4 / Xbox) | Input | Kind |
 |---|---|---|
