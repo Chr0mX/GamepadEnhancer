@@ -9,7 +9,7 @@ namespace GamepadEnhancer
     /// <summary>Shared drawing helpers for the small measurement views (colours come from the theme tokens).</summary>
     internal abstract class InstrumentView : Control
     {
-        private static readonly Typeface Mono = new(new FontFamily("Cascadia Mono, Consolas, monospace"));
+        private static readonly Typeface Mono = new(new FontFamily("avares://GamepadEnhancer/Assets/Fonts#JetBrains Mono, Cascadia Code, Consolas, monospace"));
 
         protected IBrush Res(string key, IBrush fallback) =>
             this.TryFindResource(key, ActualThemeVariant, out object v) && v is IBrush b ? b : fallback;
@@ -128,8 +128,8 @@ namespace GamepadEnhancer
         public override void Render(DrawingContext c)
         {
             var r = new Rect(0, 0, Bounds.Width, Bounds.Height);
-            c.DrawRectangle(Res("CanvasBrush", Brushes.Black), PenOf(Res("BorderBrushDefault", Brushes.Gray), 1), r, 3, 3);
-            if (fraction > 0) c.DrawRectangle(Res(colorKey, Brushes.DodgerBlue), null, new Rect(1, 1, Math.Max(0, (r.Width - 2) * fraction), r.Height - 2), 2, 2);
+            c.DrawRectangle(Res("CanvasBrush", Brushes.Black), PenOf(Res("BorderBrushDefault", Brushes.Gray), 1), r, 6, 6);
+            if (fraction > 0) c.DrawRectangle(Res(colorKey, Brushes.DodgerBlue), null, new Rect(1, 1, Math.Max(0, (r.Width - 2) * fraction), r.Height - 2), 5, 5);
             FormattedText t = Text((fraction * 100).ToString("0.0", CultureInfo.InvariantCulture) + " %", 10, Res("TextBrush", Brushes.White));
             c.DrawText(t, new Point((r.Width - t.Width) / 2, (r.Height - t.Height) / 2));
         }

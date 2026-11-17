@@ -331,10 +331,10 @@ namespace GamepadEnhancer
             bool wide = content >= 980;
             wideLayout = wide;
             ArrangeDashboard(content);
-            Arrange2(mouseGrid, mouseLeft, mouseRight, content >= 1000, "*,16,360");
-            Arrange2(controllerGrid, diagramPanel, inspectorHostController, wide, "*,16,310");
-            Arrange2(paddleGrid, paddleDiagramPanel, paddleSidePanel, wide, "*,16,310");
-            Arrange2(gamesGrid, gamesLeft, gameDetailSection, content >= 900, "320,16,*");
+            Arrange2(mouseGrid, mouseLeft, mouseRight, content >= 1000, "*,12,360");
+            Arrange2(controllerGrid, diagramPanel, inspectorHostController, wide, "*,12,310");
+            Arrange2(paddleGrid, paddleDiagramPanel, paddleSidePanel, wide, "*,12,310");
+            Arrange2(gamesGrid, gamesLeft, gameDetailSection, content >= 900, "320,12,*");
             ArrangeN(monitorStages, new Control[] { monitorStagePhysical, monitorStageProcessed, monitorStageFinal }, content >= 1000, 12);
 
             double controllerH = wide ? Math.Clamp(content - 310 - 90, 380, 640) * 0.78 : Math.Clamp(content * 0.62, 320, 560);
@@ -362,22 +362,22 @@ namespace GamepadEnhancer
             var cards = new[] { cardVirtual, cardInputs, cardConfig, cardAxes, cardPad, cardEvents };
             if (content >= 1180)
             {
-                dashGrid.ColumnDefinitions = new ColumnDefinitions("*,10,*,10,*,10,*");
-                dashGrid.RowDefinitions = new RowDefinitions("Auto,10,Auto");
+                dashGrid.ColumnDefinitions = new ColumnDefinitions("*,12,*,12,*,12,*");
+                dashGrid.RowDefinitions = new RowDefinitions("Auto,12,Auto");
                 Place(cardVirtual, 0, 0, 1); Place(cardInputs, 2, 0, 1); Place(cardConfig, 4, 0, 1); Place(cardAxes, 6, 0, 1);
                 Place(cardPad, 0, 2, 3); Place(cardEvents, 4, 2, 3);
             }
             else if (content >= 760)
             {
-                dashGrid.ColumnDefinitions = new ColumnDefinitions("*,10,*");
-                dashGrid.RowDefinitions = new RowDefinitions("Auto,10,Auto,10,Auto,10,Auto");
+                dashGrid.ColumnDefinitions = new ColumnDefinitions("*,12,*");
+                dashGrid.RowDefinitions = new RowDefinitions("Auto,12,Auto,12,Auto,12,Auto");
                 Place(cardVirtual, 0, 0, 1); Place(cardInputs, 2, 0, 1); Place(cardConfig, 0, 2, 1); Place(cardAxes, 2, 2, 1);
                 Place(cardPad, 0, 4, 3); Place(cardEvents, 0, 6, 3);
             }
             else
             {
                 dashGrid.ColumnDefinitions = new ColumnDefinitions("*");
-                dashGrid.RowDefinitions = new RowDefinitions("Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto");
+                dashGrid.RowDefinitions = new RowDefinitions("Auto,12,Auto,12,Auto,12,Auto,12,Auto,12,Auto");
                 for (int i = 0; i < cards.Length; i++) Place(cards[i], 0, i * 2, 1);
             }
         }
@@ -397,7 +397,7 @@ namespace GamepadEnhancer
             {
                 Grid.SetColumn(items[i], wide ? i * 2 : 0);
                 Grid.SetRow(items[i], wide ? 0 : i);
-                items[i].Margin = wide || i == 0 ? new Thickness(0) : new Thickness(0, 14, 0, 0);
+                items[i].Margin = wide || i == 0 ? new Thickness(0) : new Thickness(0, 12, 0, 0);
             }
         }
 
@@ -408,7 +408,7 @@ namespace GamepadEnhancer
             grid.RowDefinitions = new RowDefinitions(wide ? "Auto" : "Auto,Auto");
             Grid.SetRow(first, 0); Grid.SetColumn(first, 0);
             Grid.SetRow(second, wide ? 0 : 1); Grid.SetColumn(second, wide ? 2 : 0);
-            second.Margin = wide ? new Thickness(0) : new Thickness(0, 14, 0, 0);
+            second.Margin = wide ? new Thickness(0) : new Thickness(0, 12, 0, 0);
         }
 
         // ── Controller layout switch (Xbox 360 / PS4) ───────────────────────────

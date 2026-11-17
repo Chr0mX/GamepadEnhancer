@@ -35,13 +35,25 @@ Every control still calls the same handlers and writes the same settings and pro
 - Number entry uses numeric boxes; there are no paired sliders yet.
 - Remote command counters are not shown on the Network page: the engine does not expose them without disturbing its timing, and no placeholder values are shown.
 
-## Technical-instrument pass (informed by the open ControllerMeta frontend)
-The frontend of https://github.com/HK560/ControllerMeta was read for design principles only (no code, colours, branding or assets were copied). What it does that applies here, and how it is used:
-- **Information presentation**: metrics are small tiles, a 10 px uppercase label over a monospace value, each value in its own semantic colour (blue rate, green OK, orange warning/ids, purple counts). The dashboard is a grid of such tiles in compact cards: virtual controller (state, output rate, type, path), inputs and network, active configuration, triggers and sticks, the controller picture, and a button event stream. All values are real: output rate is the engine's reports per second, trigger and stick values are the final output sent to the virtual pad, events are the engine's own button edges.
-- **Navigation**: a narrow icon rail and a slim header with the identity, a version, a state dot and small bordered protocol tags (VIGEM, HOOKS, NET API). Underline tabs inside pages organise detail (Controller: Mapping / All bindings; Network and input: Receive / Send / Input and blocking / Appearance and files).
-- **Density and shape**: 28 px controls, 3 px corners, flat 1 px panels with a banded title, 12.5 px body text, values in a monospace face.
+## Design tokens (aligned with the ControllerMeta frontend)
+The interface uses the same design tokens as the open frontend of https://github.com/HK560/ControllerMeta (values only: no code, assets, text or branding were copied; the repository carries no licence file, and design values are not code).
+
+| | Dark | Light |
+|---|---|---|
+| Page | `#0F1117` | `#F8FAFC` |
+| Card / rail / header | `#1A1D27` | `#FFFFFF` |
+| Card hover | `#22263A` | `#F1F5F9` |
+| Border | `#2A2E3E` | `#E2E8F0` |
+| Text / secondary | `#E4E6EF` / `#8B8FA3` | `#1E293B` / `#64748B` |
+| Blue / green / red / orange / purple | `#4F8CFF` `#34D399` `#F43F5E` `#FB923C` `#A78BFA` | `#3B82F6` `#10B981` `#EF4444` `#F59E0B` `#8B5CF6` |
+
+Shapes: cards 12 px radius, 16 px padding, accent border on hover; inset tiles 8 px; buttons, inputs and tags 4 px; rail items 44 px with 12 px radius; segmented container 8 px with 6 px segments; underline tabs. Sizes: rail 64 px, header 56 px, page padding 16 px, card gap 12 px; type scale 10 / 11 / 12 / 14 / 18 / 24 px; card headings 12 px bold capitals. Fonts: Inter and JetBrains Mono, bundled with the app (SIL OFL, see `THIRD_PARTY_FONTS.md`).
+
+## Layout and content
+- **Dashboard**: a grid of compact cards made of metric tiles: virtual controller (state, output rate, type, path), inputs and network, active configuration, triggers and sticks (live bars and values on the final output), the controller picture, and a button event stream. All values are real engine data; zero while nothing is connected.
+- **Navigation**: icon rail, a header with the app version, a state dot and bordered protocol tags (VIGEM, HOOKS, NET API), and underline tabs inside pages (Controller: Mapping / All bindings; Network and input: Receive / Send / Input and blocking / Appearance and files).
 - **Controls**: every numeric setting on the mouse and monitor pages is a slider paired with a number box (the number box stays the source of truth).
 - **Measurement views** (`Views/Components/Instruments.cs`): the mouse response curve uses the engine's own `MouseLook.Shape`; the stick scope shows the final right-stick value and the game dead-zone ring; bar meters show trigger travel.
 - **Layout tests**: `UiSmokeTests.NoPageNeedsHorizontalScrolling` checks every page at four window sizes.
 
-Not adopted: its 12 px card radius, hover glow, glass/background-image theming and neon accent shadows. This app stays flat, square-cornered and quiet.
+Not adopted: the split-colour wordmark (the app keeps its own plain name), hover glow, glass blur and background-image theming.

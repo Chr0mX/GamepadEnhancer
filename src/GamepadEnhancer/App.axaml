@@ -12,46 +12,50 @@
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
           <!-- surfaces -->
-          <SolidColorBrush x:Key="CanvasBrush" Color="#101114" />
-          <SolidColorBrush x:Key="SidebarBrush" Color="#0D0E10" />
-          <SolidColorBrush x:Key="SurfaceBrush" Color="#16181C" />
-          <SolidColorBrush x:Key="RaisedBrush" Color="#1C1F24" />
-          <SolidColorBrush x:Key="HoverBrush" Color="#242830" />
-          <SolidColorBrush x:Key="PressedBrush" Color="#2B303A" />
+          <SolidColorBrush x:Key="CanvasBrush" Color="#0F1117" />
+          <SolidColorBrush x:Key="SidebarBrush" Color="#1A1D27" />
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#1A1D27" />
+          <SolidColorBrush x:Key="RaisedBrush" Color="#1A1D27" />
+          <SolidColorBrush x:Key="HoverBrush" Color="#22263A" />
+          <SolidColorBrush x:Key="PressedBrush" Color="#2A2E3E" />
           <!-- borders -->
-          <SolidColorBrush x:Key="BorderBrushSubtle" Color="#23262C" />
-          <SolidColorBrush x:Key="BorderBrushDefault" Color="#2A2E35" />
-          <SolidColorBrush x:Key="BorderBrushStrong" Color="#3A3F48" />
+          <SolidColorBrush x:Key="BorderBrushSubtle" Color="#992A2E3E" />
+          <SolidColorBrush x:Key="BorderBrushDefault" Color="#2A2E3E" />
+          <SolidColorBrush x:Key="BorderBrushStrong" Color="#2F3446" />
           <!-- text -->
-          <SolidColorBrush x:Key="TextBrush" Color="#E4E6EA" />
-          <SolidColorBrush x:Key="MutedTextBrush" Color="#98A0AB" />
-          <SolidColorBrush x:Key="FaintTextBrush" Color="#6F7782" />
+          <SolidColorBrush x:Key="TextBrush" Color="#E4E6EF" />
+          <SolidColorBrush x:Key="MutedTextBrush" Color="#8B8FA3" />
+          <SolidColorBrush x:Key="FaintTextBrush" Color="#4B4E63" />
           <!-- the single accent, plus its tint for selected/active backgrounds -->
-          <SolidColorBrush x:Key="AccentBrush" Color="#7EA6FF" />
-          <SolidColorBrush x:Key="AccentHoverBrush" Color="#98B8FF" />
-          <SolidColorBrush x:Key="AccentTintBrush" Color="#1F2A44" />
-          <SolidColorBrush x:Key="AccentTextBrush" Color="#9DBBFF" />
-          <SolidColorBrush x:Key="OnAccentBrush" Color="#0D1424" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#4F8CFF" />
+          <SolidColorBrush x:Key="AccentHoverBrush" Color="#6B9DFF" />
+          <SolidColorBrush x:Key="AccentTintBrush" Color="#1F283D" />
+          <SolidColorBrush x:Key="AccentTextBrush" Color="#4F8CFF" />
+          <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF" />
           <!-- status -->
-          <SolidColorBrush x:Key="SuccessBrush" Color="#4FBF93" />
-          <SolidColorBrush x:Key="WarningBrush" Color="#E0A53F" />
-          <SolidColorBrush x:Key="DangerBrush" Color="#EF6B6B" />
-          <SolidColorBrush x:Key="DangerTintBrush" Color="#3A1F22" />
-          <SolidColorBrush x:Key="ValueBlueBrush" Color="#7EA6FF" />
-          <SolidColorBrush x:Key="ValueGreenBrush" Color="#4FBF93" />
-          <SolidColorBrush x:Key="ValueOrangeBrush" Color="#F0A35E" />
-          <SolidColorBrush x:Key="ValuePurpleBrush" Color="#B39DFA" />
-          <Color x:Key="SystemAccentColor">#7EA6FF</Color>
-          <Color x:Key="SystemAccentColorLight1">#98B8FF</Color>
-          <Color x:Key="SystemAccentColorLight2">#B3CBFF</Color>
-          <Color x:Key="SystemAccentColorDark1">#6890E6</Color>
-          <Color x:Key="SystemAccentColorDark2">#5478CC</Color>
+          <SolidColorBrush x:Key="SuccessBrush" Color="#34D399" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#FB923C" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#F43F5E" />
+          <SolidColorBrush x:Key="DangerTintBrush" Color="#30202C" />
+          <SolidColorBrush x:Key="AccentLineBrush" Color="#4D4F8CFF" />
+          <SolidColorBrush x:Key="AccentSoftBrush" Color="#253352" />
+          <SolidColorBrush x:Key="DangerLineBrush" Color="#33F43F5E" />
+          <SolidColorBrush x:Key="TooltipBrush" Color="#22262A" />
+          <SolidColorBrush x:Key="ValueBlueBrush" Color="#4F8CFF" />
+          <SolidColorBrush x:Key="ValueGreenBrush" Color="#34D399" />
+          <SolidColorBrush x:Key="ValueOrangeBrush" Color="#FB923C" />
+          <SolidColorBrush x:Key="ValuePurpleBrush" Color="#A78BFA" />
+          <Color x:Key="SystemAccentColor">#4F8CFF</Color>
+          <Color x:Key="SystemAccentColorLight1">#6B9DFF</Color>
+          <Color x:Key="SystemAccentColorLight2">#8DB3FF</Color>
+          <Color x:Key="SystemAccentColorDark1">#3F77E0</Color>
+          <Color x:Key="SystemAccentColorDark2">#2F62C4</Color>
 
           <!-- Fluent control resources, pointed at the tokens above so hover/pressed/focus/disabled come from them -->
-          <StaticResource x:Key="ButtonBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ButtonBackground" ResourceKey="CanvasBrush" />
           <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
           <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="PressedBrush" />
-          <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="CanvasBrush" />
           <StaticResource x:Key="ButtonForeground" ResourceKey="TextBrush" />
           <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="TextBrush" />
           <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="TextBrush" />
@@ -60,9 +64,9 @@
           <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
           <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="BorderBrushStrong" />
           <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
-          <StaticResource x:Key="TextControlBackground" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="TextControlBackground" ResourceKey="CanvasBrush" />
+          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="CanvasBrush" />
+          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="CanvasBrush" />
           <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="SidebarBrush" />
           <StaticResource x:Key="TextControlBorderBrush" ResourceKey="BorderBrushDefault" />
           <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
@@ -73,61 +77,65 @@
           <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="TextBrush" />
           <StaticResource x:Key="TextControlForegroundDisabled" ResourceKey="FaintTextBrush" />
           <StaticResource x:Key="TextControlPlaceholderForeground" ResourceKey="FaintTextBrush" />
-          <StaticResource x:Key="ComboBoxBackground" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ComboBoxBackground" ResourceKey="CanvasBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="CanvasBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="CanvasBrush" />
           <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="SidebarBrush" />
           <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderBrushDefault" />
           <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
           <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="AccentBrush" />
           <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
-          <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="SurfaceBrush" />
           <StaticResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="BorderBrushDefault" />
           <StaticResource x:Key="ListBoxItemBackgroundPointerOver" ResourceKey="HoverBrush" />
           <StaticResource x:Key="ListBoxItemBackgroundSelected" ResourceKey="AccentTintBrush" />
           <StaticResource x:Key="ListBoxItemBackgroundSelectedPointerOver" ResourceKey="AccentTintBrush" />
           <StaticResource x:Key="ListBoxItemBackgroundSelectedPressed" ResourceKey="AccentTintBrush" />
-          <StaticResource x:Key="ToolTipBackground" ResourceKey="RaisedBrush" />
-          <StaticResource x:Key="ToolTipForeground" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ToolTipBackground" ResourceKey="TooltipBrush" />
+          <StaticResource x:Key="ToolTipForeground" ResourceKey="OnAccentBrush" />
           <StaticResource x:Key="ToolTipBorderBrush" ResourceKey="BorderBrushStrong" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="CanvasBrush" Color="#F3F4F7" />
-          <SolidColorBrush x:Key="SidebarBrush" Color="#EAECF1" />
+          <SolidColorBrush x:Key="CanvasBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="SidebarBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="RaisedBrush" Color="#F6F7F9" />
-          <SolidColorBrush x:Key="HoverBrush" Color="#E9EBF0" />
-          <SolidColorBrush x:Key="PressedBrush" Color="#DDE0E7" />
-          <SolidColorBrush x:Key="BorderBrushSubtle" Color="#E3E6EC" />
-          <SolidColorBrush x:Key="BorderBrushDefault" Color="#D3D7E0" />
-          <SolidColorBrush x:Key="BorderBrushStrong" Color="#B3B9C6" />
-          <SolidColorBrush x:Key="TextBrush" Color="#161A22" />
-          <SolidColorBrush x:Key="MutedTextBrush" Color="#505869" />
-          <SolidColorBrush x:Key="FaintTextBrush" Color="#6F7787" />
-          <SolidColorBrush x:Key="AccentBrush" Color="#2F6FEB" />
-          <SolidColorBrush x:Key="AccentHoverBrush" Color="#4A82F0" />
-          <SolidColorBrush x:Key="AccentTintBrush" Color="#DCE7FD" />
-          <SolidColorBrush x:Key="AccentTextBrush" Color="#2257C4" />
+          <SolidColorBrush x:Key="RaisedBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="HoverBrush" Color="#F1F5F9" />
+          <SolidColorBrush x:Key="PressedBrush" Color="#E2E8F0" />
+          <SolidColorBrush x:Key="BorderBrushSubtle" Color="#99E2E8F0" />
+          <SolidColorBrush x:Key="BorderBrushDefault" Color="#E2E8F0" />
+          <SolidColorBrush x:Key="BorderBrushStrong" Color="#CBD5E1" />
+          <SolidColorBrush x:Key="TextBrush" Color="#1E293B" />
+          <SolidColorBrush x:Key="MutedTextBrush" Color="#64748B" />
+          <SolidColorBrush x:Key="FaintTextBrush" Color="#94A3B8" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#3B82F6" />
+          <SolidColorBrush x:Key="AccentHoverBrush" Color="#2563EB" />
+          <SolidColorBrush x:Key="AccentTintBrush" Color="#EBF3FE" />
+          <SolidColorBrush x:Key="AccentTextBrush" Color="#3B82F6" />
           <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="SuccessBrush" Color="#1E8F69" />
-          <SolidColorBrush x:Key="WarningBrush" Color="#B97A12" />
-          <SolidColorBrush x:Key="DangerBrush" Color="#CC2F35" />
-          <SolidColorBrush x:Key="DangerTintBrush" Color="#FBE3E4" />
-          <SolidColorBrush x:Key="ValueBlueBrush" Color="#2457C5" />
-          <SolidColorBrush x:Key="ValueGreenBrush" Color="#1E8F69" />
-          <SolidColorBrush x:Key="ValueOrangeBrush" Color="#B25E0F" />
-          <SolidColorBrush x:Key="ValuePurpleBrush" Color="#6D4BD1" />
-          <Color x:Key="SystemAccentColor">#2F6FEB</Color>
-          <Color x:Key="SystemAccentColorLight1">#4A82F0</Color>
-          <Color x:Key="SystemAccentColorLight2">#6B9BF3</Color>
-          <Color x:Key="SystemAccentColorDark1">#2559C4</Color>
-          <Color x:Key="SystemAccentColorDark2">#1C47A0</Color>
+          <SolidColorBrush x:Key="SuccessBrush" Color="#10B981" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#EF4444" />
+          <SolidColorBrush x:Key="DangerTintBrush" Color="#FDECEC" />
+          <SolidColorBrush x:Key="AccentLineBrush" Color="#4D3B82F6" />
+          <SolidColorBrush x:Key="AccentSoftBrush" Color="#DBEAFE" />
+          <SolidColorBrush x:Key="DangerLineBrush" Color="#33EF4444" />
+          <SolidColorBrush x:Key="TooltipBrush" Color="#1E293B" />
+          <SolidColorBrush x:Key="ValueBlueBrush" Color="#3B82F6" />
+          <SolidColorBrush x:Key="ValueGreenBrush" Color="#10B981" />
+          <SolidColorBrush x:Key="ValueOrangeBrush" Color="#F59E0B" />
+          <SolidColorBrush x:Key="ValuePurpleBrush" Color="#8B5CF6" />
+          <Color x:Key="SystemAccentColor">#3B82F6</Color>
+          <Color x:Key="SystemAccentColorLight1">#60A5FA</Color>
+          <Color x:Key="SystemAccentColorLight2">#93C5FD</Color>
+          <Color x:Key="SystemAccentColorDark1">#2563EB</Color>
+          <Color x:Key="SystemAccentColorDark2">#1D4ED8</Color>
 
           <!-- Fluent control resources, pointed at the tokens above so hover/pressed/focus/disabled come from them -->
-          <StaticResource x:Key="ButtonBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ButtonBackground" ResourceKey="CanvasBrush" />
           <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
           <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="PressedBrush" />
-          <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="CanvasBrush" />
           <StaticResource x:Key="ButtonForeground" ResourceKey="TextBrush" />
           <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="TextBrush" />
           <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="TextBrush" />
@@ -136,9 +144,9 @@
           <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
           <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="BorderBrushStrong" />
           <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
-          <StaticResource x:Key="TextControlBackground" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="TextControlBackground" ResourceKey="CanvasBrush" />
+          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="CanvasBrush" />
+          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="CanvasBrush" />
           <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="SidebarBrush" />
           <StaticResource x:Key="TextControlBorderBrush" ResourceKey="BorderBrushDefault" />
           <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
@@ -149,37 +157,37 @@
           <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="TextBrush" />
           <StaticResource x:Key="TextControlForegroundDisabled" ResourceKey="FaintTextBrush" />
           <StaticResource x:Key="TextControlPlaceholderForeground" ResourceKey="FaintTextBrush" />
-          <StaticResource x:Key="ComboBoxBackground" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="SurfaceBrush" />
-          <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ComboBoxBackground" ResourceKey="CanvasBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="CanvasBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="CanvasBrush" />
           <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="SidebarBrush" />
           <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderBrushDefault" />
           <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
           <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="AccentBrush" />
           <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
-          <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="SurfaceBrush" />
           <StaticResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="BorderBrushDefault" />
           <StaticResource x:Key="ListBoxItemBackgroundPointerOver" ResourceKey="HoverBrush" />
           <StaticResource x:Key="ListBoxItemBackgroundSelected" ResourceKey="AccentTintBrush" />
           <StaticResource x:Key="ListBoxItemBackgroundSelectedPointerOver" ResourceKey="AccentTintBrush" />
           <StaticResource x:Key="ListBoxItemBackgroundSelectedPressed" ResourceKey="AccentTintBrush" />
-          <StaticResource x:Key="ToolTipBackground" ResourceKey="RaisedBrush" />
-          <StaticResource x:Key="ToolTipForeground" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ToolTipBackground" ResourceKey="TooltipBrush" />
+          <StaticResource x:Key="ToolTipForeground" ResourceKey="OnAccentBrush" />
           <StaticResource x:Key="ToolTipBorderBrush" ResourceKey="BorderBrushStrong" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
 
       <!-- Legacy keys some code-built controls still read. -->
       <x:Double x:Key="ControlHeight">28</x:Double>
-      <x:Double x:Key="SliderTrackThemeHeight">2</x:Double>
-      <x:Double x:Key="SliderHorizontalThumbWidth">10</x:Double>
-      <x:Double x:Key="SliderHorizontalThumbHeight">18</x:Double>
+      <x:Double x:Key="SliderTrackThemeHeight">4</x:Double>
+      <x:Double x:Key="SliderHorizontalThumbWidth">16</x:Double>
+      <x:Double x:Key="SliderHorizontalThumbHeight">16</x:Double>
       <x:Double x:Key="NavItemHeight">36</x:Double>
-      <CornerRadius x:Key="RadiusControl">3</CornerRadius>
-      <CornerRadius x:Key="RadiusPanel">3</CornerRadius>
-      <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI, Inter, sans-serif</FontFamily>
-      <FontFamily x:Key="DisplayFont">Bahnschrift SemiCondensed, Bahnschrift, Segoe UI Semibold, Segoe UI, sans-serif</FontFamily>
-      <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, Menlo, monospace</FontFamily>
+      <CornerRadius x:Key="RadiusControl">4</CornerRadius>
+      <CornerRadius x:Key="RadiusPanel">12</CornerRadius>
+      <FontFamily x:Key="UiFont">avares://GamepadEnhancer/Assets/Fonts#Inter, Segoe UI Variable Text, Segoe UI, system-ui, sans-serif</FontFamily>
+      <FontFamily x:Key="DisplayFont">avares://GamepadEnhancer/Assets/Fonts#Inter, Segoe UI Variable Text, Segoe UI, system-ui, sans-serif</FontFamily>
+      <FontFamily x:Key="MonoFont">avares://GamepadEnhancer/Assets/Fonts#JetBrains Mono, Cascadia Code, Consolas, monospace</FontFamily>
     </ResourceDictionary>
   </Application.Resources>
 

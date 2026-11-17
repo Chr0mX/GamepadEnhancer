@@ -12,28 +12,32 @@
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
 
       <!-- ═══════════════ Navigation rail ═══════════════ -->
-      <Border x:Name="sidebar" Grid.Column="0" Width="56" Background="{DynamicResource SidebarBrush}"
+      <Border x:Name="sidebar" Grid.Column="0" Width="64" Background="{DynamicResource SidebarBrush}"
               BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,1,0">
-        <StackPanel Margin="0,10,0,8" HorizontalAlignment="Center">
-          <RadioButton x:Name="navDashboard" Classes="nav" GroupName="nav" Tag="dashboard" IsChecked="True" ToolTip.Tip="Dashboard" IsCheckedChanged="Nav_Changed"><v:Icon Kind="dashboard" Width="19" Height="19" /></RadioButton>
-          <RadioButton Classes="nav" GroupName="nav" Tag="controller" ToolTip.Tip="Controller mapping" IsCheckedChanged="Nav_Changed"><v:Icon Kind="gamepad" Width="19" Height="19" /></RadioButton>
-          <RadioButton Classes="nav" GroupName="nav" Tag="games" ToolTip.Tip="Games and profiles" IsCheckedChanged="Nav_Changed"><v:Icon Kind="games" Width="19" Height="19" /></RadioButton>
-          <RadioButton Classes="nav" GroupName="nav" Tag="paddles" ToolTip.Tip="Rear paddles" IsCheckedChanged="Nav_Changed"><v:Icon Kind="paddles" Width="19" Height="19" /></RadioButton>
-          <RadioButton Classes="nav" GroupName="nav" Tag="mouse" ToolTip.Tip="Mouse look (right stick)" IsCheckedChanged="Nav_Changed"><v:Icon Kind="mouse" Width="19" Height="19" /></RadioButton>
-          <Border Classes="divider" Margin="10,6" />
-          <RadioButton x:Name="navMonitor" Classes="nav" GroupName="nav" Tag="monitor" ToolTip.Tip="Controller monitor" IsCheckedChanged="Nav_Changed"><v:Icon Kind="activity" Width="19" Height="19" /></RadioButton>
-          <RadioButton Classes="nav" GroupName="nav" Tag="network" ToolTip.Tip="Network and input" IsCheckedChanged="Nav_Changed"><v:Icon Kind="network" Width="19" Height="19" /></RadioButton>
+        <StackPanel Margin="0,16,0,16" HorizontalAlignment="Center">
+          <Border Padding="8" CornerRadius="12" Margin="0,0,0,24" Background="{DynamicResource AccentTintBrush}" BorderBrush="{DynamicResource AccentLineBrush}" BorderThickness="1" HorizontalAlignment="Center" ToolTip.Tip="GamepadEnhancer">
+            <v:Icon Kind="gamepad" Width="24" Height="24" Foreground="{DynamicResource AccentBrush}" />
+          </Border>
+          <RadioButton x:Name="navDashboard" Classes="nav" GroupName="nav" Tag="dashboard" IsChecked="True" ToolTip.Tip="Dashboard" IsCheckedChanged="Nav_Changed"><v:Icon Kind="dashboard" Width="20" Height="20" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="controller" ToolTip.Tip="Controller mapping" IsCheckedChanged="Nav_Changed"><v:Icon Kind="gamepad" Width="20" Height="20" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="games" ToolTip.Tip="Games and profiles" IsCheckedChanged="Nav_Changed"><v:Icon Kind="games" Width="20" Height="20" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="paddles" ToolTip.Tip="Rear paddles" IsCheckedChanged="Nav_Changed"><v:Icon Kind="paddles" Width="20" Height="20" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="mouse" ToolTip.Tip="Mouse look (right stick)" IsCheckedChanged="Nav_Changed"><v:Icon Kind="mouse" Width="20" Height="20" /></RadioButton>
+          <Border Classes="divider" Margin="12,8" />
+          <RadioButton x:Name="navMonitor" Classes="nav" GroupName="nav" Tag="monitor" ToolTip.Tip="Controller monitor" IsCheckedChanged="Nav_Changed"><v:Icon Kind="activity" Width="20" Height="20" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="network" ToolTip.Tip="Network and input" IsCheckedChanged="Nav_Changed"><v:Icon Kind="network" Width="20" Height="20" /></RadioButton>
         </StackPanel>
       </Border>
 
       <Grid Grid.Column="1" RowDefinitions="Auto,*">
 
         <!-- ═══════════════ Header: identity, state tags, controller type, connect ═══════════════ -->
-        <Border x:Name="headerBar" Grid.Row="0" Height="48" Padding="16,0" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,0,1">
+        <Border x:Name="headerBar" Grid.Row="0" Height="56" Padding="24,0" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,0,1">
           <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,Auto">
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,14,0">
-              <TextBlock x:Name="brandText" Classes="pagetitle" Text="GAMEPADENHANCER" VerticalAlignment="Center" />
-              <TextBlock x:Name="versionText" Classes="mono" Foreground="{DynamicResource FaintTextBrush}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Margin="0,0,14,0">
+              <TextBlock x:Name="brandText" Classes="pagetitle" Text="GamepadEnhancer" VerticalAlignment="Center" />
+              <Border Width="1" Height="16" Background="{DynamicResource BorderBrushDefault}" VerticalAlignment="Center" />
+              <TextBlock x:Name="versionText" Classes="mono" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
             </StackPanel>
             <Border Grid.Column="1" Classes="pill" Margin="0,0,6,0"><v:StatusBadge x:Name="statusBarBadge" /></Border>
             <Border x:Name="tagOutput" Grid.Column="2" Classes="tag" Margin="0,0,4,0"><TextBlock x:Name="tagOutputText" Text="VIGEM" /></Border>
@@ -42,7 +46,7 @@
             <Border x:Name="headerConfigPill" Grid.Column="5" Classes="pill"><TextBlock x:Name="statusBarConfig" Classes="caption" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="220" /></Border>
             <Border Grid.Column="7" Classes="segbox" Margin="0,0,8,0"><StackPanel x:Name="layoutSwitch" Orientation="Horizontal" Spacing="2" /></Border>
             <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-              <Button x:Name="connectButton" Classes="primary" Content="Connect" Click="ConnectButton_Click" />
+              <Button x:Name="connectButton" Classes="soft" Content="Connect" Click="ConnectButton_Click" />
               <Button x:Name="disconnectButton" Content="Disconnect" IsEnabled="False" IsVisible="False" Click="DisconnectButton_Click" />
             </StackPanel>
           </Grid>
@@ -60,16 +64,16 @@
 
           <!-- ───────── Dashboard ───────── -->
           <ScrollViewer x:Name="pageDashboard" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Grid x:Name="dashGrid" Margin="16,12,16,20" ColumnDefinitions="*,10,*,10,*,10,*" RowDefinitions="Auto,10,Auto" MaxWidth="1600" HorizontalAlignment="Stretch">
+            <Grid x:Name="dashGrid" Margin="16,12,16,20" ColumnDefinitions="*,12,*,12,*,12,*" RowDefinitions="Auto,12,Auto" MaxWidth="1600" HorizontalAlignment="Stretch">
 
               <!-- Virtual controller -->
               <v:Section x:Name="cardVirtual" Title="VIRTUAL CONTROLLER" Grid.Column="0" Grid.Row="0">
                 <StackPanel>
                 <UniformGrid Columns="2">
-                  <Border Classes="tile" Margin="0,0,3,3"><StackPanel><TextBlock Classes="tilelab" Text="STATE" /><v:StatusBadge x:Name="dashVirtualBadge" Margin="0,3,0,0" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="3,0,0,3"><StackPanel><TextBlock Classes="tilelab" Text="OUTPUT RATE" /><StackPanel Orientation="Horizontal" Spacing="4"><TextBlock x:Name="dashRateText" Classes="val blue" Text="0" /><TextBlock Classes="unit" Text="reports/s" VerticalAlignment="Bottom" Margin="0,0,0,2" /></StackPanel></StackPanel></Border>
-                  <Border Classes="tile" Margin="0,3,3,0"><StackPanel><TextBlock Classes="tilelab" Text="TYPE" /><TextBlock x:Name="dashVirtualTitle" Classes="val purple" FontSize="13" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="3,3,0,0"><StackPanel><TextBlock Classes="tilelab" Text="PATH" /><v:StatusBadge x:Name="dashOutputBadge" Margin="0,3,0,0" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="0,0,6,6"><StackPanel><TextBlock Classes="tilelab" Text="STATE" /><v:StatusBadge x:Name="dashVirtualBadge" Margin="0,3,0,0" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="6,0,0,6"><StackPanel><TextBlock Classes="tilelab" Text="OUTPUT RATE" /><StackPanel Orientation="Horizontal" Spacing="4"><TextBlock x:Name="dashRateText" Classes="val blue" Text="0" /><TextBlock Classes="unit" Text="reports/s" VerticalAlignment="Bottom" Margin="0,0,0,2" /></StackPanel></StackPanel></Border>
+                  <Border Classes="tile" Margin="0,6,6,0"><StackPanel><TextBlock Classes="tilelab" Text="TYPE" /><TextBlock x:Name="dashVirtualTitle" Classes="val purple" FontSize="13" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="6,6,0,0"><StackPanel><TextBlock Classes="tilelab" Text="PATH" /><v:StatusBadge x:Name="dashOutputBadge" Margin="0,3,0,0" /></StackPanel></Border>
                 </UniformGrid>
                 <TextBlock x:Name="dashVirtualDetail" Classes="caption" Margin="0,8,0,0" />
                 <TextBlock x:Name="dashOutputDetail" Classes="caption" Margin="0,2,0,0" />
@@ -80,10 +84,10 @@
               <v:Section x:Name="cardInputs" Title="INPUTS AND NETWORK" Grid.Column="2" Grid.Row="0">
                 <StackPanel>
                 <UniformGrid Columns="2">
-                  <Border Classes="tile" Margin="0,0,3,3"><StackPanel><TextBlock Classes="tilelab" Text="PHYSICAL PAD" /><v:StatusBadge x:Name="dashPhysicalBadge" Margin="0,3,0,0" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="3,0,0,3"><StackPanel><TextBlock Classes="tilelab" Text="NETWORK API" /><v:StatusBadge x:Name="dashNetworkBadge" Margin="0,3,0,0" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="0,3,3,0"><StackPanel><TextBlock Classes="tilelab" Text="CAPTURE" /><TextBlock x:Name="dashCaptureText" Classes="val orange" FontSize="13" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="3,3,0,0"><StackPanel><TextBlock Classes="tilelab" Text="MOUSE LOOK" /><TextBlock x:Name="dashMouseText" Classes="val green" FontSize="13" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="0,0,6,6"><StackPanel><TextBlock Classes="tilelab" Text="PHYSICAL PAD" /><v:StatusBadge x:Name="dashPhysicalBadge" Margin="0,3,0,0" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="6,0,0,6"><StackPanel><TextBlock Classes="tilelab" Text="NETWORK API" /><v:StatusBadge x:Name="dashNetworkBadge" Margin="0,3,0,0" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="0,6,6,0"><StackPanel><TextBlock Classes="tilelab" Text="CAPTURE" /><TextBlock x:Name="dashCaptureText" Classes="val orange" FontSize="13" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="6,6,0,0"><StackPanel><TextBlock Classes="tilelab" Text="MOUSE LOOK" /><TextBlock x:Name="dashMouseText" Classes="val green" FontSize="13" /></StackPanel></Border>
                 </UniformGrid>
                 <TextBlock x:Name="dashPhysicalDetail" Classes="caption" Margin="0,8,0,0" />
                 <TextBlock x:Name="dashNetworkDetail" Classes="caption" Margin="0,2,0,0" />
@@ -105,8 +109,8 @@
               <!-- Triggers and sticks -->
               <v:Section x:Name="cardAxes" Title="TRIGGERS AND STICKS" Grid.Column="6" Grid.Row="0">
                 <StackPanel Spacing="8">
-                  <StackPanel Spacing="3"><TextBlock x:Name="dashLtLabel" Classes="tilelab" Text="LT" /><v:BarMeter x:Name="barLt" Height="22" ColorKey="ValueBlueBrush" /></StackPanel>
-                  <StackPanel Spacing="3"><TextBlock x:Name="dashRtLabel" Classes="tilelab" Text="RT" /><v:BarMeter x:Name="barRt" Height="22" ColorKey="DangerBrush" /></StackPanel>
+                  <StackPanel Spacing="3"><TextBlock x:Name="dashLtLabel" Classes="tilelab" Text="LT" /><v:BarMeter x:Name="barLt" Height="24" ColorKey="ValueBlueBrush" /></StackPanel>
+                  <StackPanel Spacing="3"><TextBlock x:Name="dashRtLabel" Classes="tilelab" Text="RT" /><v:BarMeter x:Name="barRt" Height="24" ColorKey="DangerBrush" /></StackPanel>
                   <UniformGrid Columns="2">
                     <Border Classes="tile" Margin="0,0,3,0"><StackPanel><TextBlock Classes="tilelab" Text="LEFT STICK" /><TextBlock x:Name="dashLeftStick" Classes="val" FontSize="12" Text="+0.00  +0.00" /></StackPanel></Border>
                     <Border Classes="tile" Margin="3,0,0,0"><StackPanel><TextBlock Classes="tilelab" Text="RIGHT STICK" /><TextBlock x:Name="dashRightStick" Classes="val" FontSize="12" Text="+0.00  +0.00" /></StackPanel></Border>
@@ -135,7 +139,7 @@
 
           <!-- ───────── Controller ───────── -->
           <ScrollViewer x:Name="pageController" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="16,12,16,16" Spacing="10" MaxWidth="1560" HorizontalAlignment="Stretch">
+            <StackPanel Margin="16,12,16,16" Spacing="12" MaxWidth="1560" HorizontalAlignment="Stretch">
               <Grid ColumnDefinitions="*,Auto">
                 <TextBlock x:Name="activeGameLabel" Classes="caption" VerticalAlignment="Center" />
                 <Button Grid.Column="1" Classes="ghost" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes to the selected config and go back to its built-in defaults.">
@@ -143,13 +147,15 @@
                 </Button>
               </Grid>
 
-              <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,-2,0,0">
-                <RadioButton Classes="tab" GroupName="ctab" Tag="map" IsChecked="True" Content="Mapping" IsCheckedChanged="CTab_Changed" />
-                <RadioButton Classes="tab" GroupName="ctab" Tag="all" Content="All bindings" IsCheckedChanged="CTab_Changed" />
-              </StackPanel>
+              <Border BorderBrush="{DynamicResource BorderBrushDefault}" BorderThickness="0,0,0,1" Padding="4,0">
+                <StackPanel Orientation="Horizontal">
+                  <RadioButton Classes="tab" GroupName="ctab" Tag="map" IsChecked="True" Content="MAPPING" IsCheckedChanged="CTab_Changed" />
+                  <RadioButton Classes="tab" GroupName="ctab" Tag="all" Content="ALL BINDINGS" IsCheckedChanged="CTab_Changed" />
+                </StackPanel>
+              </Border>
 
-              <StackPanel x:Name="controllerMapPane" Spacing="10">
-              <Grid x:Name="controllerGrid" ColumnDefinitions="*,16,310" RowDefinitions="Auto,Auto">
+              <StackPanel x:Name="controllerMapPane" Spacing="12">
+              <Grid x:Name="controllerGrid" ColumnDefinitions="*,12,310" RowDefinitions="Auto,Auto">
                 <Border x:Name="diagramPanel" Grid.Column="0" Classes="panel" Padding="0" ClipToBounds="True">
                   <Border x:Name="diagramHost" Height="580" MinHeight="320" />
                 </Border>
@@ -159,8 +165,8 @@
               <TextBlock x:Name="activeGameSourceLabel" Classes="caption" />
               </StackPanel>
 
-              <StackPanel x:Name="allBindingsPane" IsVisible="False" Spacing="10">
-                <StackPanel Spacing="10">
+              <StackPanel x:Name="allBindingsPane" IsVisible="False" Spacing="12">
+                <StackPanel Spacing="12">
                   <v:Section Title="Buttons" Description="Bind each pad button to a keyboard key, a mouse button or a mouse wheel notch. Turbo (rapid fire) is optional per button. Ultimate Ability in Apex is L1 + R1 together.">
                     <UniformGrid x:Name="bindingsGrid" Columns="2" />
                   </v:Section>
@@ -174,7 +180,7 @@
 
           <!-- Shared editor for the selected control (moves between the Controller and Rear paddles pages) -->
           <Border x:Name="inspectorCard" Classes="panel" IsVisible="False">
-            <StackPanel Spacing="10">
+            <StackPanel Spacing="12">
               <StackPanel Spacing="2">
                 <TextBlock Classes="lab" Text="SELECTED INPUT" />
                 <TextBlock x:Name="slotTitle" Classes="stat" Text="Select a control" />
@@ -205,8 +211,8 @@
 
           <!-- ───────── Games and profiles ───────── -->
           <ScrollViewer x:Name="pageGames" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Grid x:Name="gamesGrid" Margin="16,12,16,20" ColumnDefinitions="320,16,*" MaxWidth="1500" HorizontalAlignment="Stretch">
-              <StackPanel x:Name="gamesLeft" Grid.Column="0" Spacing="14">
+            <Grid x:Name="gamesGrid" Margin="16,12,16,20" ColumnDefinitions="320,12,*" MaxWidth="1500" HorizontalAlignment="Stretch">
+              <StackPanel x:Name="gamesLeft" Grid.Column="0" Spacing="12">
                 <v:Section x:Name="gameListSection" Title="Game configs" Description="Picking one loads its own default layout. Each keeps its own saved changes; built-in defaults are never overwritten.">
                   <ListBox x:Name="gameList" Classes="plain" SelectionChanged="GameList_SelectionChanged" />
                 </v:Section>
@@ -218,7 +224,7 @@
                       <Button Classes="ghost icon" Click="OpenProfilesFolderButton_Click" ToolTip.Tip="Open the profiles folder"><v:Icon Kind="folder" /></Button>
                     </StackPanel>
                   </v:Section.Actions>
-                  <StackPanel Spacing="10">
+                  <StackPanel Spacing="12">
                     <ListBox x:Name="profileComboBox" Classes="plain" MaxHeight="180" SelectionChanged="ProfileComboBox_SelectionChanged" />
                     <TextBox x:Name="profileNameBox" Watermark="Profile name" />
                     <WrapPanel>
@@ -239,7 +245,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="restore" /><TextBlock Text="Restore defaults" /></StackPanel>
                   </Button>
                 </v:Section.Actions>
-                <StackPanel Spacing="10">
+                <StackPanel Spacing="12">
                   <TextBlock x:Name="gameDetailName" Classes="stat" />
                   <WrapPanel x:Name="gameDetailBadges" />
                   <TextBlock x:Name="gameDetailSource" Classes="caption" />
@@ -253,16 +259,16 @@
 
           <!-- ───────── Rear paddles ───────── -->
           <ScrollViewer x:Name="pagePaddles" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="16,12,16,20" Spacing="10" MaxWidth="1560" HorizontalAlignment="Stretch">
+            <StackPanel Margin="16,12,16,20" Spacing="12" MaxWidth="1560" HorizontalAlignment="Stretch">
               <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Classes="caption" VerticalAlignment="Center" Text="Four independent paddles. Each can press a virtual controller button, a keyboard key or a mouse button. They need a physical controller that has paddles." />
                 <v:StatusBadge x:Name="paddleHwBadge" Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0" />
               </Grid>
-              <Grid x:Name="paddleGrid" ColumnDefinitions="*,16,310">
+              <Grid x:Name="paddleGrid" ColumnDefinitions="*,12,310">
                 <Border x:Name="paddleDiagramPanel" Classes="panel" Padding="0" Grid.Column="0" ClipToBounds="True">
                   <Border x:Name="paddleDiagramHost" Height="520" MinHeight="320" />
                 </Border>
-                <StackPanel x:Name="paddleSidePanel" Grid.Column="2" Spacing="14">
+                <StackPanel x:Name="paddleSidePanel" Grid.Column="2" Spacing="12">
                   <Border x:Name="inspectorHostPaddles" />
                   <v:Section Title="Overview" Description="Click a row to edit that paddle. The dot lights while the physical paddle is held.">
                     <StackPanel x:Name="paddleSummary" Spacing="4" />
@@ -274,8 +280,8 @@
 
           <!-- ───────── Mouse look ───────── -->
           <ScrollViewer x:Name="pageMouse" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Grid x:Name="mouseGrid" Margin="16,12,16,20" ColumnDefinitions="*,16,360" MaxWidth="1300" HorizontalAlignment="Stretch">
-              <StackPanel x:Name="mouseLeft" Grid.Column="0" Spacing="10">
+            <Grid x:Name="mouseGrid" Margin="16,12,16,20" ColumnDefinitions="*,12,360" MaxWidth="1300" HorizontalAlignment="Stretch">
+              <StackPanel x:Name="mouseLeft" Grid.Column="0" Spacing="12">
               <TextBlock Classes="caption" Text="The right stick is not bound to a key: moving the mouse moves the stick. A stick value sent over the Network API replaces it while set. Movement is read with Raw Input, so it works with either input capture method." />
               <v:Section Title="Mouse look">
                 <v:SettingRow Title="Mouse movement drives the right stick" Description="Mouse Up / Down / Left / Right = stick up / down / left / right.">
@@ -309,7 +315,7 @@
                 </StackPanel>
               </v:Section>
               </StackPanel>
-              <StackPanel x:Name="mouseRight" Grid.Column="2" Spacing="10">
+              <StackPanel x:Name="mouseRight" Grid.Column="2" Spacing="12">
                 <v:Section Title="Response curve" Description="Stick output against mouse speed, drawn with the same function the engine uses. Dashed: linear. The short tick on the left is the game dead zone.">
                   <v:CurvePlot x:Name="curvePlot" Height="210" />
                 </v:Section>
@@ -321,7 +327,7 @@
           </ScrollViewer>
           <!-- ───────── Monitor ───────── -->
           <ScrollViewer x:Name="pageMonitor" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="16,12,16,20" Spacing="10" MaxWidth="1560" HorizontalAlignment="Stretch">
+            <StackPanel Margin="16,12,16,20" Spacing="12" MaxWidth="1560" HorizontalAlignment="Stretch">
               <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Classes="caption" VerticalAlignment="Center" Text="The three stages of the pipeline side by side. It draws on its own timer and never delays the controller output." />
                 <Button x:Name="monitorPopoutButton" Grid.Column="1" Content="Open pop-out window" Click="MonitorPopout_Click" />
@@ -370,15 +376,17 @@
 
           <!-- ───────── Network and input ───────── -->
           <ScrollViewer x:Name="pageNetwork" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="16,12,16,24" Spacing="10" MaxWidth="1500" HorizontalAlignment="Stretch">
+            <StackPanel Margin="16,12,16,24" Spacing="12" MaxWidth="1500" HorizontalAlignment="Stretch">
               <TextBlock Classes="caption" Text="Two directions. Receive: another computer controls the controller on this PC. Send: this PC's keyboard and mouse drive a controller on another PC. Input is how keyboard and mouse are read and when they are blocked." />
-              <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,-2,0,0">
-                <RadioButton Classes="tab" GroupName="ntab" Tag="recv" IsChecked="True" Content="Receive" IsCheckedChanged="NTab_Changed" />
-                <RadioButton Classes="tab" GroupName="ntab" Tag="send" Content="Send" IsCheckedChanged="NTab_Changed" />
-                <RadioButton Classes="tab" GroupName="ntab" Tag="input" Content="Input and blocking" IsCheckedChanged="NTab_Changed" />
-                <RadioButton Classes="tab" GroupName="ntab" Tag="look" Content="Appearance and files" IsCheckedChanged="NTab_Changed" />
-              </StackPanel>
-              <StackPanel x:Name="networkGrid" MaxWidth="820" HorizontalAlignment="Left" Spacing="10">
+              <Border BorderBrush="{DynamicResource BorderBrushDefault}" BorderThickness="0,0,0,1" Padding="4,0">
+                <StackPanel Orientation="Horizontal">
+                  <RadioButton Classes="tab" GroupName="ntab" Tag="recv" IsChecked="True" Content="RECEIVE" IsCheckedChanged="NTab_Changed" />
+                  <RadioButton Classes="tab" GroupName="ntab" Tag="send" Content="SEND" IsCheckedChanged="NTab_Changed" />
+                  <RadioButton Classes="tab" GroupName="ntab" Tag="input" Content="INPUT AND BLOCKING" IsCheckedChanged="NTab_Changed" />
+                  <RadioButton Classes="tab" GroupName="ntab" Tag="look" Content="APPEARANCE AND FILES" IsCheckedChanged="NTab_Changed" />
+                </StackPanel>
+              </Border>
+              <StackPanel x:Name="networkGrid" MaxWidth="820" HorizontalAlignment="Left" Spacing="12">
                 <v:Section x:Name="netReceiveSection" Title="Receive · Network API" Description="Another computer drives this virtual controller with MAKCU-style text commands over TCP: km.controller(id,value[,hold_ms]), km.controller_clear(). A client can also subscribe to this PC's mouse buttons with km.mouse_stream(1).">
                   <StackPanel>
                     <v:SettingRow Title="Enable Network API" Description="Off by default. Connect the controller first.">

@@ -30,20 +30,20 @@ namespace GamepadEnhancer
             GradientStops = new GradientStops { new GradientStop(Color.Parse(top), 0), new GradientStop(Color.Parse(bottom), 1) }
         };
 
-        private static readonly IBrush BackdropTop = B("#23273B"), TextDim = B("#9AA3C0"), TextBright = B("#F4F6FC"), Accent = B("#4CC9F0"), Good = B("#4CD787");
-        private static readonly IBrush BackdropFill = Vertical("#2B3047", "#1E2236");
-        private static readonly IBrush BodyFill = Vertical("#4C5474", "#33384F");
-        private static readonly IBrush PartFill = Vertical("#5A6385", "#41486A");
-        private static readonly IBrush WellFill = B("#1C2033");
-        private static readonly IBrush CapFill = Vertical("#6A7398", "#464E72");
-        private static readonly IBrush PadFill = Vertical("#262A3F", "#323853");
-        private static readonly IBrush ChipFill = Vertical("#262B42", "#1F2337");
+        private static readonly IBrush BackdropTop = B("#1A1D27"), TextDim = B("#8B8FA3"), TextBright = B("#E4E6EF"), Accent = B("#4F8CFF"), Good = B("#34D399");
+        private static readonly IBrush BackdropFill = B("#1A1D27");
+        private static readonly IBrush BodyFill = B("#22263A");
+        private static readonly IBrush PartFill = B("#2A2E3E");
+        private static readonly IBrush WellFill = B("#0F1117");
+        private static readonly IBrush CapFill = B("#2F3446");
+        private static readonly IBrush PadFill = B("#2A2E3E");
+        private static readonly IBrush ChipFill = B("#0F1117");
         private static readonly IBrush Transparent = Brushes.Transparent;
         private static readonly IBrush ShadowBrush = A("#000000", 38);
-        private static readonly IBrush DotBrush = A("#8E9AC8", 90);
+        private static readonly IBrush DotBrush = A("#8B8FA3", 90);
 
-        private static readonly Color DimLine = Color.Parse("#5B6590");
-        private static readonly IBrush DimBrush = B("#5B6590"), BoundBrush = B("#4CC9F0"), WhiteBrush = B("#FFFFFF");
+        private static readonly Color DimLine = Color.Parse("#4B4E63");
+        private static readonly IBrush DimBrush = B("#4B4E63"), BoundBrush = B("#4F8CFF"), WhiteBrush = B("#FFFFFF");
         private static readonly IBrush KeyBrush = B("#6C9CFF"), MouseBrush = B("#4CD787"), PadBrush = B("#FFB84C");
 
         private static readonly Typeface Bold = new(FontFamily.Default, FontStyle.Normal, FontWeight.SemiBold);
@@ -279,8 +279,8 @@ namespace GamepadEnhancer
 
         // ── Drawing ─────────────────────────────────────────────────────────────
 
-        private static readonly IBrush GlowBrush = A("#4CC9F0", 70), HaloBrush = A("#FFFFFF", 60), RidgeBrush = A("#FFFFFF", 45),
-            BodyEdge = A("#8190C4", 200), PartEdge = A("#8C98C8", 170), FaintEdge = A("#8E9AC8", 70), ScrimBrush = A("#0C1022", 150);
+        private static readonly IBrush GlowBrush = A("#4F8CFF", 70), HaloBrush = A("#FFFFFF", 60), RidgeBrush = A("#FFFFFF", 45),
+            BodyEdge = B("#3B4157"), PartEdge = B("#4B4E63"), FaintEdge = A("#8B8FA3", 70), ScrimBrush = A("#0F1117", 150);
 
         private List<LayoutSlot> DrawOrder()
         {

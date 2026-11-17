@@ -27,19 +27,17 @@
   <ControlTheme x:Key="{x:Type v:Section}" TargetType="v:Section">
     <Setter Property="Template">
       <ControlTemplate>
-        <Border Classes="panel" Padding="0" ClipToBounds="True">
+        <Border Classes="panel">
           <StackPanel>
-            <Border Background="{DynamicResource RaisedBrush}" BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,0,1" Padding="12,7">
-              <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Spacing="1" VerticalAlignment="Center">
-                  <TextBlock Text="{TemplateBinding Title}" Classes="h" />
-                  <TextBlock Text="{TemplateBinding Description}" Classes="caption"
-                             IsVisible="{Binding Description, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                </StackPanel>
-                <ContentPresenter Grid.Column="1" Content="{TemplateBinding Actions}" VerticalAlignment="Center" />
-              </Grid>
-            </Border>
-            <ContentPresenter Margin="12,6,12,10" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+              <StackPanel Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static v:UpperCaseConverter.Instance}}" Classes="h" />
+                <TextBlock Text="{TemplateBinding Description}" Classes="caption"
+                           IsVisible="{Binding Description, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+              <ContentPresenter Grid.Column="1" Content="{TemplateBinding Actions}" VerticalAlignment="Center" />
+            </Grid>
+            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
           </StackPanel>
         </Border>
       </ControlTemplate>
