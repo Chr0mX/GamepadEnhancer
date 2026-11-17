@@ -129,29 +129,30 @@ namespace GamepadEnhancer
             }
             else
             {
-                Slot(ControllerEngine.ActionLtL2, L, 0, 340, 118, 80, 26, R);
-                Slot(ControllerEngine.ActionLbL1, L, 1, 338, 146, 96, 16, R);
-                Slot(ControllerEngine.ActionBackShare, L, 2, 408, 222, 14, 14, C);
-                Slot(ControllerEngine.ActionDPadUp, L, 3, 400, 278, 22, 22, R);
-                Slot(ControllerEngine.ActionDPadLeft, L, 4, 378, 300, 22, 22, R);
-                Slot(ControllerEngine.ActionDPadRight, L, 5, 422, 300, 22, 22, R);
-                Slot(ControllerEngine.ActionDPadDown, L, 6, 400, 322, 22, 22, R);
-                Slot(ControllerEngine.ActionLsL3, L, 7, 356, 232, 60, 60, C);
-                Slot(ControllerEngine.ActionLeftStickUp, L, 8, 356, 200, 16, 16, C);
-                Slot(ControllerEngine.ActionLeftStickLeft, L, 9, 322, 232, 16, 16, C);
-                Slot(ControllerEngine.ActionLeftStickRight, L, 10, 390, 232, 16, 16, C);
-                Slot(ControllerEngine.ActionLeftStickDown, L, 11, 356, 264, 16, 16, C);
+                // Xbox layout: left stick high on the left, D-pad below it, face buttons high on the right, right stick below them.
+                Slot(ControllerEngine.ActionLtL2, L, 0, 330, 98, 70, 22, R);
+                Slot(ControllerEngine.ActionLbL1, L, 1, 330, 124, 90, 14, R);
+                Slot(ControllerEngine.ActionBackShare, L, 2, 410, 184, 14, 14, C);
+                Slot(ControllerEngine.ActionDPadUp, L, 3, 374, 229, 22, 22, R);
+                Slot(ControllerEngine.ActionDPadLeft, L, 4, 352, 251, 22, 22, R);
+                Slot(ControllerEngine.ActionDPadRight, L, 5, 396, 251, 22, 22, R);
+                Slot(ControllerEngine.ActionDPadDown, L, 6, 374, 273, 22, 22, R);
+                Slot(ControllerEngine.ActionLsL3, L, 7, 325, 182, 60, 60, C);
+                Slot(ControllerEngine.ActionLeftStickUp, L, 8, 325, 150, 16, 16, C);
+                Slot(ControllerEngine.ActionLeftStickLeft, L, 9, 291, 182, 16, 16, C);
+                Slot(ControllerEngine.ActionLeftStickRight, L, 10, 359, 182, 16, 16, C);
+                Slot(ControllerEngine.ActionLeftStickDown, L, 11, 325, 214, 16, 16, C);
 
-                Slot(ControllerEngine.ActionRtR2, Rt, 0, 540, 118, 80, 26, R);
-                Slot(ControllerEngine.ActionRbR1, Rt, 1, 542, 146, 96, 16, R);
-                Slot(ControllerEngine.ActionStartOptions, Rt, 2, 472, 222, 14, 14, C);
-                Slot(ControllerEngine.ActionGuidePs, Rt, 3, 440, 196, 20, 20, C);
-                Slot(ControllerEngine.ActionYTriangle, Rt, 4, 532, 206, 24, 24, C);
-                Slot(ControllerEngine.ActionBCircle, Rt, 5, 556, 230, 24, 24, C);
-                Slot(ControllerEngine.ActionXSquare, Rt, 6, 508, 230, 24, 24, C);
-                Slot(ControllerEngine.ActionACross, Rt, 7, 532, 254, 24, 24, C);
-                list.Add(new LayoutSlot { Id = RightStickId, Title = Inputs.NeutralLabel(Inputs.RightStickMove), Side = Rt, Row = 8, MX = 484, MY = 300, MW = 36, MH = 36, Shape = C });
-                Slot(ControllerEngine.ActionRsR3, Rt, 9, 484, 300, 60, 60, C);
+                Slot(ControllerEngine.ActionRtR2, Rt, 0, 550, 98, 70, 22, R);
+                Slot(ControllerEngine.ActionRbR1, Rt, 1, 550, 124, 90, 14, R);
+                Slot(ControllerEngine.ActionStartOptions, Rt, 2, 470, 184, 14, 14, C);
+                Slot(ControllerEngine.ActionGuidePs, Rt, 3, 440, 139, 30, 30, C);
+                Slot(ControllerEngine.ActionYTriangle, Rt, 4, 550, 157, 26, 26, C);
+                Slot(ControllerEngine.ActionBCircle, Rt, 5, 578, 184, 26, 26, C);
+                Slot(ControllerEngine.ActionXSquare, Rt, 6, 522, 184, 26, 26, C);
+                Slot(ControllerEngine.ActionACross, Rt, 7, 550, 211, 26, 26, C);
+                list.Add(new LayoutSlot { Id = RightStickId, Title = Inputs.NeutralLabel(Inputs.RightStickMove), Side = Rt, Row = 8, MX = 486, MY = 251, MW = 36, MH = 36, Shape = C });
+                Slot(ControllerEngine.ActionRsR3, Rt, 9, 486, 251, 60, 60, C);
             }
 
             // Rear view: four paddles, left pair and right pair.

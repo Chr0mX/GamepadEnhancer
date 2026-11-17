@@ -38,3 +38,6 @@ written back as schema 2.
 ## Not covered
 Combos and hold/toggle gestures are informational (the virtual pad cannot tell them apart); the editor UI still picks physical inputs,
 with labels resolved for the current controller. DualShock/DualSense paddles are not detected (Xbox-class Windows.Gaming.Input only).
+
+## Diagram
+`Core/ControllerLayout.cs` holds the marker geometry per virtual device (DualShock 4 and Xbox 360 each have their own silhouette and control positions, drawn in `Views/ControllerConfigView.cs`). Face-button style/colours and an optional centre glyph (the Xbox logo on Guide) come from the controller layout JSON (`FaceStyle`, `FaceColors`, `Glyphs`).

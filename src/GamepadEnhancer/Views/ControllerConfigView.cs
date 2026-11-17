@@ -75,6 +75,39 @@ namespace GamepadEnhancer
             (new Point(520, 352), new Point(490, 352), new Point(465, 352), new Point(440, 352)),
         };
 
+        // Xbox outline, same construction: right half from the top centre, defined on a 700x400 reference drawing and mapped onto the
+        // diagram; the left half is the mirror image.
+        private static readonly (double X0, double Y0, double X1, double Y1, double X2, double Y2, double X3, double Y3)[] XboxRef =
+        {
+            (350, 74, 375, 74, 395, 62, 432, 62),
+            (432, 62, 465, 62, 495, 72, 522, 92),
+            (522, 92, 560, 120, 588, 200, 600, 290),
+            (600, 290, 608, 335, 600, 385, 565, 392),
+            (565, 392, 530, 398, 500, 360, 468, 322),
+            (468, 322, 445, 298, 400, 292, 350, 292),
+        };
+
+        private static Point XboxPt(double rx, double ry) => new(440 + (rx - 350) * 0.86, 105 + (ry - 60) * 0.86);
+
+        private static readonly StreamGeometry XboxBody = BuildXboxBody();
+
+        private static StreamGeometry BuildXboxBody()
+        {
+            var g = new StreamGeometry();
+            using (StreamGeometryContext c = g.Open())
+            {
+                c.BeginFigure(XboxPt(XboxRef[0].X0, XboxRef[0].Y0), true);
+                foreach (var s in XboxRef) c.CubicBezierTo(XboxPt(s.X1, s.Y1), XboxPt(s.X2, s.Y2), XboxPt(s.X3, s.Y3));
+                for (int i = XboxRef.Length - 1; i >= 0; i--)
+                {
+                    var s = XboxRef[i];
+                    c.CubicBezierTo(Mirror(XboxPt(s.X2, s.Y2)), Mirror(XboxPt(s.X1, s.Y1)), Mirror(XboxPt(s.X0, s.Y0)));
+                }
+                c.EndFigure(true);
+            }
+            return g;
+        }
+
         private static Point Mirror(Point p) => new(880 - p.X, p.Y);
 
         private static readonly StreamGeometry Ds4Body = BuildDs4Body();
@@ -264,16 +297,12 @@ namespace GamepadEnhancer
             else
             {
                 for (int i = 1; i <= 3; i++)
-                {
-                    double dy = 2 + i * 3;
-                    c.DrawRectangle(ShadowBrush, null, new Rect(280, 150 + dy, 320, 200), 60, 60);
-                    c.DrawEllipse(ShadowBrush, null, new Point(310, 330 + dy), 58, 92);
-                    c.DrawEllipse(ShadowBrush, null, new Point(570, 330 + dy), 58, 92);
-                }
-                c.DrawRectangle(BodyFill, PenFor(BodyEdge, 2), new Rect(280, 150, 320, 200), 60, 60);
-                c.DrawEllipse(BodyFill, PenFor(BodyEdge, 2), new Point(310, 330), 58, 92);
-                c.DrawEllipse(BodyFill, PenFor(BodyEdge, 2), new Point(570, 330), 58, 92);
-                c.DrawRectangle(BodyFill, null, new Rect(284, 154, 312, 190), 56, 56);
+                    using (c.PushTransform(Matrix.CreateTranslation(0, 2 + i * 3))) c.DrawGeometry(ShadowBrush, null, XboxBody);
+                c.DrawGeometry(BodyFill, PenFor(BodyEdge, 2), XboxBody);
+                // the centre logo plate behind the Guide marker, and the inner shoulder seams
+                c.DrawEllipse(PadFill, PenFor(PartEdge, 1.2), new Point(440, 139), 22, 22);
+                c.DrawLine(PenFor(PartEdge, 1.2), new Point(366, 112), new Point(404, 118));
+                c.DrawLine(PenFor(PartEdge, 1.2), new Point(514, 112), new Point(476, 118));
             }
 
             // D-pad cross, centred on its four arm markers
@@ -466,11 +495,13 @@ namespace GamepadEnhancer
 
             string glyph = Glyph(s);
             if (!string.IsNullOrEmpty(glyph) && s.MW >= 18 && s.MH >= 12)
-                DrawText(c, glyph, 10, pressed ? BackdropTop : TextBright, new Point(s.MX, s.MY), true, true);
+                DrawText(c, glyph, s.MW >= 28 ? 15 : 10, pressed ? BackdropTop : TextBright, new Point(s.MX, s.MY), true, true);
         }
 
         private string Glyph(LayoutSlot s)
         {
+            string custom = ControllerLayouts.ForDevice(family).Glyph(s.Id);
+            if (!string.IsNullOrEmpty(custom)) return custom;
             if (s.Id == Inputs.DpadUp || s.Id == Inputs.LsUp) return "↑";
             if (s.Id == Inputs.DpadDown || s.Id == Inputs.LsDown) return "↓";
             if (s.Id == Inputs.DpadLeft || s.Id == Inputs.LsLeft) return "←";

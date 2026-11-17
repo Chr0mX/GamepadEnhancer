@@ -32,6 +32,15 @@ namespace GamepadEnhancer
         /// <summary>Canonical face-button id to an "#RRGGBB" colour.</summary>
         public Dictionary<string, string> FaceColors { get; set; } = new();
 
+        /// <summary>Optional short symbol drawn on a marker instead of its label (the Xbox logo on the Guide button).</summary>
+        public Dictionary<string, string> Glyphs { get; set; } = new();
+
+        public string Glyph(string inputId)
+        {
+            string id = Inputs.Canonical(inputId) ?? inputId;
+            return id != null && Glyphs.TryGetValue(id, out string g) ? g : null;
+        }
+
         public PadFamily Family => Enum.TryParse(Device, true, out PadFamily f) ? f : PadFamily.DualShock4;
 
         public string Label(string inputId)
@@ -84,6 +93,7 @@ namespace GamepadEnhancer
                 // keys are canonical ids; accept any casing in the file
                 l.Labels = Normalize(l.Labels);
                 l.FaceColors = Normalize(l.FaceColors);
+                l.Glyphs = Normalize(l.Glyphs);
                 l.Unsupported = l.Unsupported.Select(u => Inputs.Canonical(u) ?? u).ToList();
                 return l;
             }
