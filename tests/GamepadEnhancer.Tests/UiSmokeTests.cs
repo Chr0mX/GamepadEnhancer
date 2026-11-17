@@ -146,7 +146,7 @@ namespace GamepadEnhancer.Tests
             Dispatcher.UIThread.RunJobs();
             foreach (var (key, expected) in new[] { ("UiFont", "Inter"), ("MonoFont", "JetBrains Mono") })
             {
-                Assert.True(Application.Current.TryFindResource(key, Application.Current.ActualThemeVariant, out object value), key + " is missing");
+                Assert.True(Application.Current.TryGetResource(key, Application.Current.ActualThemeVariant, out object value), key + " is missing");
                 var family = Assert.IsType<FontFamily>(value);
                 Assert.True(FontManager.Current.TryGetGlyphTypeface(new Typeface(family), out IGlyphTypeface glyphs), key + " did not resolve to a font");
                 Assert.True(glyphs.FamilyName.Contains(expected, System.StringComparison.OrdinalIgnoreCase), $"{key} resolved to \"{glyphs.FamilyName}\", expected {expected}");
