@@ -167,5 +167,31 @@ namespace GamepadEnhancer.Tests
             Assert.Contains("no profile", window.HeaderProfileTextForTests);
             window.Close();
         }
+
+        [AvaloniaFact]
+        public void LabelsAndPictureFollowTheSelectedLayout()
+        {
+            var window = new MainWindow();
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            window.ShowPageForTests("controller");
+
+            window.SelectLayoutForTests("dualshock4");
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(PadFamily.DualShock4, window.FamilyForTests);
+            Assert.Equal(PadFamily.DualShock4, window.DiagramForTests.Family);
+            Assert.Equal("Cross", window.BindingTitleForTests(Inputs.FaceSouth));
+            Assert.Equal("Triangle", window.BindingTitleForTests(Inputs.FaceNorth));
+            Assert.Equal("Cross", window.DiagramChipTitleForTests(Inputs.FaceSouth));
+
+            window.SelectLayoutForTests("xbox360");
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(PadFamily.Xbox360, window.FamilyForTests);
+            Assert.Equal(PadFamily.Xbox360, window.DiagramForTests.Family);
+            Assert.Equal("A", window.BindingTitleForTests(Inputs.FaceSouth));
+            Assert.Equal("Y", window.BindingTitleForTests(Inputs.FaceNorth));
+            Assert.Equal("A", window.DiagramChipTitleForTests(Inputs.FaceSouth));
+            window.Close();
+        }
     }
 }

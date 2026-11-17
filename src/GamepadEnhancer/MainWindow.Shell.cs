@@ -102,6 +102,9 @@ namespace GamepadEnhancer
         internal ScrollViewer CurrentPageScroller => pages[currentPage] as ScrollViewer;
         internal void SelectLayoutForTests(string layoutId) => controllerTypeBox.SelectedItem = ControllerLayouts.Get(layoutId);
         internal PadFamily FamilyForTests => SelectedFamily();
+        internal string BindingTitleForTests(string action) => bindingTitleLabels.TryGetValue(action, out TextBlock t) ? t.Text : null;
+        internal string ActiveControllerLabelForTests => activeControllerLabel.Text;
+        internal string DiagramChipTitleForTests(string id) => ControllerLayout.Find(diagram.Family, id)?.Title;
 
         private void Nav_Changed(object sender, RoutedEventArgs e)
         {
