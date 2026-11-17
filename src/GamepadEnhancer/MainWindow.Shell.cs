@@ -81,6 +81,7 @@ namespace GamepadEnhancer
             shellTimer.Start();
 
             shellReady = true;
+            ApplyPaddleSupport();
             ShowPage("dashboard");
             SyncLayoutSwitch();
             RefreshGameViews();
@@ -422,6 +423,21 @@ namespace GamepadEnhancer
             second.Margin = wide ? new Thickness(0) : new Thickness(0, 12, 0, 0);
         }
 
+        // ── Rear paddles exist only on some pads ────────────────────────────────
+
+        /// <summary>False for a controller type without rear paddles (the PS4 DualShock 4): their page, nav button and rear view are hidden.</summary>
+        private bool PaddlesSupported() => ActiveLayout().Supports(Inputs.PaddleLeftUpper);
+
+        private void ApplyPaddleSupport()
+        {
+            if (!shellReady) return;
+            bool on = PaddlesSupported();
+            foreach (RadioButton rb in navButtons.Where(r => r.Tag is string t && t == "paddles")) rb.IsVisible = on;
+            if (!on && currentPage == "paddles") NavigateTo("dashboard");
+        }
+
+        internal bool PaddleNavVisibleForTests => navButtons.First(r => r.Tag is string t && t == "paddles").IsVisible;
+
         // ── Controller layout switch (Xbox 360 / PS4) ───────────────────────────
 
         private void BuildLayoutSwitch()
@@ -537,7 +553,7 @@ namespace GamepadEnhancer
             dashProfileText.Text = string.IsNullOrEmpty(loadedProfileName) ? "load one from the header menu" : (profileModified ? "unsaved changes" : "saved profile");
             dashMouseText.Text = mouseLookBox.IsChecked == true ? "On" : "Off";
             int assigned = paddleSettings.Count(p => p.IsActive);
-            dashPaddleText.Text = assigned == 0 ? "None assigned" : $"{assigned} of {PaddleSlots.Count} active";
+            dashPaddleText.Text = !PaddlesSupported() ? "Not on this pad" : assigned == 0 ? "None assigned" : $"{assigned} of {PaddleSlots.Count} active";
             dashBlockText.Text = blockEnabledBox.IsChecked == true ? "On" : "Off";
             dashCaptureText.Text = appSettings.InputCaptureMethod;
         }

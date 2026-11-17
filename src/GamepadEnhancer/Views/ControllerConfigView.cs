@@ -360,6 +360,7 @@ namespace GamepadEnhancer
 
             // Rear view (the same silhouette, smaller, with the paddles on its grips)
             if (overview) return;
+            if (!ControllerLayouts.ForDevice(family).Supports(Inputs.PaddleLeftUpper)) return;   // no rear paddles on this pad, no rear view
             DrawText(c, "REAR VIEW", 10, TextDim, new Point(440, 418), true, true);
             using (c.PushTransform(Matrix.CreateScale(0.5, 0.5) * Matrix.CreateTranslation(220, 359)))
             {

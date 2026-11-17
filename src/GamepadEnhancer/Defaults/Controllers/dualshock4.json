@@ -21,7 +21,7 @@
     "HOME": "PS",
     "TOUCHPAD": "Touchpad"
   },
-  "Unsupported": [],
+  "Unsupported": [ "PADDLE_LEFT_UPPER", "PADDLE_LEFT_LOWER", "PADDLE_RIGHT_UPPER", "PADDLE_RIGHT_LOWER" ],
   "FaceColors": {
     "FACE_SOUTH": "#6C9CFF",
     "FACE_EAST": "#FF6E6E",

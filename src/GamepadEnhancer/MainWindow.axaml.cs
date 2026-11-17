@@ -602,6 +602,7 @@ namespace GamepadEnhancer
         {
             RefreshControllerLabels();
             SyncLayoutSwitch();
+            ApplyPaddleSupport();
             string selected = SelectedControllerLayout().Title;
             if (engine.IsConnected)
             {

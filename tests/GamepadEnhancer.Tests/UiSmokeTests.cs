@@ -193,5 +193,30 @@ namespace GamepadEnhancer.Tests
             Assert.Equal("A", window.DiagramChipTitleForTests(Inputs.FaceSouth));
             window.Close();
         }
+
+        [AvaloniaFact]
+        public void RearPaddlesAreHiddenForPs4AndShownForXbox()
+        {
+            var window = new MainWindow();
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            window.SelectLayoutForTests("dualshock4");
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(window.PaddleNavVisibleForTests);
+            Assert.DoesNotContain(ControllerLayout.For(PadFamily.DualShock4), s => PaddleSlots.TryParseId(s.Id, out _));
+
+            window.SelectLayoutForTests("xbox360");
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(window.PaddleNavVisibleForTests);
+            Assert.Contains(ControllerLayout.For(PadFamily.Xbox360), s => PaddleSlots.TryParseId(s.Id, out _));
+
+            // being on the paddle page when switching to PS4 leaves it
+            window.ShowPageForTests("paddles");
+            window.SelectLayoutForTests("dualshock4");
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("dashboard", window.CurrentPageKey);
+            window.Close();
+        }
     }
 }

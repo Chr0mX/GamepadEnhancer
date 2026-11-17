@@ -322,7 +322,11 @@ namespace GamepadEnhancer.Tests
             foreach (string action in ControllerEngine.BindingActions.Where(a => family == PadFamily.DualShock4 || a != ControllerEngine.ActionTouchpad))
                 Assert.Contains(action, ids);
             Assert.Contains(ControllerLayout.RightStickId, ids);
-            for (int i = 0; i < PaddleSlots.Count; i++) Assert.Contains(PaddleSlots.Id(i), ids);
+            for (int i = 0; i < PaddleSlots.Count; i++)
+            {
+                if (xbox) Assert.Contains(PaddleSlots.Id(i), ids);
+                else Assert.DoesNotContain(PaddleSlots.Id(i), ids);   // a DualShock 4 has no rear paddles
+            }
         }
 
         [Fact]

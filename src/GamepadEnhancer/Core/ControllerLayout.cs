@@ -208,6 +208,9 @@ namespace GamepadEnhancer
                     Id = PaddleSlots.Id(i), Title = ControllerLayouts.ForDevice(family).Label(PaddleSlots.Names[i]), Side = SlotSide.Bottom, Row = i,
                     MX = px[i], MY = py[i], MW = 16, MH = 30, Shape = R
                 });
+            // controls the controller does not have are not drawn (a DualShock 4 has no rear paddles)
+            ControllerLayoutDef layout = ControllerLayouts.ForDevice(family);
+            list.RemoveAll(s => !layout.Supports(s.Id));
             return list;
         }
     }
