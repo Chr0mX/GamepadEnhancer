@@ -137,7 +137,9 @@ namespace GamepadEnhancer.Tests
         private static (PaddleProcessor P, FakeInjector I) Make()
         {
             var inj = new FakeInjector();
-            return (new PaddleProcessor { Injector = inj }, inj);
+            var p = new PaddleProcessor { Injector = inj };
+            p.Update(Pad(0), null, null);   // the controller is connected with nothing pressed (a paddle already held at connect time is ignored on purpose)
+            return (p, inj);
         }
 
         private static int Bit(string action) => 1 << Array.IndexOf(ControllerEngine.BindingActions, action);
