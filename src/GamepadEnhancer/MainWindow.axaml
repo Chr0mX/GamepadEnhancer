@@ -9,82 +9,123 @@
         Background="{DynamicResource CanvasBrush}">
 
   <Grid RowDefinitions="*,Auto">
-    <Grid Grid.Row="0" RowDefinitions="Auto,Auto,*">
+    <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
 
-      <!-- ═══════════════ Header: identity, state, controller type, connect ═══════════════ -->
-      <Border x:Name="headerBar" Grid.Row="0" Height="42" Padding="14,0" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,0,1">
-        <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto">
-          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="9" VerticalAlignment="Center" Margin="0,0,16,0">
-            <v:Icon Kind="gamepad" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" />
-            <TextBlock x:Name="brandText" Classes="pagetitle" Text="GAMEPADENHANCER" VerticalAlignment="Center" />
-          </StackPanel>
-          <Border x:Name="headerStatePill" Grid.Column="1" Classes="pill" Margin="0,0,6,0"><v:StatusBadge x:Name="statusBarBadge" /></Border>
-          <Border x:Name="headerConfigPill" Grid.Column="2" Classes="pill"><TextBlock x:Name="statusBarConfig" Classes="caption" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="240" /></Border>
-          <Border Grid.Column="4" Classes="segbox" Margin="0,0,8,0"><StackPanel x:Name="layoutSwitch" Orientation="Horizontal" Spacing="2" /></Border>
-          <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <Button x:Name="connectButton" Classes="primary" Content="Connect" Click="ConnectButton_Click" />
-            <Button x:Name="disconnectButton" Content="Disconnect" IsEnabled="False" IsVisible="False" Click="DisconnectButton_Click" />
-          </StackPanel>
-        </Grid>
-      </Border>
-
-      <!-- ═══════════════ Tabs ═══════════════ -->
-      <Border x:Name="sidebar" Grid.Row="1" Height="34" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,0,1">
-        <StackPanel Orientation="Horizontal" Margin="8,0" Spacing="2">
-          <RadioButton x:Name="navDashboard" Classes="tab" GroupName="nav" Tag="dashboard" IsChecked="True" Content="Dashboard" IsCheckedChanged="Nav_Changed" />
-          <RadioButton Classes="tab" GroupName="nav" Tag="controller" Content="Controller" IsCheckedChanged="Nav_Changed" />
-          <RadioButton Classes="tab" GroupName="nav" Tag="games" Content="Games" IsCheckedChanged="Nav_Changed" />
-          <RadioButton Classes="tab" GroupName="nav" Tag="paddles" Content="Paddles" IsCheckedChanged="Nav_Changed" />
-          <RadioButton Classes="tab" GroupName="nav" Tag="mouse" Content="Mouse look" IsCheckedChanged="Nav_Changed" />
-          <RadioButton x:Name="navMonitor" Classes="tab" GroupName="nav" Tag="monitor" Content="Monitor" IsCheckedChanged="Nav_Changed" />
-          <RadioButton Classes="tab" GroupName="nav" Tag="network" Content="Network &amp; input" IsCheckedChanged="Nav_Changed" />
+      <!-- ═══════════════ Navigation rail ═══════════════ -->
+      <Border x:Name="sidebar" Grid.Column="0" Width="56" Background="{DynamicResource SidebarBrush}"
+              BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,1,0">
+        <StackPanel Margin="0,10,0,8" HorizontalAlignment="Center">
+          <RadioButton x:Name="navDashboard" Classes="nav" GroupName="nav" Tag="dashboard" IsChecked="True" ToolTip.Tip="Dashboard" IsCheckedChanged="Nav_Changed"><v:Icon Kind="dashboard" Width="19" Height="19" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="controller" ToolTip.Tip="Controller mapping" IsCheckedChanged="Nav_Changed"><v:Icon Kind="gamepad" Width="19" Height="19" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="games" ToolTip.Tip="Games and profiles" IsCheckedChanged="Nav_Changed"><v:Icon Kind="games" Width="19" Height="19" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="paddles" ToolTip.Tip="Rear paddles" IsCheckedChanged="Nav_Changed"><v:Icon Kind="paddles" Width="19" Height="19" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="mouse" ToolTip.Tip="Mouse look (right stick)" IsCheckedChanged="Nav_Changed"><v:Icon Kind="mouse" Width="19" Height="19" /></RadioButton>
+          <Border Classes="divider" Margin="10,6" />
+          <RadioButton x:Name="navMonitor" Classes="nav" GroupName="nav" Tag="monitor" ToolTip.Tip="Controller monitor" IsCheckedChanged="Nav_Changed"><v:Icon Kind="activity" Width="19" Height="19" /></RadioButton>
+          <RadioButton Classes="nav" GroupName="nav" Tag="network" ToolTip.Tip="Network and input" IsCheckedChanged="Nav_Changed"><v:Icon Kind="network" Width="19" Height="19" /></RadioButton>
         </StackPanel>
       </Border>
 
-      <!-- Kept as models for the controller type, the output text and the page name -->
-      <StackPanel IsVisible="False">
-        <ComboBox x:Name="controllerTypeBox" />
-        <TextBlock x:Name="activeControllerLabel" />
-        <TextBlock x:Name="pageTitleText" />
-      </StackPanel>
+      <Grid Grid.Column="1" RowDefinitions="Auto,*">
 
-      <!-- ═══════════════ Pages ═══════════════ -->
-      <Grid Grid.Row="2" x:Name="pagesHost">
+        <!-- ═══════════════ Header: identity, state tags, controller type, connect ═══════════════ -->
+        <Border x:Name="headerBar" Grid.Row="0" Height="48" Padding="16,0" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,0,1">
+          <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,Auto">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,14,0">
+              <TextBlock x:Name="brandText" Classes="pagetitle" Text="GAMEPADENHANCER" VerticalAlignment="Center" />
+              <TextBlock x:Name="versionText" Classes="mono" Foreground="{DynamicResource FaintTextBrush}" VerticalAlignment="Center" />
+            </StackPanel>
+            <Border Grid.Column="1" Classes="pill" Margin="0,0,6,0"><v:StatusBadge x:Name="statusBarBadge" /></Border>
+            <Border x:Name="tagOutput" Grid.Column="2" Classes="tag" Margin="0,0,4,0"><TextBlock x:Name="tagOutputText" Text="VIGEM" /></Border>
+            <Border x:Name="tagCapture" Grid.Column="3" Classes="tag" Margin="0,0,4,0"><TextBlock x:Name="tagCaptureText" Text="HOOKS" /></Border>
+            <Border x:Name="tagNetwork" Grid.Column="4" Classes="tag" Margin="0,0,6,0"><TextBlock x:Name="tagNetworkText" Text="NET API" /></Border>
+            <Border x:Name="headerConfigPill" Grid.Column="5" Classes="pill"><TextBlock x:Name="statusBarConfig" Classes="caption" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="220" /></Border>
+            <Border Grid.Column="7" Classes="segbox" Margin="0,0,8,0"><StackPanel x:Name="layoutSwitch" Orientation="Horizontal" Spacing="2" /></Border>
+            <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+              <Button x:Name="connectButton" Classes="primary" Content="Connect" Click="ConnectButton_Click" />
+              <Button x:Name="disconnectButton" Content="Disconnect" IsEnabled="False" IsVisible="False" Click="DisconnectButton_Click" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <!-- Kept as models for the controller type, the output text and the page name -->
+        <StackPanel IsVisible="False">
+          <ComboBox x:Name="controllerTypeBox" />
+          <TextBlock x:Name="activeControllerLabel" />
+          <TextBlock x:Name="pageTitleText" />
+        </StackPanel>
+
+        <!-- ═══════════════ Pages ═══════════════ -->
+        <Grid Grid.Row="1" x:Name="pagesHost">
 
           <!-- ───────── Dashboard ───────── -->
           <ScrollViewer x:Name="pageDashboard" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Grid x:Name="dashGrid" Margin="16,12,16,20" ColumnDefinitions="*,16,320" MaxWidth="1500" HorizontalAlignment="Stretch">
-              <StackPanel x:Name="dashMain" Grid.Column="0" Spacing="16">
-                <WrapPanel>
-                  <StackPanel Margin="0,0,40,8"><TextBlock Classes="lab" Text="VIRTUAL CONTROLLER" /><TextBlock x:Name="dashVirtualTitle" Classes="stat" /><TextBlock x:Name="dashVirtualDetail" Classes="caption" /></StackPanel>
-                  <StackPanel Margin="0,0,40,8"><TextBlock Classes="lab" Text="ACTIVE CONFIG" /><TextBlock x:Name="dashConfigText" Classes="stat" /><TextBlock x:Name="dashConfigDetail" Classes="caption" /></StackPanel>
-                  <StackPanel Margin="0,0,0,8"><TextBlock Classes="lab" Text="PROFILE" /><TextBlock x:Name="dashProfileTitle" Classes="stat" /><TextBlock x:Name="dashProfileText" Classes="caption" /></StackPanel>
-                </WrapPanel>
-                <Border Classes="panel" Padding="8"><Border x:Name="dashPadHost" Height="400" MinHeight="260" /></Border>
-                <WrapPanel>
-                  <Button Content="Open mapping" Classes="primary" Margin="0,0,8,8" Tag="controller" Click="GoTo_Click" />
-                  <Button Content="Change game config" Margin="0,0,8,8" Tag="games" Click="GoTo_Click" />
-                  <Button Content="Profiles" Margin="0,0,8,8" Tag="games" Click="GoTo_Click" />
-                </WrapPanel>
-              </StackPanel>
-              <StackPanel x:Name="dashSide" Grid.Column="2" Spacing="10">
-                <v:Section Title="Connections">
-                  <StackPanel>
-                    <v:SettingRow Title="Virtual controller"><StackPanel HorizontalAlignment="Right"><v:StatusBadge x:Name="dashVirtualBadge" HorizontalAlignment="Right" /></StackPanel></v:SettingRow>
-                    <v:SettingRow Title="Output"><StackPanel HorizontalAlignment="Right"><v:StatusBadge x:Name="dashOutputBadge" HorizontalAlignment="Right" /><TextBlock x:Name="dashOutputDetail" Classes="caption" TextAlignment="Right" /></StackPanel></v:SettingRow>
-                    <v:SettingRow Title="Physical controller"><StackPanel HorizontalAlignment="Right"><v:StatusBadge x:Name="dashPhysicalBadge" HorizontalAlignment="Right" /><TextBlock x:Name="dashPhysicalDetail" Classes="caption" TextAlignment="Right" MaxWidth="180" /></StackPanel></v:SettingRow>
-                    <v:SettingRow Title="Network API"><StackPanel HorizontalAlignment="Right"><v:StatusBadge x:Name="dashNetworkBadge" HorizontalAlignment="Right" /><TextBlock x:Name="dashNetworkDetail" Classes="caption" TextAlignment="Right" /></StackPanel></v:SettingRow>
+            <Grid x:Name="dashGrid" Margin="16,12,16,20" ColumnDefinitions="*,10,*,10,*,10,*" RowDefinitions="Auto,10,Auto" MaxWidth="1600" HorizontalAlignment="Stretch">
+
+              <!-- Virtual controller -->
+              <v:Section x:Name="cardVirtual" Title="VIRTUAL CONTROLLER" Grid.Column="0" Grid.Row="0">
+                <UniformGrid Columns="2">
+                  <Border Classes="tile" Margin="0,0,3,3"><StackPanel><TextBlock Classes="tilelab" Text="STATE" /><v:StatusBadge x:Name="dashVirtualBadge" Margin="0,3,0,0" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="3,0,0,3"><StackPanel><TextBlock Classes="tilelab" Text="OUTPUT RATE" /><StackPanel Orientation="Horizontal" Spacing="4"><TextBlock x:Name="dashRateText" Classes="val blue" Text="0" /><TextBlock Classes="unit" Text="reports/s" VerticalAlignment="Bottom" Margin="0,0,0,2" /></StackPanel></StackPanel></Border>
+                  <Border Classes="tile" Margin="0,3,3,0"><StackPanel><TextBlock Classes="tilelab" Text="TYPE" /><TextBlock x:Name="dashVirtualTitle" Classes="val purple" FontSize="13" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="3,3,0,0"><StackPanel><TextBlock Classes="tilelab" Text="PATH" /><v:StatusBadge x:Name="dashOutputBadge" Margin="0,3,0,0" /></StackPanel></Border>
+                </UniformGrid>
+                <TextBlock x:Name="dashVirtualDetail" Classes="caption" Margin="0,8,0,0" />
+                <TextBlock x:Name="dashOutputDetail" Classes="caption" Margin="0,2,0,0" />
+              </v:Section>
+
+              <!-- Inputs and network -->
+              <v:Section x:Name="cardInputs" Title="INPUTS AND NETWORK" Grid.Column="2" Grid.Row="0">
+                <UniformGrid Columns="2">
+                  <Border Classes="tile" Margin="0,0,3,3"><StackPanel><TextBlock Classes="tilelab" Text="PHYSICAL PAD" /><v:StatusBadge x:Name="dashPhysicalBadge" Margin="0,3,0,0" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="3,0,0,3"><StackPanel><TextBlock Classes="tilelab" Text="NETWORK API" /><v:StatusBadge x:Name="dashNetworkBadge" Margin="0,3,0,0" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="0,3,3,0"><StackPanel><TextBlock Classes="tilelab" Text="CAPTURE" /><TextBlock x:Name="dashCaptureText" Classes="val orange" FontSize="13" /></StackPanel></Border>
+                  <Border Classes="tile" Margin="3,3,0,0"><StackPanel><TextBlock Classes="tilelab" Text="MOUSE LOOK" /><TextBlock x:Name="dashMouseText" Classes="val green" FontSize="13" /></StackPanel></Border>
+                </UniformGrid>
+                <TextBlock x:Name="dashPhysicalDetail" Classes="caption" Margin="0,8,0,0" />
+                <TextBlock x:Name="dashNetworkDetail" Classes="caption" Margin="0,2,0,0" />
+              </v:Section>
+
+              <!-- Active configuration -->
+              <v:Section x:Name="cardConfig" Title="ACTIVE CONFIGURATION" Grid.Column="4" Grid.Row="0">
+                <StackPanel Spacing="3">
+                  <Border Classes="tile"><StackPanel><TextBlock Classes="tilelab" Text="GAME CONFIG" /><TextBlock x:Name="dashConfigText" Classes="val blue" FontSize="13" /><TextBlock x:Name="dashConfigDetail" Classes="caption" /></StackPanel></Border>
+                  <Border Classes="tile"><StackPanel><TextBlock Classes="tilelab" Text="PROFILE" /><TextBlock x:Name="dashProfileTitle" Classes="val purple" FontSize="13" /><TextBlock x:Name="dashProfileText" Classes="caption" /></StackPanel></Border>
+                  <UniformGrid Columns="2">
+                    <Border Classes="tile" Margin="0,0,3,0"><StackPanel><TextBlock Classes="tilelab" Text="PADDLES" /><TextBlock x:Name="dashPaddleText" Classes="val green" FontSize="13" /></StackPanel></Border>
+                    <Border Classes="tile" Margin="3,0,0,0"><StackPanel><TextBlock Classes="tilelab" Text="BLOCKING" /><TextBlock x:Name="dashBlockText" Classes="val orange" FontSize="13" /></StackPanel></Border>
+                  </UniformGrid>
+                </StackPanel>
+              </v:Section>
+
+              <!-- Triggers and sticks -->
+              <v:Section x:Name="cardAxes" Title="TRIGGERS AND STICKS" Grid.Column="6" Grid.Row="0">
+                <StackPanel Spacing="8">
+                  <StackPanel Spacing="3"><TextBlock x:Name="dashLtLabel" Classes="tilelab" Text="LT" /><v:BarMeter x:Name="barLt" Height="22" ColorKey="ValueBlueBrush" /></StackPanel>
+                  <StackPanel Spacing="3"><TextBlock x:Name="dashRtLabel" Classes="tilelab" Text="RT" /><v:BarMeter x:Name="barRt" Height="22" ColorKey="DangerBrush" /></StackPanel>
+                  <UniformGrid Columns="2">
+                    <Border Classes="tile" Margin="0,0,3,0"><StackPanel><TextBlock Classes="tilelab" Text="LEFT STICK" /><TextBlock x:Name="dashLeftStick" Classes="val" FontSize="12" Text="+0.00  +0.00" /></StackPanel></Border>
+                    <Border Classes="tile" Margin="3,0,0,0"><StackPanel><TextBlock Classes="tilelab" Text="RIGHT STICK" /><TextBlock x:Name="dashRightStick" Classes="val" FontSize="12" Text="+0.00  +0.00" /></StackPanel></Border>
+                  </UniformGrid>
+                  <TextBlock Classes="caption" Text="Final output sent to the virtual pad; zero while nothing is connected." />
+                </StackPanel>
+              </v:Section>
+
+              <!-- Pad picture -->
+              <v:Section x:Name="cardPad" Title="CONTROLLER" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="2">
+                <v:Section.Actions>
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button Content="Open mapping" Classes="primary" Tag="controller" Click="GoTo_Click" />
+                    <Button Content="Games &amp; profiles" Tag="games" Click="GoTo_Click" />
                   </StackPanel>
-                </v:Section>
-                <v:Section Title="Features">
-                  <StackPanel>
-                    <v:SettingRow Title="Mouse look"><TextBlock x:Name="dashMouseText" Classes="mono" VerticalAlignment="Center" /></v:SettingRow>
-                    <v:SettingRow Title="Rear paddles"><TextBlock x:Name="dashPaddleText" Classes="mono" VerticalAlignment="Center" /></v:SettingRow>
-                    <v:SettingRow Title="Input blocking"><TextBlock x:Name="dashBlockText" Classes="mono" VerticalAlignment="Center" /></v:SettingRow>
-                    <v:SettingRow Title="Input capture"><TextBlock x:Name="dashCaptureText" Classes="mono" VerticalAlignment="Center" /></v:SettingRow>
-                  </StackPanel>
-                </v:Section>
-              </StackPanel>
+                </v:Section.Actions>
+                <Border x:Name="dashPadHost" Height="360" MinHeight="240" />
+              </v:Section>
+
+              <!-- Event stream -->
+              <v:Section x:Name="cardEvents" Title="EVENT STREAM" Description="Button presses and releases on the final output, newest first." Grid.Column="4" Grid.ColumnSpan="3" Grid.Row="2">
+                <TextBlock x:Name="dashEventLog" Classes="mono" TextWrapping="NoWrap" MinHeight="200" />
+              </v:Section>
             </Grid>
           </ScrollViewer>
 
@@ -98,6 +139,12 @@
                 </Button>
               </Grid>
 
+              <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,-2,0,0">
+                <RadioButton Classes="tab" GroupName="ctab" Tag="map" IsChecked="True" Content="Mapping" IsCheckedChanged="CTab_Changed" />
+                <RadioButton Classes="tab" GroupName="ctab" Tag="all" Content="All bindings" IsCheckedChanged="CTab_Changed" />
+              </StackPanel>
+
+              <StackPanel x:Name="controllerMapPane" Spacing="10">
               <Grid x:Name="controllerGrid" ColumnDefinitions="*,16,310" RowDefinitions="Auto,Auto">
                 <Border x:Name="diagramPanel" Grid.Column="0" Classes="panel" Padding="0" ClipToBounds="True">
                   <Border x:Name="diagramHost" Height="580" MinHeight="320" />
@@ -106,9 +153,10 @@
               </Grid>
 
               <TextBlock x:Name="activeGameSourceLabel" Classes="caption" />
+              </StackPanel>
 
-              <Expander Header="All bindings (list view)" HorizontalAlignment="Stretch">
-                <StackPanel Spacing="12" Margin="0,8,0,0">
+              <StackPanel x:Name="allBindingsPane" IsVisible="False" Spacing="10">
+                <StackPanel Spacing="10">
                   <v:Section Title="Buttons" Description="Bind each pad button to a keyboard key, a mouse button or a mouse wheel notch. Turbo (rapid fire) is optional per button. Ultimate Ability in Apex is L1 + R1 together.">
                     <UniformGrid x:Name="bindingsGrid" Columns="2" />
                   </v:Section>
@@ -116,7 +164,7 @@
                     <UniformGrid x:Name="leftStickGrid" Columns="2" />
                   </v:Section>
                 </StackPanel>
-              </Expander>
+              </StackPanel>
             </StackPanel>
           </ScrollViewer>
 
@@ -320,8 +368,14 @@
           <ScrollViewer x:Name="pageNetwork" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="16,12,16,24" Spacing="10" MaxWidth="1500" HorizontalAlignment="Stretch">
               <TextBlock Classes="caption" Text="Two directions. Receive: another computer controls the controller on this PC. Send: this PC's keyboard and mouse drive a controller on another PC. Input is how keyboard and mouse are read and when they are blocked." />
-              <Grid x:Name="networkGrid" ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto">
-                <v:Section x:Name="netReceiveSection" Grid.Column="0" Title="Receive · Network API" Description="Another computer drives this virtual controller with MAKCU-style text commands over TCP: km.controller(id,value[,hold_ms]), km.controller_clear(). A client can also subscribe to this PC's mouse buttons with km.mouse_stream(1).">
+              <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,-2,0,0">
+                <RadioButton Classes="tab" GroupName="ntab" Tag="recv" IsChecked="True" Content="Receive" IsCheckedChanged="NTab_Changed" />
+                <RadioButton Classes="tab" GroupName="ntab" Tag="send" Content="Send" IsCheckedChanged="NTab_Changed" />
+                <RadioButton Classes="tab" GroupName="ntab" Tag="input" Content="Input and blocking" IsCheckedChanged="NTab_Changed" />
+                <RadioButton Classes="tab" GroupName="ntab" Tag="look" Content="Appearance and files" IsCheckedChanged="NTab_Changed" />
+              </StackPanel>
+              <StackPanel x:Name="networkGrid" MaxWidth="820" HorizontalAlignment="Left" Spacing="10">
+                <v:Section x:Name="netReceiveSection" Title="Receive · Network API" Description="Another computer drives this virtual controller with MAKCU-style text commands over TCP: km.controller(id,value[,hold_ms]), km.controller_clear(). A client can also subscribe to this PC's mouse buttons with km.mouse_stream(1).">
                   <StackPanel>
                     <v:SettingRow Title="Enable Network API" Description="Off by default. Connect the controller first.">
                       <ToggleSwitch x:Name="netEnabledBox" OnContent="" OffContent="" IsCheckedChanged="NetworkSettings_Changed" />
@@ -347,7 +401,7 @@
                   </StackPanel>
                 </v:Section>
 
-                <v:Section x:Name="netSendSection" Grid.Column="2" Title="Send · to another PC" Description="Run this app on the PC with your mouse and keyboard and let the other PC (the one with ViGEmBus and the game) create the virtual controller. Enter that PC's address and token from its Network page, then press Connect. No ViGEmBus is needed on this PC.">
+                <v:Section x:Name="netSendSection" IsVisible="False" Title="Send · to another PC" Description="Run this app on the PC with your mouse and keyboard and let the other PC (the one with ViGEmBus and the game) create the virtual controller. Enter that PC's address and token from its Network page, then press Connect. No ViGEmBus is needed on this PC.">
                   <StackPanel>
                     <v:SettingRow Title="Send the controller to another PC" Description="Instead of creating it on this PC.">
                       <ToggleSwitch x:Name="remoteSendBox" OnContent="" OffContent="" IsCheckedChanged="RemoteSettings_Changed" />
@@ -365,7 +419,7 @@
                   </StackPanel>
                 </v:Section>
 
-                <v:Section x:Name="netInputSection" Grid.Column="4" Title="Input · capture and blocking" Description="While a listed program is focused and the virtual controller is connected, the keys and mouse buttons you mapped to pad actions (and mouse movement, if mouse look is on) are swallowed so only the controller reaches the game. Unmapped input and the toggle hotkey are never blocked.">
+                <v:Section x:Name="netInputSection" IsVisible="False" Title="Input · capture and blocking" Description="While a listed program is focused and the virtual controller is connected, the keys and mouse buttons you mapped to pad actions (and mouse movement, if mouse look is on) are swallowed so only the controller reaches the game. Unmapped input and the toggle hotkey are never blocked.">
                   <StackPanel>
                     <v:SettingRow Title="Capture method" Description="Low-Level Hooks can block mapped input; Raw Input cannot.">
                       <ComboBox x:Name="inputMethodBox" MinWidth="150" SelectionChanged="InputMethodBox_SelectionChanged" />
@@ -396,9 +450,9 @@
                     </StackPanel>
                   </StackPanel>
                 </v:Section>
-              </Grid>
+              </StackPanel>
 
-              <v:Section x:Name="appearanceSection" Title="Appearance and files">
+              <v:Section x:Name="appearanceSection" Title="Appearance and files" IsVisible="False" MaxWidth="820" HorizontalAlignment="Left">
                 <StackPanel>
                   <v:SettingRow Title="Dark mode">
                     <ToggleSwitch x:Name="darkModeToggle" IsChecked="True" OnContent="" OffContent="" Click="DarkModeToggle_Click" />
@@ -411,6 +465,7 @@
               </v:Section>
             </StackPanel>
           </ScrollViewer>
+        </Grid>
       </Grid>
     </Grid>
 

@@ -115,4 +115,23 @@ namespace GamepadEnhancer
             c.DrawText(ft, new Point((Bounds.Width - ft.Width) / 2, size + 4));
         }
     }
+
+    /// <summary>A horizontal bar meter with its percentage written on it (trigger travel).</summary>
+    internal sealed class BarMeter : InstrumentView
+    {
+        private double fraction;
+        private string colorKey = "AccentBrush";
+
+        public double Fraction { get => fraction; set { double v = Math.Clamp(double.IsNaN(value) ? 0 : value, 0, 1); if (v != fraction) { fraction = v; InvalidateVisual(); } } }
+        public string ColorKey { get => colorKey; set { if (colorKey != value) { colorKey = value; InvalidateVisual(); } } }
+
+        public override void Render(DrawingContext c)
+        {
+            var r = new Rect(0, 0, Bounds.Width, Bounds.Height);
+            c.DrawRectangle(Res("CanvasBrush", Brushes.Black), PenOf(Res("BorderBrushDefault", Brushes.Gray), 1), r, 3, 3);
+            if (fraction > 0) c.DrawRectangle(Res(colorKey, Brushes.DodgerBlue), null, new Rect(1, 1, Math.Max(0, (r.Width - 2) * fraction), r.Height - 2), 2, 2);
+            FormattedText t = Text((fraction * 100).ToString("0.0", CultureInfo.InvariantCulture) + " %", 10, Res("TextBrush", Brushes.White));
+            c.DrawText(t, new Point((r.Width - t.Width) / 2, (r.Height - t.Height) / 2));
+        }
+    }
 }

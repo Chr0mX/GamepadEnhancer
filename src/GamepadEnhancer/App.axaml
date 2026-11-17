@@ -37,6 +37,10 @@
           <SolidColorBrush x:Key="WarningBrush" Color="#E0A53F" />
           <SolidColorBrush x:Key="DangerBrush" Color="#EF6B6B" />
           <SolidColorBrush x:Key="DangerTintBrush" Color="#3A1F22" />
+          <SolidColorBrush x:Key="ValueBlueBrush" Color="#7EA6FF" />
+          <SolidColorBrush x:Key="ValueGreenBrush" Color="#4FBF93" />
+          <SolidColorBrush x:Key="ValueOrangeBrush" Color="#F0A35E" />
+          <SolidColorBrush x:Key="ValuePurpleBrush" Color="#B39DFA" />
           <Color x:Key="SystemAccentColor">#7EA6FF</Color>
           <Color x:Key="SystemAccentColorLight1">#98B8FF</Color>
           <Color x:Key="SystemAccentColorLight2">#B3CBFF</Color>
@@ -109,6 +113,10 @@
           <SolidColorBrush x:Key="WarningBrush" Color="#B97A12" />
           <SolidColorBrush x:Key="DangerBrush" Color="#CC2F35" />
           <SolidColorBrush x:Key="DangerTintBrush" Color="#FBE3E4" />
+          <SolidColorBrush x:Key="ValueBlueBrush" Color="#2457C5" />
+          <SolidColorBrush x:Key="ValueGreenBrush" Color="#1E8F69" />
+          <SolidColorBrush x:Key="ValueOrangeBrush" Color="#B25E0F" />
+          <SolidColorBrush x:Key="ValuePurpleBrush" Color="#6D4BD1" />
           <Color x:Key="SystemAccentColor">#2F6FEB</Color>
           <Color x:Key="SystemAccentColorLight1">#4A82F0</Color>
           <Color x:Key="SystemAccentColorLight2">#6B9BF3</Color>

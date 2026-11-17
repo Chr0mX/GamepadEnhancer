@@ -48,7 +48,7 @@ namespace GamepadEnhancer
             pages["monitor"] = pageMonitor;
             pages["network"] = pageNetwork;
 
-            foreach (RadioButton rb in sidebar.GetLogicalDescendants().OfType<RadioButton>().Where(r => r.Classes.Contains("tab")))
+            foreach (RadioButton rb in sidebar.GetLogicalDescendants().OfType<RadioButton>().Where(r => r.Classes.Contains("nav")))
             {
                 navButtons.Add(rb);
                 if (ToolTip.GetTip(rb) is string tip) AutomationProperties.SetName(rb, tip);
@@ -69,6 +69,10 @@ namespace GamepadEnhancer
             RefreshCurvePlot();
             scopeTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(33) };
             scopeTimer.Tick += (_, _) => UpdateScope();
+            dashTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(66) };
+            dashTimer.Tick += (_, _) => UpdateDash();
+            versionText.Text = "v" + (typeof(MainWindow).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "").Split('+')[0];
             dataPathLabel.Text = $"Profiles: {profilesDirectory}{Environment.NewLine}Settings: {AppSettings.DefaultPath}";
 
             shellTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -138,6 +142,7 @@ namespace GamepadEnhancer
                 if (!PaddleSlots.TryParseId(selectedSlot, out _)) { selectedSlot = PaddleSlots.Id(0); diagram.SelectedId = selectedSlot; SyncEditor(); }
             }
             SetScopeActive(key == "mouse");
+            SetDashActive(key == "dashboard");
             UpdateMonitorRunning();
             RefreshShell();
         }
@@ -152,6 +157,100 @@ namespace GamepadEnhancer
             if (mode == DiagramMode.Controls && PaddleSlots.TryParseId(selectedSlot, out _)) { selectedSlot = null; SyncEditor(); }
             diagram.SelectedId = selectedSlot;
             diagram.Refresh();
+        }
+
+        // ── In-page tabs ────────────────────────────────────────────────────────
+
+        private void CTab_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!shellReady || sender is not RadioButton { IsChecked: true, Tag: string tag }) return;
+            controllerMapPane.IsVisible = tag == "map";
+            allBindingsPane.IsVisible = tag == "all";
+        }
+
+        private void NTab_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!shellReady || sender is not RadioButton { IsChecked: true, Tag: string tag }) return;
+            netReceiveSection.IsVisible = tag == "recv";
+            netSendSection.IsVisible = tag == "send";
+            netInputSection.IsVisible = tag == "input";
+            appearanceSection.IsVisible = tag == "look";
+        }
+
+        // ── Live dashboard readouts (real engine snapshots; registered as a viewer only while the dashboard shows) ──
+
+        private DispatcherTimer dashTimer;
+        private bool dashViewer;
+        private long dashCursor, dashRateBase;
+        private double dashRateMs;
+        private readonly PadEvent[] dashEventBuffer = new PadEvent[64];
+        private readonly LinkedList<(string Time, string Label, bool Pressed)> dashLines = new();
+        private readonly System.Diagnostics.Stopwatch dashClock = System.Diagnostics.Stopwatch.StartNew();
+
+        private void SetDashActive(bool on)
+        {
+            if (on == dashViewer) return;
+            dashViewer = on;
+            if (on)
+            {
+                engine.Snapshots.AddViewer();
+                dashCursor = engine.Snapshots.EventCount;
+                dashRateBase = engine.Snapshots.ReportsSent;
+                dashRateMs = dashClock.Elapsed.TotalMilliseconds;
+                dashTimer.Start();
+            }
+            else { dashTimer.Stop(); engine.Snapshots.RemoveViewer(); }
+        }
+
+        private Avalonia.Media.IBrush Token(string key, Avalonia.Media.IBrush fallback) =>
+            this.TryFindResource(key, ActualThemeVariant, out object v) && v is Avalonia.Media.IBrush b ? b : fallback;
+
+        private void UpdateDash()
+        {
+            if (!dashViewer) return;
+            PadMonitor m = engine.Snapshots;
+            PadState st = m.Get(PadView.Final);
+            PadFamily fam = m.Connected ? m.Family : SelectedFamily();
+            bool xbox = fam == PadFamily.Xbox360;
+            dashLtLabel.Text = xbox ? "LT" : "L2";
+            dashRtLabel.Text = xbox ? "RT" : "R2";
+            barLt.Fraction = st.Lt;
+            barRt.Fraction = st.Rt;
+            dashLeftStick.Text = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:+0.00;-0.00;+0.00}  {1:+0.00;-0.00;+0.00}", st.Lx, st.Ly);
+            dashRightStick.Text = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:+0.00;-0.00;+0.00}  {1:+0.00;-0.00;+0.00}", st.Rx, st.Ry);
+
+            double now = dashClock.Elapsed.TotalMilliseconds;
+            if (now - dashRateMs >= 500)
+            {
+                long reports = m.ReportsSent;
+                dashRateText.Text = ((reports - dashRateBase) * 1000.0 / (now - dashRateMs)).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+                dashRateBase = reports;
+                dashRateMs = now;
+            }
+
+            int n = m.CopyEventsSince(ref dashCursor, dashEventBuffer);
+            if (n == 0 && dashEventLog.Inlines != null && dashEventLog.Inlines.Count > 0) return;
+            for (int i = 0; i < n; i++)
+            {
+                PadEvent e = dashEventBuffer[i];
+                if (e.View != PadView.Final) continue;
+                dashLines.AddFirst((TimeSpan.FromMilliseconds(e.TickMs).ToString(@"mm\:ss\.f", System.Globalization.CultureInfo.InvariantCulture), PadLabels.For(fam, e.Action), e.Pressed));
+                if (dashLines.Count > 12) dashLines.RemoveLast();
+            }
+            dashEventLog.Inlines?.Clear();
+            if (dashLines.Count == 0)
+            {
+                dashEventLog.Inlines?.Add(new Avalonia.Controls.Documents.Run("No events yet. Press a bound key while the virtual controller is connected.") { Foreground = Token("FaintTextBrush", Avalonia.Media.Brushes.Gray) });
+                return;
+            }
+            foreach (var (time, label, pressed) in dashLines)
+            {
+                dashEventLog.Inlines.Add(new Avalonia.Controls.Documents.Run(time + "  ") { Foreground = Token("FaintTextBrush", Avalonia.Media.Brushes.Gray) });
+                dashEventLog.Inlines.Add(new Avalonia.Controls.Documents.Run("[BTN] ") { Foreground = Token("ValueOrangeBrush", Avalonia.Media.Brushes.Orange) });
+                dashEventLog.Inlines.Add(new Avalonia.Controls.Documents.Run(label.PadRight(12)) { Foreground = Token("TextBrush", Avalonia.Media.Brushes.White) });
+                dashEventLog.Inlines.Add(new Avalonia.Controls.Documents.Run(pressed ? "pressed" : "released") { Foreground = Token(pressed ? "ValueGreenBrush" : "MutedTextBrush", Avalonia.Media.Brushes.Gray) });
+                dashEventLog.Inlines.Add(new Avalonia.Controls.Documents.LineBreak());
+            }
         }
 
         // ── Slider + number pairs, curve plot, live stick scope ────────────────
@@ -223,17 +322,19 @@ namespace GamepadEnhancer
         private void ApplyShellLayout(double windowWidth)
         {
             if (sidebar == null) return;
-            double content = windowWidth;
-            brandText.IsVisible = windowWidth >= 820;
-            headerConfigPill.IsVisible = windowWidth >= 960;
+            double content = windowWidth - sidebar.Width;
+            brandText.IsVisible = windowWidth >= 760;
+            versionText.IsVisible = windowWidth >= 900;
+            headerConfigPill.IsVisible = windowWidth >= 1100;
+            tagCapture.IsVisible = windowWidth >= 1000;
+            tagNetwork.IsVisible = windowWidth >= 1000;
             bool wide = content >= 980;
             wideLayout = wide;
-            Arrange2(dashGrid, dashMain, dashSide, content >= 1000, "*,16,320");
+            ArrangeDashboard(content);
             Arrange2(mouseGrid, mouseLeft, mouseRight, content >= 1000, "*,16,360");
             Arrange2(controllerGrid, diagramPanel, inspectorHostController, wide, "*,16,310");
             Arrange2(paddleGrid, paddleDiagramPanel, paddleSidePanel, wide, "*,16,310");
             Arrange2(gamesGrid, gamesLeft, gameDetailSection, content >= 900, "320,16,*");
-            ArrangeN(networkGrid, new Control[] { netReceiveSection, netSendSection, netInputSection }, content >= 1180);
             ArrangeN(monitorStages, new Control[] { monitorStagePhysical, monitorStageProcessed, monitorStageFinal }, content >= 1000, 12);
 
             double controllerH = wide ? Math.Clamp(content - 310 - 90, 380, 640) * 0.78 : Math.Clamp(content * 0.62, 320, 560);
@@ -253,6 +354,37 @@ namespace GamepadEnhancer
                 monitorFitPercent = fit;
                 if (monitorPanels != null) ApplyMonitorSettings();
             }
+        }
+
+        /// <summary>The dashboard card grid: four across, two across, or one column.</summary>
+        private void ArrangeDashboard(double content)
+        {
+            var cards = new[] { cardVirtual, cardInputs, cardConfig, cardAxes, cardPad, cardEvents };
+            if (content >= 1180)
+            {
+                dashGrid.ColumnDefinitions = new ColumnDefinitions("*,10,*,10,*,10,*");
+                dashGrid.RowDefinitions = new RowDefinitions("Auto,10,Auto");
+                Place(cardVirtual, 0, 0, 1); Place(cardInputs, 2, 0, 1); Place(cardConfig, 4, 0, 1); Place(cardAxes, 6, 0, 1);
+                Place(cardPad, 0, 2, 3); Place(cardEvents, 4, 2, 3);
+            }
+            else if (content >= 760)
+            {
+                dashGrid.ColumnDefinitions = new ColumnDefinitions("*,10,*");
+                dashGrid.RowDefinitions = new RowDefinitions("Auto,10,Auto,10,Auto,10,Auto");
+                Place(cardVirtual, 0, 0, 1); Place(cardInputs, 2, 0, 1); Place(cardConfig, 0, 2, 1); Place(cardAxes, 2, 2, 1);
+                Place(cardPad, 0, 4, 3); Place(cardEvents, 0, 6, 3);
+            }
+            else
+            {
+                dashGrid.ColumnDefinitions = new ColumnDefinitions("*");
+                dashGrid.RowDefinitions = new RowDefinitions("Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto");
+                for (int i = 0; i < cards.Length; i++) Place(cards[i], 0, i * 2, 1);
+            }
+        }
+
+        private static void Place(Control c, int col, int row, int colSpan)
+        {
+            Grid.SetColumn(c, col); Grid.SetRow(c, row); Grid.SetColumnSpan(c, colSpan);
         }
 
         /// <summary>Lays three or more children in one row (wide) or one above the other (narrow), keeping any existing gap columns.</summary>
@@ -335,6 +467,13 @@ namespace GamepadEnhancer
             statusBarConfig.Text = activeGame.DisplayName + (string.IsNullOrEmpty(loadedProfileName) ? "" : $" · profile {loadedProfileName}");
             connectButton.IsVisible = !engine.IsConnected;
             disconnectButton.IsVisible = engine.IsConnected;
+            tagOutputText.Text = engine.IsConnected && engine.IsRemote ? "REMOTE PC" : "VIGEM";
+            tagOutput.Classes.Set("on", engine.IsConnected);
+            tagCaptureText.Text = string.Equals(appSettings.InputCaptureMethod, "RawInput", StringComparison.OrdinalIgnoreCase) ? "RAW INPUT" : "HOOKS";
+            tagCapture.Classes.Set("on", true);
+            bool netOn = networkApi != null && networkApi.IsRunning;
+            tagNetworkText.Text = netOn ? $"NET API :{networkApi.Port}" : "NET API";
+            tagNetwork.Classes.Set("on", netOn);
         }
 
         private void RefreshDashboard()

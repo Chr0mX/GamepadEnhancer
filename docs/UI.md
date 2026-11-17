@@ -35,12 +35,13 @@ Every control still calls the same handlers and writes the same settings and pro
 - Number entry uses numeric boxes; there are no paired sliders yet.
 - Remote command counters are not shown on the Network page: the engine does not expose them without disturbing its timing, and no placeholder values are shown.
 
-## Technical-instrument pass
-The look follows the principles of technical configuration and diagnostic tools: compact, dense and quiet.
-- **Navigation**: a slim header (identity, connection state, controller type, Connect) above one row of text tabs (Dashboard, Controller, Games, Paddles, Mouse look, Monitor, Network & input). No icon rail, no labels hidden in tooltips.
-- **Density**: 28 px controls, 3 px corners, flat 1 px panels with a banded title row, 12.5 px body text, values in a monospace face.
-- **Controls**: every numeric setting on the mouse and monitor pages is a slider paired with a number box (the number box stays the source of truth; the slider snaps to its step).
-- **Measurement views** (`Views/Components/Instruments.cs`): the response curve is drawn with the engine's own `MouseLook.Shape`, so it always shows what the current curve and dead zone do; the stick scope shows the final right-stick value sent to the virtual pad (centred while nothing is connected) and the game dead-zone ring.
+## Technical-instrument pass (informed by the open ControllerMeta frontend)
+The frontend of https://github.com/HK560/ControllerMeta was read for design principles only (no code, colours, branding or assets were copied). What it does that applies here, and how it is used:
+- **Information presentation**: metrics are small tiles, a 10 px uppercase label over a monospace value, each value in its own semantic colour (blue rate, green OK, orange warning/ids, purple counts). The dashboard is a grid of such tiles in compact cards: virtual controller (state, output rate, type, path), inputs and network, active configuration, triggers and sticks, the controller picture, and a button event stream. All values are real: output rate is the engine's reports per second, trigger and stick values are the final output sent to the virtual pad, events are the engine's own button edges.
+- **Navigation**: a narrow icon rail and a slim header with the identity, a version, a state dot and small bordered protocol tags (VIGEM, HOOKS, NET API). Underline tabs inside pages organise detail (Controller: Mapping / All bindings; Network and input: Receive / Send / Input and blocking / Appearance and files).
+- **Density and shape**: 28 px controls, 3 px corners, flat 1 px panels with a banded title, 12.5 px body text, values in a monospace face.
+- **Controls**: every numeric setting on the mouse and monitor pages is a slider paired with a number box (the number box stays the source of truth).
+- **Measurement views** (`Views/Components/Instruments.cs`): the mouse response curve uses the engine's own `MouseLook.Shape`; the stick scope shows the final right-stick value and the game dead-zone ring; bar meters show trigger travel.
 - **Layout tests**: `UiSmokeTests.NoPageNeedsHorizontalScrolling` checks every page at four window sizes.
 
-The ControllerMeta site was not reachable from the build environment, so this follows the stated principles, not its exact layout.
+Not adopted: its 12 px card radius, hover glow, glass/background-image theming and neon accent shadows. This app stays flat, square-cornered and quiet.

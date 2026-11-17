@@ -108,6 +108,49 @@
     <Setter Property="BorderThickness" Value="0,0,0,1" />
     <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushSubtle}" />
   </Style>
+  <!-- Metric tile: a small label over a coloured monospace value, the unit of presentation on the dashboard -->
+  <Style Selector="Border.tile">
+    <Setter Property="Background" Value="{DynamicResource CanvasBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushSubtle}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="Padding" Value="9,6" />
+  </Style>
+  <Style Selector="TextBlock.tilelab">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="0.8" />
+    <Setter Property="Foreground" Value="{DynamicResource FaintTextBrush}" />
+  </Style>
+  <Style Selector="TextBlock.val">
+    <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+  <Style Selector="TextBlock.val.blue"><Setter Property="Foreground" Value="{DynamicResource ValueBlueBrush}" /></Style>
+  <Style Selector="TextBlock.val.green"><Setter Property="Foreground" Value="{DynamicResource ValueGreenBrush}" /></Style>
+  <Style Selector="TextBlock.val.orange"><Setter Property="Foreground" Value="{DynamicResource ValueOrangeBrush}" /></Style>
+  <Style Selector="TextBlock.val.purple"><Setter Property="Foreground" Value="{DynamicResource ValuePurpleBrush}" /></Style>
+  <Style Selector="TextBlock.unit">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="Foreground" Value="{DynamicResource FaintTextBrush}" />
+  </Style>
+  <!-- A protocol/state tag in the header -->
+  <Style Selector="Border.tag">
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrushDefault}" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="Padding" Value="6,1" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.tag TextBlock">
+    <Setter Property="FontFamily" Value="{DynamicResource MonoFont}" />
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="Foreground" Value="{DynamicResource FaintTextBrush}" />
+  </Style>
+  <Style Selector="Border.tag.on"><Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></Style>
+  <Style Selector="Border.tag.on TextBlock"><Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" /></Style>
   <Style Selector="Border.divider">
     <Setter Property="Height" Value="1" />
     <Setter Property="Background" Value="{DynamicResource BorderBrushSubtle}" />

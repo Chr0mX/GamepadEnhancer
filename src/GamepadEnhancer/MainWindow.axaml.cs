@@ -975,7 +975,7 @@ namespace GamepadEnhancer
         protected override void OnClosed(EventArgs e)
         {
             StopGames();
-            try { SetScopeActive(false); } catch { }
+            try { SetScopeActive(false); SetDashActive(false); } catch { }
             try { if (monitorPanels != null) foreach (MonitorPanel p in monitorPanels) p.Stop(); } catch { }
             try { monitorWindow?.Close(); } catch { }
             try { networkApi?.Dispose(); } catch { }
