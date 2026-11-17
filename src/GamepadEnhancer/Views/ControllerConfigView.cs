@@ -15,6 +15,9 @@ namespace GamepadEnhancer
     /// the host shows the editor. Pressed controls light up, the selected one is outlined and a just-remapped one flashes. It only paints
     /// what the host gives it and scales to whatever size it is placed in.
     /// </summary>
+    /// <summary>What the diagram shows: the full controller (with a small rear view), or only the paddles on a large rear view.</summary>
+    internal enum DiagramMode { Controls, Paddles }
+
     internal sealed class ControllerConfigView : Control
     {
         private static IBrush B(string hex) => new SolidColorBrush(Color.Parse(hex));
@@ -148,10 +151,11 @@ namespace GamepadEnhancer
         private static readonly IBrush PsCross = B("#6C9CFF"), PsCircle = B("#FF6E6E"), PsSquare = B("#FF8AD4"), PsTriangle = B("#4CD7A8");
 
         private readonly Dictionary<(string, double, IBrush, bool), FormattedText> textCache = new();
-        private readonly Dictionary<PadFamily, List<LayoutSlot>> drawOrder = new();
+        private readonly Dictionary<(PadFamily, DiagramMode), List<LayoutSlot>> drawOrder = new();
         private readonly Dictionary<string, DateTime> flashes = new(StringComparer.OrdinalIgnoreCase);
         private readonly DispatcherTimer flashTimer;
         private PadFamily family = PadFamily.DualShock4;
+        private DiagramMode mode = DiagramMode.Controls;
         private string selectedId;
 
         /// <summary>Text shown on a slot's chip (its current mapping, e.g. "Space" or "Not set").</summary>
@@ -193,6 +197,14 @@ namespace GamepadEnhancer
             set { if (family != value) { family = value; InvalidateVisual(); } }
         }
 
+        public DiagramMode Mode
+        {
+            get => mode;
+            set { if (mode != value) { mode = value; InvalidateVisual(); } }
+        }
+
+        private IReadOnlyList<LayoutSlot> Slots() => mode == DiagramMode.Paddles ? ControllerLayout.ForPaddles(family) : ControllerLayout.For(family);
+
         public string SelectedId
         {
             get => selectedId;
@@ -226,7 +238,7 @@ namespace GamepadEnhancer
             Focus();
             Point p = e.GetPosition(this);
             var (s, ox, oy) = Fit();
-            LayoutSlot hit = ControllerLayout.HitTest(family, (p.X - ox) / s, (p.Y - oy) / s);
+            LayoutSlot hit = ControllerLayout.HitTest(Slots(), (p.X - ox) / s, (p.Y - oy) / s);
             if (hit != null) Select(hit.Id);
         }
 
@@ -235,7 +247,7 @@ namespace GamepadEnhancer
             base.OnKeyDown(e);
             int step = e.Key is Key.Right or Key.Down ? 1 : e.Key is Key.Left or Key.Up ? -1 : 0;
             if (step == 0) return;
-            IReadOnlyList<LayoutSlot> slots = ControllerLayout.For(family);
+            IReadOnlyList<LayoutSlot> slots = Slots();
             int index = -1;
             for (int i = 0; i < slots.Count; i++) if (string.Equals(slots[i].Id, selectedId, StringComparison.OrdinalIgnoreCase)) index = i;
             index = (index + step + slots.Count) % slots.Count;
@@ -256,11 +268,11 @@ namespace GamepadEnhancer
 
         private List<LayoutSlot> DrawOrder()
         {
-            if (!drawOrder.TryGetValue(family, out List<LayoutSlot> list))
+            if (!drawOrder.TryGetValue((family, mode), out List<LayoutSlot> list))
             {
-                list = new List<LayoutSlot>(ControllerLayout.For(family));
+                list = new List<LayoutSlot>(Slots());
                 list.Sort((a, b) => (b.MW * b.MH).CompareTo(a.MW * a.MH));   // big shapes first so small ones stay on top of them
-                drawOrder[family] = list;
+                drawOrder[(family, mode)] = list;
             }
             return list;
         }
@@ -272,8 +284,8 @@ namespace GamepadEnhancer
             using (context.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(ox, oy)))
             {
                 DrawHeader(context);
-                DrawBodies(context);
-                IReadOnlyList<LayoutSlot> slots = ControllerLayout.For(family);
+                if (mode == DiagramMode.Paddles) DrawRearBody(context); else DrawBodies(context);
+                IReadOnlyList<LayoutSlot> slots = Slots();
                 foreach (LayoutSlot s in slots) DrawConnector(context, s);
                 foreach (LayoutSlot s in DrawOrder()) DrawMarker(context, s);
                 foreach (LayoutSlot s in slots) DrawChip(context, s);
@@ -283,7 +295,21 @@ namespace GamepadEnhancer
         private void DrawHeader(DrawingContext c)
         {
             DrawText(c, ControllerLayouts.ForDevice(family).Title.ToUpperInvariant(), 13, TextBright, new Point(440, 30), true, true);
-            DrawText(c, "Select a control to see and change what it does", 10, TextDim, new Point(440, 50), true, false);
+            DrawText(c, mode == DiagramMode.Paddles ? "Rear view: select a paddle to assign it" : "Select a control to see and change what it does", 10, TextDim, new Point(440, 50), true, false);
+        }
+
+        /// <summary>The large rear view used by the paddle page: the grips carry the four paddles.</summary>
+        private void DrawRearBody(DrawingContext c)
+        {
+            StreamGeometry body = family == PadFamily.Xbox360 ? XboxBody : Ds4Body;
+            double dy = family == PadFamily.Xbox360 ? 20 : 0;
+            using (c.PushTransform(Matrix.CreateTranslation(0, dy)))
+            {
+                for (int i = 1; i <= 3; i++)
+                    using (c.PushTransform(Matrix.CreateTranslation(0, 2 + i * 3))) c.DrawGeometry(ShadowBrush, null, body);
+                c.DrawGeometry(BodyFill, PenFor(BodyEdge, 2), body);
+            }
+            DrawText(c, "REAR VIEW", 10, TextDim, new Point(440, 470), true, true);
         }
 
         private void DrawBodies(DrawingContext c)

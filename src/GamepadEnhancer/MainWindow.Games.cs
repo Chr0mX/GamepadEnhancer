@@ -90,6 +90,7 @@ namespace GamepadEnhancer
             };
             diagram.SlotSelected += OnSlotSelected;
             diagramHost.Child = diagram;
+            BuildGameList();
 
             buttonPicker = CreatePicker(keyboardOnly: false);
             stickPicker = CreatePicker(keyboardOnly: true);
@@ -151,7 +152,7 @@ namespace GamepadEnhancer
             PushSettings();
 
             suppressGameChange = true;
-            try { gameComboBox.SelectedItem = (gameComboBox.ItemsSource as IEnumerable<ComboBoxItem>)?.FirstOrDefault(i => (string)i.Tag == game.Id); }
+            try { SyncGameList(game.Id); gameComboBox.SelectedItem = (gameComboBox.ItemsSource as IEnumerable<ComboBoxItem>)?.FirstOrDefault(i => (string)i.Tag == game.Id); }
             finally { suppressGameChange = false; }
 
             if (!string.Equals(appSettings.ActiveGame, game.Id, StringComparison.Ordinal))
@@ -231,6 +232,9 @@ namespace GamepadEnhancer
             activeGameSourceLabel.Text = activeGame.Verified
                 ? (string.IsNullOrEmpty(activeGame.Layout) || activeGame.Layout == "n/a" ? activeGame.Source : $"Native layout: {activeGame.Layout}. Source: {activeGame.Source}")
                 : activeGame.Source;
+            activeConfigSummary = $"{src}" + (modified ? " · modified" : " · unchanged");
+            activeConfigModified = modified;
+            RefreshGameViews();
         }
 
         // ── Diagram data ────────────────────────────────────────────────────────
@@ -266,7 +270,7 @@ namespace GamepadEnhancer
 
         private void UpdateDiagramLive()
         {
-            if (diagram == null || !diagramHost.IsEffectivelyVisible) return;
+            if (diagram == null || !diagram.IsEffectivelyVisible) return;
             lastReading = paddleSource.Read();
             paddleSeenMask |= lastReading.Mask;
             availableMask = PaddleCaps.AvailableMask(lastReading, paddleSeenMask);
@@ -282,6 +286,7 @@ namespace GamepadEnhancer
             diagram.PressedActionMask = engine.IsConnected ? engine.LastMask : 0;
             diagram.Refresh();
             UpdatePaddleStatus();
+            UpdatePaddleSummaryLive(physicalSlots);
         }
 
         private void UpdatePaddleStatus()

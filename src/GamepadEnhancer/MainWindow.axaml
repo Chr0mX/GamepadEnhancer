@@ -1,256 +1,548 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:v="using:GamepadEnhancer"
         x:Class="GamepadEnhancer.MainWindow"
         Title="GamepadEnhancer"
-        Width="1100" Height="780" MinWidth="520" MinHeight="480"
+        Width="1280" Height="820" MinWidth="640" MinHeight="520"
         WindowStartupLocation="CenterScreen"
         UseLayoutRounding="True"
         Background="{DynamicResource CanvasBrush}">
 
-  <DockPanel>
+  <Grid RowDefinitions="*,Auto">
+    <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
 
-    <!-- Header: wraps instead of scrolling when the window is narrow -->
-    <Border DockPanel.Dock="Top" Classes="card" Margin="12,12,12,6">
-      <WrapPanel Orientation="Horizontal">
-        <TextBlock Classes="title" Text="GamepadEnhancer" VerticalAlignment="Center" Margin="0,4,18,4" />
-        <ComboBox x:Name="controllerTypeBox" MinWidth="120" Margin="0,4,8,4" VerticalAlignment="Center" />
-        <Button x:Name="connectButton" Classes="primary" Content="Connect" Margin="0,4,6,4" Click="ConnectButton_Click" />
-        <Button x:Name="disconnectButton" Content="Disconnect" IsEnabled="False" Margin="0,4,12,4" Click="DisconnectButton_Click" />
-        <TextBlock x:Name="activeControllerLabel" Text="Output: none" VerticalAlignment="Center" FontWeight="SemiBold"
-                   Foreground="{DynamicResource AccentTextBrush}" Margin="0,4,18,4" />
-
-        <TextBlock Text="Profile" VerticalAlignment="Center" Margin="0,4,8,4" />
-        <ComboBox x:Name="profileComboBox" MinWidth="140" Margin="0,4,6,4" VerticalAlignment="Center" SelectionChanged="ProfileComboBox_SelectionChanged" />
-        <TextBox x:Name="profileNameBox" MinWidth="140" Watermark="Profile name" Margin="0,4,6,4" VerticalAlignment="Center" />
-        <Button Content="Save" Margin="0,4,6,4" Click="SaveProfileButton_Click" />
-        <Button Content="Load" Margin="0,4,6,4" Click="LoadProfileButton_Click" />
-        <Button Content="Delete" Margin="0,4,6,4" Click="DeleteProfileButton_Click" />
-        <Button Content="Import..." Margin="0,4,6,4" Click="ImportProfileButton_Click" ToolTip.Tip="Load a profile file (.json) and add it to the list" />
-        <Button Content="Export..." Margin="0,4,6,4" Click="ExportProfileButton_Click" ToolTip.Tip="Save the current mapping to a file you can share or edit" />
-        <Button Content="Folder" Margin="0,4,10,4" Click="OpenProfilesFolderButton_Click" ToolTip.Tip="Open the profiles folder" />
-        <TextBlock Text="Config" VerticalAlignment="Center" Margin="0,4,8,4" />
-        <ComboBox x:Name="gameComboBox" MinWidth="200" Margin="0,4,6,4" VerticalAlignment="Center" SelectionChanged="GameComboBox_SelectionChanged"
-                  ToolTip.Tip="Pick a config: Default, or a game with its own layout. Each keeps its own saved changes." />
-        <Button Content="Restore config defaults" Margin="0,4,18,4" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes to the selected config and go back to its built-in defaults." />
-
-        <ToggleButton x:Name="darkModeToggle" Content="Dark mode" IsChecked="True" Margin="0,4,18,4" Click="DarkModeToggle_Click" />
-
-        <TextBlock Text="Input capture" VerticalAlignment="Center" Margin="0,4,8,4" />
-        <ComboBox x:Name="inputMethodBox" MinWidth="150" Margin="0,4,0,4" VerticalAlignment="Center" SelectionChanged="InputMethodBox_SelectionChanged" />
-      </WrapPanel>
-    </Border>
-
-    <!-- Status bar -->
-    <Border DockPanel.Dock="Bottom" Classes="card" Margin="12,6,12,12" Padding="12,8">
-      <StackPanel Spacing="2">
-        <TextBlock x:Name="statusLabel" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource AccentTextBrush}" Text="Status: Not connected" />
-      </StackPanel>
-    </Border>
-
-    <TabControl x:Name="mainTabs" Margin="12,0,12,0">
-
-      <!-- ─────────────── PC to Controller ─────────────── -->
-      <TabItem Header="PC to Controller">
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-          <StackPanel Margin="0,12,0,12" Spacing="12">
-            <Border Classes="card">
-              <StackPanel Spacing="8">
-                <TextBlock Classes="h" Text="Controller" />
-                <TextBlock x:Name="activeGameLabel" FontWeight="SemiBold" TextWrapping="Wrap" Text="" />
-                <TextBlock x:Name="activeGameSourceLabel" Classes="muted" TextWrapping="Wrap" Text="" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Click a control (or use the arrow keys) to select it and change what it does. Highlighted controls are being pressed; the rear view has the four paddles. The game line shows what the selected game does on that pad button." />
-                <Border x:Name="diagramHost" Height="540" MinHeight="320" />
-              </StackPanel>
+      <!-- ═══════════════ Sidebar ═══════════════ -->
+      <Border x:Name="sidebar" Grid.Column="0" Width="232" Background="{DynamicResource SidebarBrush}"
+              BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,1,0">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="18,18,12,10">
+            <Border Width="28" Height="28" CornerRadius="7" Background="{DynamicResource AccentBrush}">
+              <v:Icon Kind="gamepad" Width="16" Height="16" Foreground="{DynamicResource OnAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
-            <Border Classes="card">
-              <StackPanel Spacing="8">
-                <TextBlock x:Name="slotTitle" Classes="h" Text="Select a control" />
-                <TextBlock x:Name="slotNative" Classes="muted" TextWrapping="Wrap" Text="" />
-                <WrapPanel x:Name="slotPickerRow" Orientation="Horizontal" />
-                <WrapPanel x:Name="slotCaptureRow" Orientation="Horizontal" IsVisible="False">
-                  <Button x:Name="slotCaptureButton" Content="Press a key or button..." Margin="0,0,10,4"
-                          ToolTip.Tip="Click, then press the keyboard key, mouse button or wheel notch you want. Esc cancels." />
-                  <TextBlock Classes="muted" VerticalAlignment="Center" Margin="0,0,0,4" Text="or choose from the list" />
-                </WrapPanel>
-                <WrapPanel x:Name="slotTurboRow" Orientation="Horizontal" IsVisible="False">
-                  <CheckBox x:Name="slotTurboBox" Content="Turbo" Margin="0,0,8,4" />
-                  <NumericUpDown x:Name="slotTurboHz" Minimum="1" Maximum="30" Value="12" Increment="1" FormatString="0" MinWidth="100" Margin="0,0,6,4" />
-                  <TextBlock Text="Hz" VerticalAlignment="Center" Margin="0,0,0,4" />
-                </WrapPanel>
-                <WrapPanel x:Name="paddleRow" Orientation="Horizontal" IsVisible="False">
-                  <CheckBox x:Name="paddleEnableBox" Content="Enable this paddle" Margin="0,0,12,4" />
-                  <Button x:Name="paddleLearnButton" Content="Detect paddle..." Margin="0,0,0,4" ToolTip.Tip="Press the physical paddle you want to use for this slot." />
-                </WrapPanel>
-                <TextBlock x:Name="paddleStatusLabel" Classes="muted" TextWrapping="Wrap" Text="" />
-                <TextBlock x:Name="slotHint" Classes="muted" TextWrapping="Wrap" Text="" />
-              </StackPanel>
-            </Border>
-            <Expander Header="All bindings (list view)" HorizontalAlignment="Stretch">
-              <StackPanel Spacing="12" Margin="0,8,0,0">
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Buttons" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Bind each pad button to a keyboard key, a mouse button or a mouse wheel notch (the tag beside each picker says which). Turbo (rapid fire) is optional per button. The Apex line is what Apex Legends' default controller preset does on that button; Ultimate Ability is L1 + R1 together (Q + Mouse 4 by default)." />
-                <UniformGrid x:Name="bindingsGrid" Columns="2" />
-              </StackPanel>
-            </Border>
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Left stick  ·  keyboard" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Four keyboard keys move the left stick. Opposite keys cancel out and diagonals are scaled so they are no faster than straight lines. A left stick value sent over the Network API replaces these keys while it is set." />
-                <UniformGrid x:Name="leftStickGrid" Columns="2" />
-              </StackPanel>
-            </Border>
-              </StackPanel>
-            </Expander>
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Right stick  ·  mouse movement" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="The right stick is not bound to a key: moving the mouse moves the stick (Mouse Up / Down / Left / Right = stick up / down / left / right). A stick value sent over the Network API replaces it while set. Movement is read with Raw Input, so it works with either input capture method. Sensitivity is percent of stick per (mouse count per millisecond): higher = a slower mouse reaches full tilt." />
-                <CheckBox x:Name="mouseLookBox" Content="Mouse movement drives the right stick" IsCheckedChanged="AnySettingChangedChecked" />
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="Sensitivity X" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseSensXBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <TextBlock Text="Sensitivity Y" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseSensYBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <TextBlock Text="Curve" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseCurveBox" Minimum="0.5" Maximum="4" Value="1" Increment="0.1" FormatString="0.0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                </WrapPanel>
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="Game dead zone (%)" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseDeadZoneBox" Minimum="0" Maximum="50" Value="0" Increment="1" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <TextBlock Text="Release (ms)" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="mouseReleaseBox" Minimum="0" Maximum="500" Value="30" Increment="5" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="AnySettingChangedNumeric" />
-                  <CheckBox x:Name="mouseInvertYBox" Content="Invert Y" Margin="0,0,0,4" IsCheckedChanged="AnySettingChangedChecked" />
-                </WrapPanel>
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Game dead zone: set this to the game's own inner stick dead zone so small mouse moves still register. Release: how long the last stick value is held with no movement before the stick recenters." />
-              </StackPanel>
-            </Border>
+            <TextBlock x:Name="brandText" Classes="navtext" Text="GamepadEnhancer" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" />
           </StackPanel>
-        </ScrollViewer>
-      </TabItem>
 
-      <!-- ─────────────── Monitor ─────────────── -->
-      <TabItem Header="Monitor" x:Name="monitorTab">
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-          <StackPanel Margin="0,12,0,12" Spacing="12">
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Controller monitor" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="A live picture of the virtual controller. Pick which stage of the pipeline to look at: what your keyboard/mouse ask for, what the app makes of it (mouse look, turbo, remote commands), or exactly what is sent to the virtual pad. It draws on its own timer and never delays the controller output." />
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="View" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <ComboBox x:Name="monitorViewBox" MinWidth="200" Margin="0,0,16,4" SelectionChanged="MonitorSettings_SelectionChanged" />
-                  <TextBlock Text="Size (%)" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <NumericUpDown x:Name="monitorScaleBox" Minimum="50" Maximum="200" Value="100" Increment="10" FormatString="0" MinWidth="130" Margin="0,0,16,4" ValueChanged="MonitorSettings_Numeric" />
-                  <TextBlock Text="Refresh (Hz)" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <ComboBox x:Name="monitorHzBox" MinWidth="90" Margin="0,0,0,4" SelectionChanged="MonitorSettings_SelectionChanged" />
-                </WrapPanel>
-                <WrapPanel Orientation="Horizontal">
-                  <CheckBox x:Name="monitorEnabledBox" Content="Live visualization" IsChecked="True" Margin="0,0,16,4" IsCheckedChanged="MonitorSettings_Checked" />
-                  <CheckBox x:Name="monitorCompactBox" Content="Compact" Margin="0,0,16,4" IsCheckedChanged="MonitorSettings_Checked" />
-                  <CheckBox x:Name="monitorTopmostBox" Content="Pop-out always on top" Margin="0,0,16,4" IsCheckedChanged="MonitorSettings_Checked" />
-                  <CheckBox x:Name="monitorOverlayBox" Content="Pop-out as transparent overlay" Margin="0,0,16,4" IsCheckedChanged="MonitorSettings_Checked" />
-                  <Button x:Name="monitorPopoutButton" Content="Open pop-out window" Margin="0,0,0,4" Click="MonitorPopout_Click" />
-                </WrapPanel>
-                <TextBlock x:Name="monitorViewHint" Classes="muted" TextWrapping="Wrap" />
-              </StackPanel>
-            </Border>
-            <Border Classes="card">
-              <Border x:Name="monitorHost" HorizontalAlignment="Center" />
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
+          <!-- Virtual controller: always visible, so connecting never needs a page change -->
+          <Border x:Name="sidebarFooter" DockPanel.Dock="Bottom" Padding="14,12,14,14" BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,1,0,0">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="caption" Text="Virtual controller" FontWeight="SemiBold" />
+              <ComboBox x:Name="controllerTypeBox" HorizontalAlignment="Stretch" ToolTip.Tip="Which controller the game sees" />
+              <Grid ColumnDefinitions="*,8,*">
+                <Button x:Name="connectButton" Grid.Column="0" Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Connect" Click="ConnectButton_Click" />
+                <Button x:Name="disconnectButton" Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Disconnect" IsEnabled="False" Click="DisconnectButton_Click" />
+              </Grid>
+              <TextBlock x:Name="activeControllerLabel" Classes="caption" Text="Output: none" />
+            </StackPanel>
+          </Border>
 
-      <!-- ─────────────── Block & Mouse ─────────────── -->
-      <TabItem Header="Block &amp; Mouse">
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-          <StackPanel Margin="0,12,0,12" Spacing="12">
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Block physical keyboard and mouse" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="While one of the listed programs is focused and the virtual controller is connected, the keys and mouse buttons you mapped to pad actions (and mouse movement, if mouse look is on) are swallowed so only the controller reaches the game. Unmapped input is untouched, and the toggle hotkey is never blocked. Needs the Low-Level Hooks capture method. Input injected by other tools is never blocked." />
-                <CheckBox x:Name="blockEnabledBox" Content="Block mapped input while a listed program is focused" IsCheckedChanged="BlockSettings_Changed" />
-                <WrapPanel Orientation="Horizontal">
-                  <CheckBox x:Name="blockKeyboardBox" Content="Block keyboard" IsChecked="True" Margin="0,0,16,4" IsCheckedChanged="BlockSettings_Changed" />
-                  <CheckBox x:Name="blockMouseBox" Content="Block mouse (buttons, wheel, mouse look)" IsChecked="True" Margin="0,0,16,4" IsCheckedChanged="BlockSettings_Changed" />
-                  <Button x:Name="blockRestoreButton" Content="Restore input now" Margin="0,0,0,4" Click="BlockRestore_Click" />
-                </WrapPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,4,0,8">
+              <RadioButton x:Name="navDashboard" Classes="nav" GroupName="nav" Tag="dashboard" IsChecked="True" ToolTip.Tip="Dashboard" IsCheckedChanged="Nav_Changed">
+                <StackPanel Orientation="Horizontal" Spacing="12"><v:Icon Kind="dashboard" /><TextBlock Classes="navtext" Text="Dashboard" /></StackPanel>
+              </RadioButton>
+
+              <TextBlock Classes="eyebrow navtext" Text="CONFIGURE" />
+              <RadioButton Classes="nav" GroupName="nav" Tag="controller" ToolTip.Tip="Controller mapping" IsCheckedChanged="Nav_Changed">
+                <StackPanel Orientation="Horizontal" Spacing="12"><v:Icon Kind="gamepad" /><TextBlock Classes="navtext" Text="Controller" /></StackPanel>
+              </RadioButton>
+              <RadioButton Classes="nav" GroupName="nav" Tag="games" ToolTip.Tip="Game configurations" IsCheckedChanged="Nav_Changed">
+                <StackPanel Orientation="Horizontal" Spacing="12"><v:Icon Kind="games" /><TextBlock Classes="navtext" Text="Games" /></StackPanel>
+              </RadioButton>
+              <RadioButton Classes="nav" GroupName="nav" Tag="paddles" ToolTip.Tip="Rear paddles" IsCheckedChanged="Nav_Changed">
+                <StackPanel Orientation="Horizontal" Spacing="12"><v:Icon Kind="paddles" /><TextBlock Classes="navtext" Text="Rear paddles" /></StackPanel>
+              </RadioButton>
+              <RadioButton Classes="nav" GroupName="nav" Tag="mouse" ToolTip.Tip="Mouse look (right stick)" IsCheckedChanged="Nav_Changed">
+                <StackPanel Orientation="Horizontal" Spacing="12"><v:Icon Kind="mouse" /><TextBlock Classes="navtext" Text="Mouse look" /></StackPanel>
+              </RadioButton>
+              <RadioButton Classes="nav" GroupName="nav" Tag="profiles" ToolTip.Tip="Profiles" IsCheckedChanged="Nav_Changed">
+                <StackPanel Orientation="Horizontal" Spacing="12"><v:Icon Kind="profile" /><TextBlock Classes="navtext" Text="Profiles" /></StackPanel>
+              </RadioButton>
+
+              <TextBlock Classes="eyebrow navtext" Text="OBSERVE" />
+              <RadioButton x:Name="navMonitor" Classes="nav" GroupName="nav" Tag="monitor" ToolTip.Tip="Controller monitor" IsCheckedChanged="Nav_Changed">
+                <StackPanel Orientation="Horizontal" Spacing="12"><v:Icon Kind="activity" /><TextBlock Classes="navtext" Text="Monitor" /></StackPanel>
+              </RadioButton>
+
+              <TextBlock Classes="eyebrow navtext" Text="SYSTEM" />
+              <RadioButton Classes="nav" GroupName="nav" Tag="network" ToolTip.Tip="Network" IsCheckedChanged="Nav_Changed">
+                <StackPanel Orientation="Horizontal" Spacing="12"><v:Icon Kind="network" /><TextBlock Classes="navtext" Text="Network" /></StackPanel>
+              </RadioButton>
+              <RadioButton Classes="nav" GroupName="nav" Tag="settings" ToolTip.Tip="Input and settings" IsCheckedChanged="Nav_Changed">
+                <StackPanel Orientation="Horizontal" Spacing="12"><v:Icon Kind="settings" /><TextBlock Classes="navtext" Text="Input &amp; settings" /></StackPanel>
+              </RadioButton>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+
+      <!-- ═══════════════ Pages ═══════════════ -->
+      <Grid Grid.Column="1" x:Name="pagesHost">
+
+        <!-- ───────── Dashboard ───────── -->
+        <ScrollViewer x:Name="pageDashboard" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="28,24,28,28" Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="title" Text="Dashboard" />
+              <TextBlock Classes="caption" Text="What is connected and what is active right now." />
+            </StackPanel>
+
+            <UniformGrid x:Name="dashTiles" Columns="4">
+              <Border Classes="panel" Margin="0,0,8,8" Padding="14">
                 <StackPanel Spacing="6">
-                  <TextBlock Text="Programs (process names, separated by commas)" />
-                  <TextBox x:Name="blockProcessesBox" Watermark="game.exe, other.exe" LostFocus="BlockSettings_LostFocus" />
-                  <WrapPanel Orientation="Horizontal">
-                    <ComboBox x:Name="blockRunningBox" MinWidth="220" Margin="0,0,8,4" PlaceholderText="Running programs" />
-                    <Button x:Name="blockRefreshButton" Content="Refresh" Margin="0,0,8,4" Click="BlockRefresh_Click" />
-                    <Button x:Name="blockAddButton" Content="Add selected" Margin="0,0,0,4" Click="BlockAdd_Click" />
+                  <TextBlock Classes="caption" Text="Virtual controller" />
+                  <v:StatusBadge x:Name="dashVirtualBadge" />
+                  <TextBlock x:Name="dashVirtualDetail" Classes="caption" />
+                </StackPanel>
+              </Border>
+              <Border Classes="panel" Margin="0,0,8,8" Padding="14">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="caption" Text="Output path" />
+                  <v:StatusBadge x:Name="dashOutputBadge" />
+                  <TextBlock x:Name="dashOutputDetail" Classes="caption" />
+                </StackPanel>
+              </Border>
+              <Border Classes="panel" Margin="0,0,8,8" Padding="14">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="caption" Text="Physical controller" />
+                  <v:StatusBadge x:Name="dashPhysicalBadge" />
+                  <TextBlock x:Name="dashPhysicalDetail" Classes="caption" />
+                </StackPanel>
+              </Border>
+              <Border Classes="panel" Margin="0,0,0,8" Padding="14">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="caption" Text="Network API" />
+                  <v:StatusBadge x:Name="dashNetworkBadge" />
+                  <TextBlock x:Name="dashNetworkDetail" Classes="caption" />
+                </StackPanel>
+              </Border>
+            </UniformGrid>
+
+            <Grid x:Name="dashLower" ColumnDefinitions="*,16,*">
+              <v:Section x:Name="dashConfigSection" Grid.Column="0" Title="Active configuration" Description="The game config and profile currently loaded.">
+                <StackPanel Spacing="8">
+                  <TextBlock x:Name="dashConfigText" Classes="h" TextWrapping="Wrap" />
+                  <TextBlock x:Name="dashConfigDetail" Classes="caption" />
+                  <TextBlock x:Name="dashProfileText" Classes="caption" />
+                  <WrapPanel Margin="0,4,0,0">
+                    <Button x:Name="dashConnectButton" Content="Connect" Classes="primary" Margin="0,0,8,8" Click="ConnectButton_Click" />
+                    <Button x:Name="dashDisconnectButton" Content="Disconnect" Margin="0,0,8,8" IsEnabled="False" Click="DisconnectButton_Click" />
+                    <Button Content="Open controller" Margin="0,0,8,8" Tag="controller" Click="GoTo_Click" />
+                    <Button Content="Change game config" Margin="0,0,8,8" Tag="games" Click="GoTo_Click" />
+                    <Button Content="Profiles" Margin="0,0,8,8" Tag="profiles" Click="GoTo_Click" />
                   </WrapPanel>
                 </StackPanel>
-                <WrapPanel Orientation="Horizontal">
-                  <TextBlock Text="Toggle / panic hotkey" VerticalAlignment="Center" Margin="0,0,10,4" />
-                  <ComboBox x:Name="blockHotkeyBox" MinWidth="150" Margin="0,0,0,4" SelectionChanged="BlockHotkeyBox_SelectionChanged" />
-                </WrapPanel>
-                <TextBlock x:Name="blockStatusLabel" Classes="muted" Text="Input blocking is off" TextWrapping="Wrap" />
-              </StackPanel>
-            </Border>
+              </v:Section>
+              <v:Section x:Name="dashQuickSection" Grid.Column="2" Title="Quick access" Description="Current state of the main features. Open one to change it.">
+                <StackPanel>
+                  <v:SettingRow Title="Mouse look" Description="Mouse movement drives the right stick">
+                    <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock x:Name="dashMouseText" VerticalAlignment="Center" Classes="caption" /><Button Content="Open" Tag="mouse" Click="GoTo_Click" /></StackPanel>
+                  </v:SettingRow>
+                  <v:SettingRow Title="Rear paddles" Description="Paddles on the physical controller">
+                    <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock x:Name="dashPaddleText" VerticalAlignment="Center" Classes="caption" /><Button Content="Open" Tag="paddles" Click="GoTo_Click" /></StackPanel>
+                  </v:SettingRow>
+                  <v:SettingRow Title="Input blocking" Description="Swallow mapped keys while a game is focused">
+                    <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock x:Name="dashBlockText" VerticalAlignment="Center" Classes="caption" /><Button Content="Open" Tag="settings" Click="GoTo_Click" /></StackPanel>
+                  </v:SettingRow>
+                  <v:SettingRow Title="Input capture" Description="How keyboard and mouse are read">
+                    <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock x:Name="dashCaptureText" VerticalAlignment="Center" Classes="caption" /><Button Content="Open" Tag="settings" Click="GoTo_Click" /></StackPanel>
+                  </v:SettingRow>
+                </StackPanel>
+              </v:Section>
+            </Grid>
           </StackPanel>
         </ScrollViewer>
-      </TabItem>
 
-      <!-- ─────────────── Network API ─────────────── -->
-      <TabItem Header="Network">
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-          <StackPanel Margin="0,12,0,12" Spacing="12">
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Network API (MAKCU commands)" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Let another computer drive this virtual controller with MAKCU-style text commands over TCP (km.controller(id,value[,hold_ms]), km.controller_clear()). Off by default. A client must send its token first: auth &lt;token&gt;. Anyone on your network who has the token can control the pad, so keep the port firewalled. Connect the controller first." />
-                <CheckBox x:Name="netEnabledBox" Content="Enable Network API" IsCheckedChanged="NetworkSettings_Changed" />
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="Port" VerticalAlignment="Center" />
-                  <TextBox x:Name="netPortBox" Width="90" Text="5555" LostFocus="NetworkSettings_LostFocus" />
-                  <CheckBox x:Name="netBindAllBox" Content="Allow other computers (LAN)" IsChecked="True" IsCheckedChanged="NetworkSettings_Changed" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="Token" VerticalAlignment="Center" />
-                  <TextBox x:Name="netTokenBox" Width="260" IsReadOnly="True" PasswordChar="*" />
-                  <CheckBox x:Name="netShowTokenBox" Content="Show" IsCheckedChanged="NetShowToken_Changed" />
-                  <Button x:Name="netCopyButton" Content="Copy" Click="NetCopyToken_Click" />
-                  <Button x:Name="netNewTokenButton" Content="New token" Click="NetNewToken_Click" />
-                </StackPanel>
-                <TextBlock x:Name="netStatusLabel" Classes="muted" Text="Network API is off" TextWrapping="Wrap" />
+        <!-- ───────── Controller ───────── -->
+        <ScrollViewer x:Name="pageController" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="24,22,24,24" Spacing="14" MaxWidth="1560" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="title" Text="Controller" />
+                <TextBlock x:Name="activeGameLabel" Classes="caption" />
               </StackPanel>
-            </Border>
-            <Border Classes="card">
-              <StackPanel Spacing="10">
-                <TextBlock Classes="h" Text="Send to another PC" />
-                <TextBlock Classes="muted" TextWrapping="Wrap"
-                           Text="Run this app on the PC with your mouse and keyboard and let the other PC (the one with ViGEmBus and the game) create the virtual controller. Turn this on, enter that PC's address and token from its Network tab, then press Connect. No ViGEmBus is needed on this PC." />
-                <CheckBox x:Name="remoteSendBox" Content="Send the controller to another PC instead of creating it here" IsCheckedChanged="RemoteSettings_Changed" />
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="Address" VerticalAlignment="Center" />
-                  <TextBox x:Name="remoteHostBox" Width="180" Watermark="192.168.1.20" LostFocus="RemoteSettings_LostFocus" />
-                  <TextBlock Text="Port" VerticalAlignment="Center" />
-                  <TextBox x:Name="remotePortBox" Width="80" Text="5555" LostFocus="RemoteSettings_LostFocus" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="Token" VerticalAlignment="Center" />
-                  <TextBox x:Name="remoteTokenBox" Width="260" PasswordChar="*" LostFocus="RemoteSettings_LostFocus" />
-                </StackPanel>
+              <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+                <Border Classes="panel" Padding="3" Margin="0,0,10,0" CornerRadius="8">
+                  <StackPanel x:Name="layoutSwitch" Orientation="Horizontal" Spacing="2" />
+                </Border>
+                <Button Classes="ghost" Margin="0,0,0,0" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes to the selected config and go back to its built-in defaults.">
+                  <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="restore" /><TextBlock Text="Restore defaults" /></StackPanel>
+                </Button>
+              </WrapPanel>
+            </Grid>
+
+            <Grid x:Name="controllerGrid" ColumnDefinitions="*,16,380" RowDefinitions="Auto,Auto">
+              <Border x:Name="diagramPanel" Grid.Column="0" Classes="panel" Padding="8">
+                <Border x:Name="diagramHost" Height="580" MinHeight="320" />
+              </Border>
+              <Border x:Name="inspectorHostController" Grid.Column="2" />
+            </Grid>
+
+            <TextBlock x:Name="activeGameSourceLabel" Classes="caption" />
+
+            <Expander Header="All bindings (list view)" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="12" Margin="0,8,0,0">
+                <v:Section Title="Buttons" Description="Bind each pad button to a keyboard key, a mouse button or a mouse wheel notch. Turbo (rapid fire) is optional per button. Ultimate Ability in Apex is L1 + R1 together.">
+                  <UniformGrid x:Name="bindingsGrid" Columns="2" />
+                </v:Section>
+                <v:Section Title="Left stick · keyboard" Description="Four keyboard keys move the left stick. Opposite keys cancel out and diagonals are scaled so they are no faster than straight lines. A left stick value sent over the Network API replaces these keys while it is set.">
+                  <UniformGrid x:Name="leftStickGrid" Columns="2" />
+                </v:Section>
               </StackPanel>
-            </Border>
+            </Expander>
           </StackPanel>
         </ScrollViewer>
-      </TabItem>
 
-    </TabControl>
-  </DockPanel>
+        <!-- Shared editor for the selected control (moves between the Controller and Rear paddles pages) -->
+        <Border x:Name="inspectorCard" Classes="panel" IsVisible="False">
+          <StackPanel Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <v:Icon Kind="key" Foreground="{DynamicResource AccentTextBrush}" />
+              <TextBlock x:Name="slotTitle" Classes="h" Text="Select a control" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock x:Name="slotNative" Classes="caption" />
+            <WrapPanel x:Name="slotPickerRow" Orientation="Horizontal" />
+            <WrapPanel x:Name="slotCaptureRow" Orientation="Horizontal" IsVisible="False">
+              <Button x:Name="slotCaptureButton" Content="Press a key or button..." Margin="0,0,10,4"
+                      ToolTip.Tip="Click, then press the keyboard key, mouse button or wheel notch you want. Esc cancels." />
+              <TextBlock Classes="caption" VerticalAlignment="Center" Margin="0,0,0,4" Text="or choose from the list" />
+            </WrapPanel>
+            <WrapPanel x:Name="slotTurboRow" Orientation="Horizontal" IsVisible="False">
+              <CheckBox x:Name="slotTurboBox" Content="Turbo" Margin="0,0,8,4" />
+              <NumericUpDown x:Name="slotTurboHz" Minimum="1" Maximum="30" Value="12" Increment="1" FormatString="0" MinWidth="100" Margin="0,0,6,4" />
+              <TextBlock Text="Hz" VerticalAlignment="Center" Margin="0,0,0,4" />
+            </WrapPanel>
+            <WrapPanel x:Name="paddleRow" Orientation="Horizontal" IsVisible="False">
+              <CheckBox x:Name="paddleEnableBox" Content="Enable this paddle" Margin="0,0,12,4" />
+              <Button x:Name="paddleLearnButton" Content="Detect paddle..." Margin="0,0,0,4" ToolTip.Tip="Press the physical paddle you want to use for this slot." />
+            </WrapPanel>
+            <TextBlock x:Name="paddleStatusLabel" Classes="caption" />
+            <TextBlock x:Name="slotHint" Classes="caption" />
+          </StackPanel>
+        </Border>
+
+        <!-- ───────── Games ───────── -->
+        <ScrollViewer x:Name="pageGames" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="28,24,28,28" Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="title" Text="Game configurations" />
+                <TextBlock Classes="caption" Text="Picking a game loads its own default layout. Each config keeps its own saved changes; built-in defaults are never overwritten." />
+              </StackPanel>
+              <Button Grid.Column="1" Classes="ghost" VerticalAlignment="Center" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes to the selected config and go back to its built-in defaults.">
+                <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="restore" /><TextBlock Text="Restore defaults" /></StackPanel>
+              </Button>
+            </Grid>
+
+            <Grid x:Name="gamesGrid" ColumnDefinitions="360,16,*">
+              <v:Section x:Name="gameListSection" Grid.Column="0" Title="Configs" Description="Default, or a game with its own layout.">
+                <ListBox x:Name="gameList" Classes="plain" SelectionChanged="GameList_SelectionChanged" />
+              </v:Section>
+              <v:Section x:Name="gameDetailSection" Grid.Column="2" Title="Selected config" Description="Where its defaults come from and what the game does on each button.">
+                <StackPanel Spacing="10">
+                  <TextBlock x:Name="gameDetailName" Classes="title" />
+                  <WrapPanel x:Name="gameDetailBadges" />
+                  <TextBlock x:Name="gameDetailSource" Classes="caption" />
+                  <Border Classes="divider" />
+                  <TextBlock Classes="label" Text="Native layout (what the game does on each button)" />
+                  <TextBlock x:Name="gameNativeEmpty" Classes="caption" IsVisible="False" />
+                  <ItemsControl x:Name="gameNativeList" />
+                </StackPanel>
+              </v:Section>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ───────── Rear paddles ───────── -->
+        <ScrollViewer x:Name="pagePaddles" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="24,22,24,24" Spacing="14" MaxWidth="1560" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="title" Text="Rear paddles" />
+                <TextBlock Classes="caption" Text="Four independent paddles. Each can press a virtual controller button, a keyboard key or a mouse button. They need a physical controller that has paddles." />
+              </StackPanel>
+              <v:StatusBadge x:Name="paddleHwBadge" Grid.Column="1" VerticalAlignment="Center" />
+            </Grid>
+            <Grid x:Name="paddleGrid" ColumnDefinitions="*,16,380">
+              <Border x:Name="paddleDiagramPanel" Classes="panel" Padding="8" Grid.Column="0">
+                <Border x:Name="paddleDiagramHost" Height="520" MinHeight="320" />
+              </Border>
+              <StackPanel x:Name="paddleSidePanel" Grid.Column="2" Spacing="14">
+                <Border x:Name="inspectorHostPaddles" />
+                <v:Section Title="Overview" Description="Click a row to edit that paddle. The dot lights while the physical paddle is held.">
+                  <StackPanel x:Name="paddleSummary" Spacing="4" />
+                </v:Section>
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ───────── Mouse look ───────── -->
+        <ScrollViewer x:Name="pageMouse" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="28,24,28,28" Spacing="16" MaxWidth="860" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="title" Text="Mouse look" />
+              <TextBlock Classes="caption" Text="The right stick is not bound to a key: moving the mouse moves the stick. A stick value sent over the Network API replaces it while set. Movement is read with Raw Input, so it works with either input capture method." />
+            </StackPanel>
+            <v:Section Title="Mouse look">
+              <v:SettingRow Title="Mouse movement drives the right stick" Description="Mouse Up / Down / Left / Right = stick up / down / left / right.">
+                <ToggleSwitch x:Name="mouseLookBox" OnContent="" OffContent="" IsCheckedChanged="AnySettingChangedChecked" />
+              </v:SettingRow>
+            </v:Section>
+            <v:Section Title="Mouse movement" Description="Sensitivity is percent of stick per (mouse count per millisecond): a higher value means a slower mouse reaches full tilt.">
+              <StackPanel>
+                <v:SettingRow Title="Sensitivity X" Description="Horizontal sensitivity.">
+                  <NumericUpDown x:Name="mouseSensXBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" ValueChanged="AnySettingChangedNumeric" />
+                </v:SettingRow>
+                <v:SettingRow Title="Sensitivity Y" Description="Vertical sensitivity.">
+                  <NumericUpDown x:Name="mouseSensYBox" Minimum="0.5" Maximum="100" Value="8" Increment="0.5" FormatString="0.0" MinWidth="130" ValueChanged="AnySettingChangedNumeric" />
+                </v:SettingRow>
+                <v:SettingRow Title="Curve" Description="Response curve of small versus large movements.">
+                  <NumericUpDown x:Name="mouseCurveBox" Minimum="0.5" Maximum="4" Value="1" Increment="0.1" FormatString="0.0" MinWidth="130" ValueChanged="AnySettingChangedNumeric" />
+                </v:SettingRow>
+                <v:SettingRow Title="Invert Y" Description="Moving the mouse up pushes the stick down.">
+                  <ToggleSwitch x:Name="mouseInvertYBox" OnContent="" OffContent="" IsCheckedChanged="AnySettingChangedChecked" />
+                </v:SettingRow>
+              </StackPanel>
+            </v:Section>
+            <v:Section Title="Right-stick output">
+              <StackPanel>
+                <v:SettingRow Title="Game dead zone (%)" Description="Set this to the game's own inner stick dead zone so small mouse moves still register.">
+                  <NumericUpDown x:Name="mouseDeadZoneBox" Minimum="0" Maximum="50" Value="0" Increment="1" FormatString="0" MinWidth="130" ValueChanged="AnySettingChangedNumeric" />
+                </v:SettingRow>
+                <v:SettingRow Title="Release (ms)" Description="How long the last stick value is held with no movement before the stick recenters.">
+                  <NumericUpDown x:Name="mouseReleaseBox" Minimum="0" Maximum="500" Value="30" Increment="5" FormatString="0" MinWidth="130" ValueChanged="AnySettingChangedNumeric" />
+                </v:SettingRow>
+              </StackPanel>
+            </v:Section>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ───────── Profiles ───────── -->
+        <ScrollViewer x:Name="pageProfiles" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="28,24,28,28" Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="title" Text="Profiles" />
+                <TextBlock Classes="caption" Text="A profile is a snapshot of the current mapping: controller type, every binding, paddles and mouse look. Share one by exporting the file." />
+              </StackPanel>
+              <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+                <Button Margin="0,0,8,0" Click="ImportProfileButton_Click" ToolTip.Tip="Load a profile file (.json) and add it to the list">
+                  <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="download" /><TextBlock Text="Import" /></StackPanel>
+                </Button>
+                <Button Margin="0,0,8,0" Click="ExportProfileButton_Click" ToolTip.Tip="Save the current mapping to a file you can share or edit">
+                  <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="upload" /><TextBlock Text="Export" /></StackPanel>
+                </Button>
+                <Button Classes="ghost" Click="OpenProfilesFolderButton_Click" ToolTip.Tip="Open the profiles folder">
+                  <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="folder" /><TextBlock Text="Folder" /></StackPanel>
+                </Button>
+              </WrapPanel>
+            </Grid>
+
+            <Grid x:Name="profilesGrid" ColumnDefinitions="360,16,*">
+              <v:Section x:Name="profileListSection" Grid.Column="0" Title="Saved profiles" Description="Select one, then Load it.">
+                <ListBox x:Name="profileComboBox" Classes="plain" MaxHeight="420" SelectionChanged="ProfileComboBox_SelectionChanged" />
+              </v:Section>
+              <v:Section x:Name="profileEditSection" Grid.Column="2" Title="Profile" Description="Name the current mapping and save it, or load the selected one.">
+                <StackPanel Spacing="12">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="label" Text="Name" />
+                    <TextBox x:Name="profileNameBox" Watermark="Profile name" />
+                  </StackPanel>
+                  <WrapPanel>
+                    <Button Classes="primary" Margin="0,0,8,8" Click="SaveProfileButton_Click">
+                      <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="save" /><TextBlock Text="Save current mapping" /></StackPanel>
+                    </Button>
+                    <Button Margin="0,0,8,8" Click="LoadProfileButton_Click">
+                      <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="check" /><TextBlock Text="Load" /></StackPanel>
+                    </Button>
+                    <Button Classes="danger" Margin="0,0,8,8" Click="DeleteProfileButton_Click">
+                      <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="trash" /><TextBlock Text="Delete" /></StackPanel>
+                    </Button>
+                  </WrapPanel>
+                  <Border Classes="divider" />
+                  <TextBlock x:Name="profileActiveLabel" Classes="label" />
+                  <TextBlock x:Name="profileInfoLabel" Classes="caption" />
+                  <TextBlock Classes="caption" Text="Game configs (Games page) are separate: they save themselves automatically and each game keeps its own. Profiles are files you choose when to save and load." />
+                </StackPanel>
+              </v:Section>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ───────── Monitor ───────── -->
+        <ScrollViewer x:Name="pageMonitor" IsVisible="False" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="28,24,28,28" Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="title" Text="Controller monitor" />
+                <TextBlock Classes="caption" Text="A live picture of the virtual controller. It draws on its own timer and never delays the controller output." />
+              </StackPanel>
+              <Button x:Name="monitorPopoutButton" Grid.Column="1" VerticalAlignment="Center" Content="Open pop-out window" Click="MonitorPopout_Click" />
+            </Grid>
+
+            <v:Section Title="Source" Description="Pick which stage of the pipeline to look at: what your keyboard and mouse ask for, what the app makes of it (mouse look, turbo, remote commands), or exactly what is sent to the virtual pad.">
+              <StackPanel>
+                <v:SettingRow Title="View">
+                  <ComboBox x:Name="monitorViewBox" MinWidth="220" SelectionChanged="MonitorSettings_SelectionChanged" />
+                </v:SettingRow>
+                <TextBlock x:Name="monitorViewHint" Classes="caption" Margin="0,8,0,0" />
+              </StackPanel>
+            </v:Section>
+
+            <Border Classes="panel">
+              <Border x:Name="monitorHost" HorizontalAlignment="Center" />
+            </Border>
+
+            <v:Section Title="Display and pop-out">
+              <StackPanel>
+                <v:SettingRow Title="Live visualization" Description="Turn off to stop drawing entirely.">
+                  <ToggleSwitch x:Name="monitorEnabledBox" IsChecked="True" OnContent="" OffContent="" IsCheckedChanged="MonitorSettings_Checked" />
+                </v:SettingRow>
+                <v:SettingRow Title="Size (%)">
+                  <NumericUpDown x:Name="monitorScaleBox" Minimum="50" Maximum="200" Value="100" Increment="10" FormatString="0" MinWidth="130" ValueChanged="MonitorSettings_Numeric" />
+                </v:SettingRow>
+                <v:SettingRow Title="Refresh (Hz)">
+                  <ComboBox x:Name="monitorHzBox" MinWidth="110" SelectionChanged="MonitorSettings_SelectionChanged" />
+                </v:SettingRow>
+                <v:SettingRow Title="Compact" Description="A smaller layout with fewer readouts.">
+                  <ToggleSwitch x:Name="monitorCompactBox" OnContent="" OffContent="" IsCheckedChanged="MonitorSettings_Checked" />
+                </v:SettingRow>
+                <v:SettingRow Title="Pop-out always on top" Description="Keep the pop-out window above the game.">
+                  <ToggleSwitch x:Name="monitorTopmostBox" OnContent="" OffContent="" IsCheckedChanged="MonitorSettings_Checked" />
+                </v:SettingRow>
+                <v:SettingRow Title="Pop-out as transparent overlay" Description="No frame, only the controller. Drag to move; Esc or right click closes it.">
+                  <ToggleSwitch x:Name="monitorOverlayBox" OnContent="" OffContent="" IsCheckedChanged="MonitorSettings_Checked" />
+                </v:SettingRow>
+              </StackPanel>
+            </v:Section>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ───────── Network ───────── -->
+        <ScrollViewer x:Name="pageNetwork" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="28,24,28,28" Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="title" Text="Network" />
+              <TextBlock Classes="caption" Text="Two different directions. Receive: another computer controls the controller on this PC. Send: this PC's keyboard and mouse drive a controller on another PC." />
+            </StackPanel>
+
+            <Grid x:Name="networkGrid" ColumnDefinitions="*,16,*">
+              <v:Section x:Name="netReceiveSection" Grid.Column="0" Title="Receive · Network API" Description="Let another computer drive this virtual controller with MAKCU-style text commands over TCP (km.controller(id,value[,hold_ms]), km.controller_clear()). A client can also subscribe to this PC's mouse buttons with km.mouse_stream(1).">
+                <StackPanel>
+                  <v:SettingRow Title="Enable Network API" Description="Off by default. Connect the controller first.">
+                    <ToggleSwitch x:Name="netEnabledBox" OnContent="" OffContent="" IsCheckedChanged="NetworkSettings_Changed" />
+                  </v:SettingRow>
+                  <v:SettingRow Title="Port">
+                    <TextBox x:Name="netPortBox" Width="110" Text="5555" LostFocus="NetworkSettings_LostFocus" />
+                  </v:SettingRow>
+                  <v:SettingRow Title="Allow other computers (LAN)" Description="Off keeps it reachable from this PC only.">
+                    <ToggleSwitch x:Name="netBindAllBox" IsChecked="True" OnContent="" OffContent="" IsCheckedChanged="NetworkSettings_Changed" />
+                  </v:SettingRow>
+                  <v:SettingRow Title="Token" Description="A client must send auth &lt;token&gt; first. Anyone on your network who has it can control the pad, so keep the port firewalled.">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBox x:Name="netTokenBox" Width="170" IsReadOnly="True" PasswordChar="●" />
+                      <CheckBox x:Name="netShowTokenBox" Content="Show" IsCheckedChanged="NetShowToken_Changed" />
+                    </StackPanel>
+                  </v:SettingRow>
+                  <WrapPanel Margin="0,10,0,0">
+                    <Button x:Name="netCopyButton" Margin="0,0,8,8" Click="NetCopyToken_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="copy" /><TextBlock Text="Copy token" /></StackPanel></Button>
+                    <Button x:Name="netNewTokenButton" Margin="0,0,8,8" Click="NetNewToken_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="restore" /><TextBlock Text="New token" /></StackPanel></Button>
+                  </WrapPanel>
+                  <v:StatusBadge x:Name="netStatusBadge" Margin="0,4,0,4" />
+                  <TextBlock x:Name="netStatusLabel" Classes="caption" Text="Network API is off" />
+                </StackPanel>
+              </v:Section>
+
+              <v:Section x:Name="netSendSection" Grid.Column="2" Title="Send · to another PC" Description="Run this app on the PC with your mouse and keyboard and let the other PC (the one with ViGEmBus and the game) create the virtual controller. Enter that PC's address and token from its Network page, then press Connect. No ViGEmBus is needed on this PC.">
+                <StackPanel>
+                  <v:SettingRow Title="Send the controller to another PC" Description="Instead of creating it on this PC.">
+                    <ToggleSwitch x:Name="remoteSendBox" OnContent="" OffContent="" IsCheckedChanged="RemoteSettings_Changed" />
+                  </v:SettingRow>
+                  <v:SettingRow Title="Address">
+                    <TextBox x:Name="remoteHostBox" Width="200" Watermark="192.168.1.20" LostFocus="RemoteSettings_LostFocus" />
+                  </v:SettingRow>
+                  <v:SettingRow Title="Port">
+                    <TextBox x:Name="remotePortBox" Width="110" Text="5555" LostFocus="RemoteSettings_LostFocus" />
+                  </v:SettingRow>
+                  <v:SettingRow Title="Token" Description="The token shown on the other PC's Network page.">
+                    <TextBox x:Name="remoteTokenBox" Width="200" PasswordChar="●" LostFocus="RemoteSettings_LostFocus" />
+                  </v:SettingRow>
+                  <v:StatusBadge x:Name="remoteStatusBadge" Margin="0,10,0,0" />
+                </StackPanel>
+              </v:Section>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ───────── Input & settings ───────── -->
+        <ScrollViewer x:Name="pageSettings" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="28,24,28,28" Spacing="16" MaxWidth="860" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="title" Text="Input &amp; settings" />
+              <TextBlock Classes="caption" Text="How keyboard and mouse are read, when they are blocked, and how the app looks." />
+            </StackPanel>
+
+            <v:Section Title="Input capture">
+              <v:SettingRow Title="Capture method" Description="Low-Level Hooks can block mapped input; Raw Input reads devices without blocking.">
+                <ComboBox x:Name="inputMethodBox" MinWidth="200" SelectionChanged="InputMethodBox_SelectionChanged" />
+              </v:SettingRow>
+            </v:Section>
+
+            <v:Section Title="Block physical keyboard and mouse" Description="While one of the listed programs is focused and the virtual controller is connected, the keys and mouse buttons you mapped to pad actions (and mouse movement, if mouse look is on) are swallowed so only the controller reaches the game. Unmapped input is untouched and the toggle hotkey is never blocked. Needs the Low-Level Hooks capture method. Input injected by other tools is never blocked.">
+              <StackPanel>
+                <v:SettingRow Title="Block mapped input while a listed program is focused">
+                  <ToggleSwitch x:Name="blockEnabledBox" OnContent="" OffContent="" IsCheckedChanged="BlockSettings_Changed" />
+                </v:SettingRow>
+                <v:SettingRow Title="Block keyboard">
+                  <ToggleSwitch x:Name="blockKeyboardBox" IsChecked="True" OnContent="" OffContent="" IsCheckedChanged="BlockSettings_Changed" />
+                </v:SettingRow>
+                <v:SettingRow Title="Block mouse" Description="Buttons, wheel and mouse look.">
+                  <ToggleSwitch x:Name="blockMouseBox" IsChecked="True" OnContent="" OffContent="" IsCheckedChanged="BlockSettings_Changed" />
+                </v:SettingRow>
+                <v:SettingRow Title="Toggle / panic hotkey" Description="Turns blocking on or off; never blocked itself.">
+                  <ComboBox x:Name="blockHotkeyBox" MinWidth="150" SelectionChanged="BlockHotkeyBox_SelectionChanged" />
+                </v:SettingRow>
+                <StackPanel Spacing="6" Margin="0,12,0,0">
+                  <TextBlock Classes="label" Text="Game programs (process names, separated by commas)" />
+                  <TextBox x:Name="blockProcessesBox" Watermark="game.exe, other.exe" LostFocus="BlockSettings_LostFocus" />
+                  <WrapPanel>
+                    <ComboBox x:Name="blockRunningBox" MinWidth="240" Margin="0,0,8,6" PlaceholderText="Running programs" />
+                    <Button x:Name="blockRefreshButton" Content="Refresh" Margin="0,0,8,6" Click="BlockRefresh_Click" />
+                    <Button x:Name="blockAddButton" Content="Add selected" Margin="0,0,8,6" Click="BlockAdd_Click" />
+                    <Button x:Name="blockRestoreButton" Content="Restore input now" Margin="0,0,0,6" Click="BlockRestore_Click" ToolTip.Tip="Releases blocking immediately" />
+                  </WrapPanel>
+                  <v:StatusBadge x:Name="blockStatusBadge" />
+                  <TextBlock x:Name="blockStatusLabel" Classes="caption" Text="Input blocking is off" />
+                </StackPanel>
+              </StackPanel>
+            </v:Section>
+
+            <v:Section Title="Appearance">
+              <v:SettingRow Title="Dark mode">
+                <ToggleSwitch x:Name="darkModeToggle" IsChecked="True" OnContent="" OffContent="" Click="DarkModeToggle_Click" />
+              </v:SettingRow>
+            </v:Section>
+
+            <v:Section Title="Data and files" Description="Settings and profiles are plain JSON files next to the app. Older files keep loading.">
+              <StackPanel>
+                <v:SettingRow Title="Profiles folder">
+                  <Button Click="OpenProfilesFolderButton_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="folder" /><TextBlock Text="Open" /></StackPanel></Button>
+                </v:SettingRow>
+                <TextBlock x:Name="dataPathLabel" Classes="caption mono" Margin="0,8,0,0" TextWrapping="Wrap" />
+              </StackPanel>
+            </v:Section>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Grid>
+
+    <!-- ═══════════════ Status bar ═══════════════ -->
+    <Border Grid.Row="1" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,1,0,0" Padding="16,6">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <v:StatusBadge x:Name="statusBarBadge" Grid.Column="0" Margin="0,0,16,0" />
+        <TextBlock x:Name="statusLabel" Grid.Column="1" Classes="caption" Text="Status: Not connected" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <TextBlock x:Name="statusBarConfig" Grid.Column="2" Classes="caption" VerticalAlignment="Center" Margin="16,0,0,0" />
+      </Grid>
+    </Border>
+  </Grid>
 </Window>

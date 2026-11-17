@@ -1,0 +1,43 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:v="using:GamepadEnhancer">
+
+  <!-- SettingRow: title + explanation, control on the right (drops below on a narrow window via the Wrap panel) -->
+  <ControlTheme x:Key="{x:Type v:SettingRow}" TargetType="v:SettingRow">
+    <Setter Property="Padding" Value="0,10" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Padding="{TemplateBinding Padding}" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource BorderBrushSubtle}">
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+            <TextBlock Grid.Column="0" Text="{TemplateBinding Title}" Classes="label" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock Grid.Column="0" Grid.Row="1" Text="{TemplateBinding Description}" Classes="caption" Margin="0,2,16,0"
+                       IsVisible="{Binding Description, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <ContentPresenter Grid.Column="1" Grid.RowSpan="2" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                              VerticalAlignment="Center" HorizontalAlignment="Right" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <!-- Section: a titled panel -->
+  <ControlTheme x:Key="{x:Type v:Section}" TargetType="v:Section">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Classes="panel">
+          <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Text="{TemplateBinding Title}" Classes="h" />
+                <TextBlock Text="{TemplateBinding Description}" Classes="caption"
+                           IsVisible="{Binding Description, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+              <ContentPresenter Grid.Column="1" Content="{TemplateBinding Actions}" VerticalAlignment="Top" />
+            </Grid>
+            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</Styles>

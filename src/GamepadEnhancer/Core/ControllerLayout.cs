@@ -23,6 +23,9 @@ namespace GamepadEnhancer
         public double MW { get; init; }
         public double MH { get; init; }
         public SlotShape Shape { get; init; }
+        /// <summary>Explicit chip position (diagram coordinates); null = the default column for <see cref="Side"/> and <see cref="Row"/>.</summary>
+        public double? ChipX { get; init; }
+        public double? ChipY { get; init; }
 
         public bool IsPaddle => PaddleSlots.TryParseId(Id, out _);
 
@@ -70,6 +73,7 @@ namespace GamepadEnhancer
         /// <summary>Position of a slot's label chip in diagram coordinates.</summary>
         public static (double X, double Y, double W, double H) ChipRect(LayoutSlot s)
         {
+            if (s.ChipX.HasValue && s.ChipY.HasValue) return (s.ChipX.Value, s.ChipY.Value, ChipW, ChipH);
             switch (s.Side)
             {
                 case SlotSide.Left: return (12, 16 + s.Row * (ChipH + ChipGap), ChipW, ChipH);
@@ -79,11 +83,44 @@ namespace GamepadEnhancer
         }
 
         /// <summary>The slot under a point: a label chip first, then the smallest marker containing it (so a stick direction wins over the stick click ring).</summary>
-        public static LayoutSlot HitTest(PadFamily family, double x, double y)
+        public static LayoutSlot HitTest(PadFamily family, double x, double y) => HitTest(For(family), x, y);
+
+        public static LayoutSlot HitTest(IReadOnlyList<LayoutSlot> slots, double x, double y)
         {
-            IReadOnlyList<LayoutSlot> slots = For(family);
             foreach (LayoutSlot s in slots) if (s.ChipContains(x, y)) return s;
             return slots.Where(s => s.MarkerContains(x, y)).OrderBy(s => s.MW * s.MH).FirstOrDefault();
+        }
+
+        private static readonly Dictionary<PadFamily, IReadOnlyList<LayoutSlot>> PaddleCache = new();
+
+        /// <summary>
+        /// The paddle-focused layout: only the four paddles, drawn large on the rear view, with their chips beside the grips
+        /// (left pair on the left, right pair on the right). Same slot ids as the paddles in <see cref="For"/>.
+        /// </summary>
+        public static IReadOnlyList<LayoutSlot> ForPaddles(PadFamily family)
+        {
+            lock (PaddleCache)
+            {
+                if (PaddleCache.TryGetValue(family, out IReadOnlyList<LayoutSlot> cached)) return cached;
+                var list = new List<LayoutSlot>();
+                double[] px = { 262, 262, 618, 618 };
+                double[] py = { 300, 372, 300, 372 };
+                for (int i = 0; i < PaddleSlots.Count; i++)
+                {
+                    bool left = i < 2;
+                    list.Add(new LayoutSlot
+                    {
+                        Id = PaddleSlots.Id(i),
+                        Title = ControllerLayouts.ForDevice(family).Label(PaddleSlots.Names[i]),
+                        Side = left ? SlotSide.Left : SlotSide.Right,
+                        Row = i % 2,
+                        MX = px[i], MY = py[i], MW = 24, MH = 56, Shape = SlotShape.RoundRect,
+                        ChipX = left ? 12 : Width - 12 - ChipW,
+                        ChipY = 290 + (i % 2) * 72
+                    });
+                }
+                return PaddleCache[family] = list;
+            }
         }
 
         private static IReadOnlyList<LayoutSlot> Build(PadFamily family)

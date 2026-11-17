@@ -81,11 +81,11 @@ namespace GamepadEnhancer
             InitializeMonitor();
             InitializeGames();
             LoadProfileList();
+            InitializeShell();
 
             ready = true;
             controllerTypeBox.SelectionChanged += ControllerTypeBox_SelectionChanged;
             UpdateActiveControllerLabel();
-            mainTabs.SelectionChanged += (_, _) => UpdateMonitorRunning();
             PropertyChanged += (_, e) => { if (e.Property == WindowStateProperty) UpdateMonitorRunning(); };
             UpdateMonitorRunning();
             SizeChanged += (_, e) => UpdateResponsiveLayout(e.NewSize.Width);
@@ -97,7 +97,8 @@ namespace GamepadEnhancer
 
         private void UpdateResponsiveLayout(double windowWidth)
         {
-            double w = Math.Max(0, windowWidth - 48);
+            ApplyShellLayout(windowWidth);
+            double w = Math.Max(0, windowWidth - (sidebar?.Width ?? 232) - 48);
             bindingsGrid.Columns = Math.Clamp((int)(w / 380), 1, 4);
             leftStickGrid.Columns = Math.Clamp((int)(w / 380), 1, 4);
         }
@@ -535,7 +536,7 @@ namespace GamepadEnhancer
         }
 
         private void NetShowToken_Changed(object sender, RoutedEventArgs e) =>
-            netTokenBox.PasswordChar = netShowTokenBox.IsChecked == true ? '\0' : '*';
+            netTokenBox.PasswordChar = netShowTokenBox.IsChecked == true ? '\0' : '●';
 
         private async void NetCopyToken_Click(object sender, RoutedEventArgs e)
         {
@@ -600,6 +601,7 @@ namespace GamepadEnhancer
         private void UpdateActiveControllerLabel()
         {
             RefreshControllerLabels();
+            SyncLayoutSwitch();
             string selected = SelectedControllerLayout().Title;
             if (engine.IsConnected)
             {
@@ -626,6 +628,7 @@ namespace GamepadEnhancer
             disconnectButton.IsEnabled = connected;
             if (!connected) statusLabel.Text = "Status: Not connected";
             UpdateActiveControllerLabel();
+            RefreshShellStatus();
             UpdateMonitorRunning();
         }
 
@@ -662,11 +665,13 @@ namespace GamepadEnhancer
                 profileComboBox.SelectedItem = names.FirstOrDefault(n => string.Equals(n, selectedName, StringComparison.OrdinalIgnoreCase));
                 profileNameBox.Text = selectedName;
             }
+            UpdateProfileInfo();
         }
 
         private void ProfileComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (profileComboBox.SelectedItem is string name) profileNameBox.Text = name;
+            UpdateProfileInfo();
         }
 
         /// <summary>The current UI as a profile (controller type, mouse look and every binding).</summary>
@@ -699,6 +704,7 @@ namespace GamepadEnhancer
             if (name.Length == 0) { await Dialogs.ShowMessageAsync(this, "Profiles", "Enter a profile name first."); return; }
 
             File.WriteAllText(GetProfilePath(name), JsonSerializer.Serialize(BuildProfileFromUi(name), ProfileJson));
+            loadedProfileName = name;
             LoadProfileList(name);
             statusLabel.Text = $"Status: Saved profile '{name}'";
         }
@@ -759,6 +765,7 @@ namespace GamepadEnhancer
             for (int i = 1; File.Exists(GetProfilePath(name)); i++) name = baseName + "_" + i;
             profile.Name = name;
             File.WriteAllText(GetProfilePath(name), JsonSerializer.Serialize(profile, ProfileJson));
+            loadedProfileName = name;
             LoadProfileList(name);
             ApplyProfile(profile);
             statusLabel.Text = $"Status: Imported profile '{name}'" + (warnings.Count > 0 ? $" ({warnings.Count} value(s) cleared)" : "");
@@ -786,6 +793,8 @@ namespace GamepadEnhancer
             if (profile == null) { await Dialogs.ShowMessageAsync(this, "Profiles", "Failed to read that profile."); return; }
 
             ApplyProfile(profile);
+            loadedProfileName = name;
+            UpdateProfileInfo();
             statusLabel.Text = $"Status: Loaded profile '{profile.Name}'";
         }
 
@@ -920,7 +929,7 @@ namespace GamepadEnhancer
         private void UpdateMonitorRunning()
         {
             if (monitorPanel == null) return;
-            bool visible = monitorTab.IsSelected && WindowState != WindowState.Minimized;
+            bool visible = currentPage == "monitor" && WindowState != WindowState.Minimized;
             if (appSettings.MonitorEnabled && visible) monitorPanel.Start();
             else monitorPanel.Stop();
         }
