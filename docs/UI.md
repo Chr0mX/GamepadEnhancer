@@ -34,3 +34,13 @@ Every control still calls the same handlers and writes the same settings and pro
 - The monitor panel's drawing is the previous implementation (stick positions, trigger values and recent events were already there); only its page, controls and layout changed.
 - Number entry uses numeric boxes; there are no paired sliders yet.
 - Remote command counters are not shown on the Network page: the engine does not expose them without disturbing its timing, and no placeholder values are shown.
+
+## Technical-instrument pass
+The look follows the principles of technical configuration and diagnostic tools: compact, dense and quiet.
+- **Navigation**: a slim header (identity, connection state, controller type, Connect) above one row of text tabs (Dashboard, Controller, Games, Paddles, Mouse look, Monitor, Network & input). No icon rail, no labels hidden in tooltips.
+- **Density**: 28 px controls, 3 px corners, flat 1 px panels with a banded title row, 12.5 px body text, values in a monospace face.
+- **Controls**: every numeric setting on the mouse and monitor pages is a slider paired with a number box (the number box stays the source of truth; the slider snaps to its step).
+- **Measurement views** (`Views/Components/Instruments.cs`): the response curve is drawn with the engine's own `MouseLook.Shape`, so it always shows what the current curve and dead zone do; the stick scope shows the final right-stick value sent to the virtual pad (centred while nothing is connected) and the game dead-zone ring.
+- **Layout tests**: `UiSmokeTests.NoPageNeedsHorizontalScrolling` checks every page at four window sizes.
+
+The ControllerMeta site was not reachable from the build environment, so this follows the stated principles, not its exact layout.

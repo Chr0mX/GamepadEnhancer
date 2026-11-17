@@ -110,5 +110,29 @@ namespace GamepadEnhancer.Tests
                 window.Close();
             }
         }
+
+        [AvaloniaTheory]
+        [InlineData(720, 520)]
+        [InlineData(900, 640)]
+        [InlineData(1280, 820)]
+        [InlineData(1920, 1080)]
+        public void NoPageNeedsHorizontalScrolling(int width, int height)
+        {
+            var window = new MainWindow { Width = width, Height = height };
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            var wide = new System.Collections.Generic.List<string>();
+            foreach (string key in MainWindow.PageKeys)
+            {
+                window.ShowPageForTests(key);
+                window.UpdateLayout();
+                Dispatcher.UIThread.RunJobs();
+                var sv = window.CurrentPageScroller;
+                if (sv != null && sv.Extent.Width > sv.Viewport.Width + 1.5)
+                    wide.Add($"{key}: content {sv.Extent.Width:0} px wide, viewport {sv.Viewport.Width:0} px");
+            }
+            window.Close();
+            Assert.True(wide.Count == 0, $"At {width}x{height} these pages overflow sideways: " + string.Join("; ", wide));
+        }
     }
 }

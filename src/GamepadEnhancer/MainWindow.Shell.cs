@@ -26,6 +26,8 @@ namespace GamepadEnhancer
         private readonly Dictionary<string, Control> pages = new();
         private readonly List<RadioButton> navButtons = new();
         private ControllerConfigView dashPad;
+        private DispatcherTimer scopeTimer;
+        private bool scopeViewer;
         private int monitorFitPercent = 100;
         private DispatcherTimer shellTimer;
         private string loadedProfileName;
@@ -46,7 +48,7 @@ namespace GamepadEnhancer
             pages["monitor"] = pageMonitor;
             pages["network"] = pageNetwork;
 
-            foreach (RadioButton rb in sidebar.GetLogicalDescendants().OfType<RadioButton>().Where(r => r.Classes.Contains("nav")))
+            foreach (RadioButton rb in sidebar.GetLogicalDescendants().OfType<RadioButton>().Where(r => r.Classes.Contains("tab")))
             {
                 navButtons.Add(rb);
                 if (ToolTip.GetTip(rb) is string tip) AutomationProperties.SetName(rb, tip);
@@ -61,6 +63,12 @@ namespace GamepadEnhancer
             dashPadHost.Child = dashPad;
             BuildLayoutSwitch();
             BuildPaddleSummary();
+            foreach (NumericUpDown n in new[] { mouseSensXBox, mouseSensYBox, mouseCurveBox, mouseDeadZoneBox, mouseReleaseBox, monitorScaleBox }) PairWithSlider(n);
+            mouseCurveBox.ValueChanged += (_, _) => RefreshCurvePlot();
+            mouseDeadZoneBox.ValueChanged += (_, _) => RefreshCurvePlot();
+            RefreshCurvePlot();
+            scopeTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(33) };
+            scopeTimer.Tick += (_, _) => UpdateScope();
             dataPathLabel.Text = $"Profiles: {profilesDirectory}{Environment.NewLine}Settings: {AppSettings.DefaultPath}";
 
             shellTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -86,6 +94,7 @@ namespace GamepadEnhancer
         internal string CurrentPageKey => currentPage;
         internal void ShowPageForTests(string key) => NavigateTo(key);
         internal ControllerConfigView DiagramForTests => diagram;
+        internal ScrollViewer CurrentPageScroller => pages[currentPage] as ScrollViewer;
         internal void SelectLayoutForTests(string layoutId) => controllerTypeBox.SelectedItem = ControllerLayouts.Get(layoutId);
         internal PadFamily FamilyForTests => SelectedFamily();
 
@@ -128,6 +137,7 @@ namespace GamepadEnhancer
                 inspectorHostPaddles.Child = inspectorCard;
                 if (!PaddleSlots.TryParseId(selectedSlot, out _)) { selectedSlot = PaddleSlots.Id(0); diagram.SelectedId = selectedSlot; SyncEditor(); }
             }
+            SetScopeActive(key == "mouse");
             UpdateMonitorRunning();
             RefreshShell();
         }
@@ -144,15 +154,82 @@ namespace GamepadEnhancer
             diagram.Refresh();
         }
 
+        // ── Slider + number pairs, curve plot, live stick scope ────────────────
+
+        /// <summary>
+        /// Puts a slider beside a number box and keeps the two in step (the number box stays the one the settings code reads).
+        /// The slider snaps to the box's increment.
+        /// </summary>
+        private static void PairWithSlider(NumericUpDown num)
+        {
+            double min = (double)num.Minimum, max = (double)num.Maximum, step = Math.Max(1e-6, (double)num.Increment);
+            var slider = new Slider
+            {
+                Minimum = min, Maximum = max, Width = 150, SmallChange = step, LargeChange = step * 10,
+                Value = (double)(num.Value ?? num.Minimum), VerticalAlignment = VerticalAlignment.Center
+            };
+            bool syncing = false;
+            slider.PropertyChanged += (_, e) =>
+            {
+                if (e.Property != Slider.ValueProperty || syncing) return;
+                syncing = true;
+                try { num.Value = (decimal)(Math.Round(slider.Value / step) * step); }
+                finally { syncing = false; }
+            };
+            num.ValueChanged += (_, e) =>
+            {
+                if (syncing || !e.NewValue.HasValue) return;
+                syncing = true;
+                try { slider.Value = (double)e.NewValue.Value; }
+                finally { syncing = false; }
+            };
+            num.Width = 96;
+            if (num.Parent is ContentControl host)
+            {
+                host.Content = null;
+                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+                row.Children.Add(slider);
+                row.Children.Add(num);
+                host.Content = row;
+            }
+        }
+
+        private void RefreshCurvePlot()
+        {
+            if (curvePlot == null) return;
+            curvePlot.Curve = (double)(mouseCurveBox.Value ?? 1m);
+            double dz = (double)(mouseDeadZoneBox.Value ?? 0m) / 100.0;
+            curvePlot.DeadZone = dz;
+            stickScope.DeadZone = dz;
+        }
+
+        private void SetScopeActive(bool on)
+        {
+            if (on == scopeViewer) return;
+            scopeViewer = on;
+            if (on) { engine.Snapshots.AddViewer(); scopeTimer.Start(); }
+            else { scopeTimer.Stop(); engine.Snapshots.RemoveViewer(); }
+        }
+
+        private void UpdateScope()
+        {
+            if (!scopeViewer) return;
+            PadState st = engine.Snapshots.Get(PadView.Final);
+            stickScope.SetPosition(st.Rx, st.Ry);
+        }
+
         // ── Responsive layout ───────────────────────────────────────────────────
 
         private void ApplyShellLayout(double windowWidth)
         {
             if (sidebar == null) return;
-            double content = windowWidth - sidebar.Width;
+            double content = windowWidth;
+            brandText.IsVisible = windowWidth >= 820;
+            headerConfigPill.IsVisible = windowWidth >= 960;
             bool wide = content >= 980;
             wideLayout = wide;
-            Arrange2(dashGrid, dashMain, dashSide, content >= 1000, "*,24,320");
+            Arrange2(dashGrid, dashMain, dashSide, content >= 1000, "*,16,320");
+            Arrange2(mouseGrid, mouseLeft, mouseRight, content >= 1000, "*,16,360");
             Arrange2(controllerGrid, diagramPanel, inspectorHostController, wide, "*,16,310");
             Arrange2(paddleGrid, paddleDiagramPanel, paddleSidePanel, wide, "*,16,310");
             Arrange2(gamesGrid, gamesLeft, gameDetailSection, content >= 900, "320,16,*");

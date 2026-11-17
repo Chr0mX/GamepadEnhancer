@@ -7,7 +7,7 @@
 
   <!-- SettingRow: title + explanation, control on the right (drops below on a narrow window via the Wrap panel) -->
   <ControlTheme x:Key="{x:Type v:SettingRow}" TargetType="v:SettingRow">
-    <Setter Property="Padding" Value="0,10" />
+    <Setter Property="Padding" Value="0,6" />
     <Setter Property="Template">
       <ControlTemplate>
         <Border Padding="{TemplateBinding Padding}" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource BorderBrushSubtle}">
@@ -27,17 +27,19 @@
   <ControlTheme x:Key="{x:Type v:Section}" TargetType="v:Section">
     <Setter Property="Template">
       <ControlTemplate>
-        <Border Classes="panel">
-          <StackPanel Spacing="10">
-            <Grid ColumnDefinitions="*,Auto">
-              <StackPanel Spacing="2">
-                <TextBlock Text="{TemplateBinding Title}" Classes="h" />
-                <TextBlock Text="{TemplateBinding Description}" Classes="caption"
-                           IsVisible="{Binding Description, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-              </StackPanel>
-              <ContentPresenter Grid.Column="1" Content="{TemplateBinding Actions}" VerticalAlignment="Top" />
-            </Grid>
-            <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+        <Border Classes="panel" Padding="0" ClipToBounds="True">
+          <StackPanel>
+            <Border Background="{DynamicResource RaisedBrush}" BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,0,1" Padding="12,7">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="1" VerticalAlignment="Center">
+                  <TextBlock Text="{TemplateBinding Title}" Classes="h" />
+                  <TextBlock Text="{TemplateBinding Description}" Classes="caption"
+                             IsVisible="{Binding Description, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+                <ContentPresenter Grid.Column="1" Content="{TemplateBinding Actions}" VerticalAlignment="Center" />
+              </Grid>
+            </Border>
+            <ContentPresenter Margin="12,6,12,10" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
           </StackPanel>
         </Border>
       </ControlTemplate>

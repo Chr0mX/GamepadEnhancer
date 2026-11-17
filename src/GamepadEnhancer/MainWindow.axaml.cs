@@ -98,7 +98,7 @@ namespace GamepadEnhancer
         private void UpdateResponsiveLayout(double windowWidth)
         {
             ApplyShellLayout(windowWidth);
-            double w = Math.Max(0, windowWidth - (sidebar?.Width ?? 232) - 48);
+            double w = Math.Max(0, windowWidth - 48);
             bindingsGrid.Columns = Math.Clamp((int)(w / 380), 1, 4);
             leftStickGrid.Columns = Math.Clamp((int)(w / 380), 1, 4);
         }
@@ -975,6 +975,7 @@ namespace GamepadEnhancer
         protected override void OnClosed(EventArgs e)
         {
             StopGames();
+            try { SetScopeActive(false); } catch { }
             try { if (monitorPanels != null) foreach (MonitorPanel p in monitorPanels) p.Stop(); } catch { }
             try { monitorWindow?.Close(); } catch { }
             try { networkApi?.Dispose(); } catch { }
