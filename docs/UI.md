@@ -5,12 +5,12 @@ GamepadEnhancer's window is a dark-first, single-accent desktop utility: a persi
 ## Structure
 | Page | What it holds |
 |---|---|
-| Dashboard | Virtual controller, output path (ViGEm or another PC), physical controller, Network API status; the active game config and profile; the state of mouse look, paddles, blocking and input capture, each with an "Open" shortcut |
+| Dashboard | Virtual controller, output path (ViGEm or another PC), physical controller, Network API status; the active game and profile; the state of mouse look, paddles, blocking and input capture, each with an "Open" shortcut |
 | Controller | The interactive diagram (Xbox 360 / PS4 switch above it), the editor for the selected control, and the list view of all bindings |
 | Games | Configs list (Default, Apex Legends, Warzone), built-in versus saved-changes state, source of the defaults, the game's native layout, Restore defaults |
 | Rear paddles | A large rear view with the four paddles, the same editor, a four-row overview with live "held" dots and the hardware paddle each slot reads |
 | Mouse look | Enable, movement (sensitivity, curve, invert) and right-stick output (dead zone, release) |
-| Profiles | Saved profiles list, name/save/load/delete, import/export/folder, active profile, per-file details (controller, game, size, date) |
+| Profiles (Games page) | The loaded profile with an unsaved-changes marker and its file details, plus the Profile menu button; the same menu is in the header |
 | Monitor | Physical / processed / final-output views, display options, pop-out (always on top, transparent overlay) |
 | Network | Two separate sections: Receive (Network API server) and Send (control a PC that has ViGEmBus) |
 | Input & settings | Capture method, input blocking and game programs, appearance, data folders |
@@ -57,3 +57,10 @@ Shapes: cards 12 px radius, 16 px padding, accent border on hover; inset tiles 8
 - **Layout tests**: `UiSmokeTests.NoPageNeedsHorizontalScrolling` checks every page at four window sizes.
 
 Not adopted: the split-colour wordmark (the app keeps its own plain name), hover glow, glass blur and background-image theming.
+
+## Profiles and games (vocabulary)
+- **Game**: what you are playing (Apex, Warzone, ...). Each game keeps its own changes automatically; built-in defaults are never overwritten.
+- **Profile**: a saved copy of your whole setup (controller type, bindings, paddles, mouse look) in `profiles/<name>.json`.
+- **Controller**: the virtual pad type (Xbox 360 or DualShock 4).
+- The header shows `Game · Profile`, with a dot while the setup differs from the loaded profile. Clicking it opens the Profile menu: load, Save, Save as, Duplicate, Rename, Delete, Import, Export, Open profiles folder, Reset game to its defaults. The menu is also on the Games page (always available when the window is too narrow for the header).
+- Loading a profile with unsaved changes asks first. `Default` cannot be renamed or deleted. Switching game clears the loaded profile.

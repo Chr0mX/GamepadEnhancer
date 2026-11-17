@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -327,7 +327,7 @@ namespace GamepadEnhancer
             double content = windowWidth - sidebar.Width;
             brandText.IsVisible = windowWidth >= 760;
             versionText.IsVisible = windowWidth >= 900;
-            headerConfigPill.IsVisible = windowWidth >= 1100;
+            headerConfigPill.IsVisible = windowWidth >= 1100;   // narrower windows use the Profile menu button on the Games page
             tagCapture.IsVisible = windowWidth >= 1000;
             tagNetwork.IsVisible = windowWidth >= 1000;
             bool wide = content >= 980;
@@ -465,7 +465,7 @@ namespace GamepadEnhancer
                 statusBarBadge.Set(BadgeState.Ok, $"Connected · {ControllerLayouts.ForDevice(engine.Family).Title}");
             else
                 statusBarBadge.Set(BadgeState.Off, $"Not connected · {layout.Name} selected");
-            statusBarConfig.Text = activeGame.DisplayName + (string.IsNullOrEmpty(loadedProfileName) ? "" : $" · profile {loadedProfileName}");
+            UpdateProfileHeaderText();
             connectButton.IsVisible = !engine.IsConnected;
             disconnectButton.IsVisible = engine.IsConnected;
             tagOutputText.Text = engine.IsConnected && engine.IsRemote ? "REMOTE PC" : "VIGEM";
@@ -524,7 +524,7 @@ namespace GamepadEnhancer
             dashPad.Family = SelectedFamily();
             dashConfigDetail.Text = activeConfigSummary;
             dashProfileTitle.Text = string.IsNullOrEmpty(loadedProfileName) ? "None loaded" : loadedProfileName;
-            dashProfileText.Text = string.IsNullOrEmpty(loadedProfileName) ? "profiles are files you load" : "loaded profile file";
+            dashProfileText.Text = string.IsNullOrEmpty(loadedProfileName) ? "load one from the header menu" : (profileModified ? "unsaved changes" : "saved profile");
             dashMouseText.Text = mouseLookBox.IsChecked == true ? "On" : "Off";
             int assigned = paddleSettings.Count(p => p.IsActive);
             dashPaddleText.Text = assigned == 0 ? "None assigned" : $"{assigned} of {PaddleSlots.Count} active";
@@ -715,29 +715,26 @@ namespace GamepadEnhancer
 
         // ── Profiles ────────────────────────────────────────────────────────────
 
+        private void UpdateProfileHeaderText()
+        {
+            if (statusBarConfig == null) return;
+            statusBarConfig.Text = activeGame.DisplayName + " · " + (string.IsNullOrEmpty(loadedProfileName) ? "no profile" : loadedProfileName + (profileModified ? " ●" : ""));
+        }
+
         private void UpdateProfileInfo()
         {
             if (profileActiveLabel == null) return;
-            profileActiveLabel.Text = string.IsNullOrEmpty(loadedProfileName)
-                ? $"Active profile: none (working from the {activeGame.DisplayName} config)"
-                : $"Active profile: {loadedProfileName}";
-
-            string name = profileComboBox.SelectedItem as string;
-            if (string.IsNullOrEmpty(name)) { profileInfoLabel.Text = "Select a profile to see its details."; return; }
+            string name = loadedProfileName;
+            profileActiveLabel.Text = string.IsNullOrEmpty(name)
+                ? $"No profile loaded. You are working from the {activeGame.DisplayName} defaults."
+                : $"Profile: {name}" + (profileModified ? "  ·  unsaved changes" : "  ·  saved");
+            if (string.IsNullOrEmpty(name)) { profileInfoLabel.Text = "Use the menu to load a saved profile, or Save as to keep what you have now."; return; }
             try
             {
-                string path = GetProfilePath(name);
-                var info = new FileInfo(path);
-                if (!info.Exists) { profileInfoLabel.Text = "That file no longer exists."; return; }
-                string detail = "";
-                try
-                {
-                    InputProfile p = JsonSerializer.Deserialize<InputProfile>(File.ReadAllText(path));
-                    if (p != null)
-                        detail = $"Controller: {ControllerLayouts.Get(p.ControllerType).Title}\nGame config: {(string.IsNullOrEmpty(p.Game) ? "any (not tied to a game)" : GameCatalog.Get(p.Game).DisplayName)}\n";
-                }
-                catch { detail = "Could not read the profile contents.\n"; }
-                profileInfoLabel.Text = detail + $"{info.Name} · {info.Length / 1024.0:0.#} KB · saved {info.LastWriteTime:g}";
+                var info = new FileInfo(GetProfilePath(name));
+                profileInfoLabel.Text = info.Exists
+                    ? $"{info.Name} · {info.Length / 1024.0:0.#} KB · saved {info.LastWriteTime:g}"
+                    : "The file for this profile no longer exists. Save it again to recreate it.";
             }
             catch (Exception ex) { profileInfoLabel.Text = ex.Message; }
         }

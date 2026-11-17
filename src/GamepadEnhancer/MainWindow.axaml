@@ -43,7 +43,7 @@
             <Border x:Name="tagOutput" Grid.Column="2" Classes="tag" Margin="0,0,4,0"><TextBlock x:Name="tagOutputText" Text="VIGEM" /></Border>
             <Border x:Name="tagCapture" Grid.Column="3" Classes="tag" Margin="0,0,4,0"><TextBlock x:Name="tagCaptureText" Text="HOOKS" /></Border>
             <Border x:Name="tagNetwork" Grid.Column="4" Classes="tag" Margin="0,0,6,0"><TextBlock x:Name="tagNetworkText" Text="NET API" /></Border>
-            <Border x:Name="headerConfigPill" Grid.Column="5" Classes="pill"><TextBlock x:Name="statusBarConfig" Classes="caption" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="220" /></Border>
+            <Button x:Name="headerConfigPill" Grid.Column="5" Classes="soft" ToolTip.Tip="Profile menu: load, save, save as, rename, delete, import, export"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock x:Name="statusBarConfig" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="260" /><TextBlock Text="▾" VerticalAlignment="Center" /></StackPanel></Button>
             <Border Grid.Column="7" Classes="segbox" Margin="0,0,8,0"><StackPanel x:Name="layoutSwitch" Orientation="Horizontal" Spacing="2" /></Border>
             <StackPanel Grid.Column="8" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
               <Button x:Name="connectButton" Classes="soft" Content="Connect" Click="ConnectButton_Click" />
@@ -92,7 +92,7 @@
               <v:Section x:Name="cardConfig" Title="DETAILS">
                 <StackPanel>
                   <TextBlock Classes="tilelab" Text="CONFIGURATION" Margin="0,0,0,6" />
-                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Game config" VerticalAlignment="Center" /><TextBlock x:Name="dashConfigText" Classes="mono" Grid.Column="1" TextTrimming="CharacterEllipsis" MaxWidth="170" /></Grid>
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Game" VerticalAlignment="Center" /><TextBlock x:Name="dashConfigText" Classes="mono" Grid.Column="1" TextTrimming="CharacterEllipsis" MaxWidth="170" /></Grid>
                   <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Loaded" VerticalAlignment="Center" /><TextBlock x:Name="dashConfigDetail" Classes="mono" Grid.Column="1" Foreground="{DynamicResource MutedTextBrush}" TextTrimming="CharacterEllipsis" MaxWidth="170" /></Grid>
                   <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Profile" VerticalAlignment="Center" /><TextBlock x:Name="dashProfileTitle" Classes="mono" Grid.Column="1" TextTrimming="CharacterEllipsis" MaxWidth="170" /></Grid>
                   <Border Classes="divider" Margin="0,4,0,10" />
@@ -216,28 +216,14 @@
           <ScrollViewer x:Name="pageGames" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <Grid x:Name="gamesGrid" Margin="16,12,16,20" ColumnDefinitions="320,12,*" MaxWidth="1500" HorizontalAlignment="Stretch">
               <StackPanel x:Name="gamesLeft" Grid.Column="0" Spacing="12">
-                <v:Section x:Name="gameListSection" Title="Game configs" Description="Picking one loads its own default layout. Each keeps its own saved changes; built-in defaults are never overwritten.">
+                <v:Section x:Name="gameListSection" Title="Games" Description="Picking a game loads its default layout. Each game keeps its own changes automatically; built-in defaults are never overwritten.">
                   <ListBox x:Name="gameList" Classes="plain" SelectionChanged="GameList_SelectionChanged" />
                 </v:Section>
-                <v:Section x:Name="profileSection" Title="Profiles" Description="A profile is a snapshot of the current mapping: controller type, bindings, paddles and mouse look.">
-                  <v:Section.Actions>
-                    <StackPanel Orientation="Horizontal" Spacing="2">
-                      <Button Classes="ghost icon" Click="ImportProfileButton_Click" ToolTip.Tip="Import a profile file (.json) and add it to the list"><v:Icon Kind="download" /></Button>
-                      <Button Classes="ghost icon" Click="ExportProfileButton_Click" ToolTip.Tip="Export the current mapping to a file you can share or edit"><v:Icon Kind="upload" /></Button>
-                      <Button Classes="ghost icon" Click="OpenProfilesFolderButton_Click" ToolTip.Tip="Open the profiles folder"><v:Icon Kind="folder" /></Button>
-                    </StackPanel>
-                  </v:Section.Actions>
+                <v:Section x:Name="profileSection" Title="Profile" Description="A profile is a saved copy of your setup: controller type, bindings, paddles and mouse look. Load, save and manage them from this menu (also in the header).">
                   <StackPanel Spacing="12">
-                    <ListBox x:Name="profileComboBox" Classes="plain" MaxHeight="180" SelectionChanged="ProfileComboBox_SelectionChanged" />
-                    <TextBox x:Name="profileNameBox" Watermark="Profile name" />
-                    <WrapPanel>
-                      <Button Classes="primary" Margin="0,0,8,6" Click="SaveProfileButton_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="save" /><TextBlock Text="Save" /></StackPanel></Button>
-                      <Button Margin="0,0,8,6" Click="LoadProfileButton_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="check" /><TextBlock Text="Load" /></StackPanel></Button>
-                      <Button Classes="danger" Margin="0,0,8,6" Click="DeleteProfileButton_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="trash" /><TextBlock Text="Delete" /></StackPanel></Button>
-                    </WrapPanel>
-                    <Border Classes="divider" />
                     <TextBlock x:Name="profileActiveLabel" Classes="label" TextWrapping="Wrap" />
-                    <TextBlock x:Name="profileInfoLabel" Classes="caption" />
+                    <Button x:Name="profileMenuButton" Classes="primary" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="save" /><TextBlock Text="Profile menu" /><TextBlock Text="▾" /></StackPanel></Button>
+                    <TextBlock x:Name="profileInfoLabel" Classes="caption" TextWrapping="Wrap" />
                   </StackPanel>
                 </v:Section>
               </StackPanel>

@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
@@ -151,6 +151,20 @@ namespace GamepadEnhancer.Tests
                 Assert.True(FontManager.Current.TryGetGlyphTypeface(new Typeface(family), out IGlyphTypeface glyphs), key + " did not resolve to a font");
                 Assert.True(glyphs.FamilyName.Contains(expected, System.StringComparison.OrdinalIgnoreCase), $"{key} resolved to \"{glyphs.FamilyName}\", expected {expected}");
             }
+            window.Close();
+        }
+
+        [AvaloniaFact]
+        public void ProfileMenuHoldsEveryProfileAction()
+        {
+            var window = new MainWindow();
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            var headers = window.ProfileMenuForTests();
+            foreach (string wanted in new[] { "Save", "Save as…", "Duplicate…", "Rename…", "Delete", "Import…", "Export…", "Open profiles folder" })
+                Assert.Contains(wanted, headers);
+            Assert.Contains(headers, h => h.StartsWith("No profile loaded"));
+            Assert.Contains("no profile", window.HeaderProfileTextForTests);
             window.Close();
         }
     }

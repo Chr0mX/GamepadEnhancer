@@ -80,7 +80,7 @@ namespace GamepadEnhancer
             InitializeNetworkApi();
             InitializeMonitor();
             InitializeGames();
-            LoadProfileList();
+            InitializeProfileMenus();
             InitializeShell();
 
             ready = true;
@@ -656,26 +656,6 @@ namespace GamepadEnhancer
 
         // ── Profiles ─────────────────────────────────────────────────────────────
 
-        private void LoadProfileList(string selectedName = null)
-        {
-            string[] names = Directory.EnumerateFiles(profilesDirectory, "*.json")
-                .Select(Path.GetFileNameWithoutExtension)
-                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToArray();
-            profileComboBox.ItemsSource = names;
-            if (!string.IsNullOrWhiteSpace(selectedName))
-            {
-                profileComboBox.SelectedItem = names.FirstOrDefault(n => string.Equals(n, selectedName, StringComparison.OrdinalIgnoreCase));
-                profileNameBox.Text = selectedName;
-            }
-            UpdateProfileInfo();
-        }
-
-        private void ProfileComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (profileComboBox.SelectedItem is string name) profileNameBox.Text = name;
-            UpdateProfileInfo();
-        }
-
         /// <summary>The current UI as a profile (controller type, mouse look and every binding).</summary>
         private InputProfile BuildProfileFromUi(string name) => new InputProfile
         {
@@ -700,80 +680,7 @@ namespace GamepadEnhancer
 
         private static readonly JsonSerializerOptions ProfileJson = new() { WriteIndented = true };
 
-        private async void SaveProfileButton_Click(object sender, RoutedEventArgs e)
-        {
-            string name = (profileNameBox.Text ?? string.Empty).Trim();
-            if (name.Length == 0) { await Dialogs.ShowMessageAsync(this, "Profiles", "Enter a profile name first."); return; }
-
-            File.WriteAllText(GetProfilePath(name), JsonSerializer.Serialize(BuildProfileFromUi(name), ProfileJson));
-            loadedProfileName = name;
-            LoadProfileList(name);
-            statusLabel.Text = $"Status: Saved profile '{name}'";
-        }
-
         private static readonly FilePickerFileType JsonFileType = new("Profile (JSON)") { Patterns = new[] { "*.json" } };
-
-        /// <summary>Writes the current mapping to a file you choose, so it can be shared or edited by hand.</summary>
-        private async void ExportProfileButton_Click(object sender, RoutedEventArgs e)
-        {
-            string name = (profileNameBox.Text ?? string.Empty).Trim();
-            if (name.Length == 0) name = "profile";
-            IStorageFile file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-            {
-                Title = "Export profile",
-                SuggestedFileName = SafeName(name, "profile") + ".json",
-                DefaultExtension = "json",
-                FileTypeChoices = new[] { JsonFileType }
-            });
-            if (file == null) return;
-            try
-            {
-                await using Stream stream = await file.OpenWriteAsync();
-                if (stream.CanSeek) stream.SetLength(0);
-                await using var writer = new StreamWriter(stream);
-                await writer.WriteAsync(JsonSerializer.Serialize(BuildProfileFromUi(name), ProfileJson));
-                statusLabel.Text = $"Status: Exported profile '{name}'";
-            }
-            catch (Exception ex) { await Dialogs.ShowMessageAsync(this, "Export", "Could not write the file.\n\n" + ex.Message); }
-        }
-
-        /// <summary>Reads a profile file, clears anything invalid (and says what), saves it into profiles/ and applies it.</summary>
-        private async void ImportProfileButton_Click(object sender, RoutedEventArgs e)
-        {
-            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-            {
-                Title = "Import profile",
-                AllowMultiple = false,
-                FileTypeFilter = new[] { JsonFileType }
-            });
-            if (files.Count == 0) return;
-
-            string json;
-            try
-            {
-                await using Stream stream = await files[0].OpenReadAsync();
-                using var reader = new StreamReader(stream);
-                var buffer = new char[ProfileImport.MaxBytes + 1];
-                int n = await reader.ReadBlockAsync(buffer, 0, buffer.Length);
-                json = new string(buffer, 0, n);
-            }
-            catch (Exception ex) { await Dialogs.ShowMessageAsync(this, "Import", "Could not read the file.\n\n" + ex.Message); return; }
-
-            InputProfile profile = ProfileImport.Parse(json, out string error, out List<string> warnings);
-            if (profile == null) { await Dialogs.ShowMessageAsync(this, "Import", error); return; }
-
-            string baseName = SafeName(profile.Name, "Imported");
-            string name = baseName;
-            for (int i = 1; File.Exists(GetProfilePath(name)); i++) name = baseName + "_" + i;
-            profile.Name = name;
-            File.WriteAllText(GetProfilePath(name), JsonSerializer.Serialize(profile, ProfileJson));
-            loadedProfileName = name;
-            LoadProfileList(name);
-            ApplyProfile(profile);
-            statusLabel.Text = $"Status: Imported profile '{name}'" + (warnings.Count > 0 ? $" ({warnings.Count} value(s) cleared)" : "");
-            if (warnings.Count > 0)
-                await Dialogs.ShowMessageAsync(this, "Import", "The profile was imported, but some values were not valid and were cleared:\n\n" + string.Join("\n", warnings.Take(12)));
-        }
 
         private void OpenProfilesFolderButton_Click(object sender, RoutedEventArgs e)
         {
@@ -782,37 +689,8 @@ namespace GamepadEnhancer
             catch (Exception ex) { statusLabel.Text = "Status: Could not open folder - " + ex.Message; }
         }
 
-        private async void LoadProfileButton_Click(object sender, RoutedEventArgs e)
-        {
-            string name = (profileNameBox.Text ?? string.Empty).Trim();
-            if (name.Length == 0) { await Dialogs.ShowMessageAsync(this, "Profiles", "Choose or type a profile name."); return; }
-            string path = GetProfilePath(name);
-            if (!File.Exists(path)) { await Dialogs.ShowMessageAsync(this, "Profiles", "That profile does not exist yet."); return; }
-
-            InputProfile profile;
-            try { profile = JsonSerializer.Deserialize<InputProfile>(File.ReadAllText(path)); }
-            catch { profile = null; }
-            if (profile == null) { await Dialogs.ShowMessageAsync(this, "Profiles", "Failed to read that profile."); return; }
-
-            ApplyProfile(profile);
-            loadedProfileName = name;
-            UpdateProfileInfo();
-            statusLabel.Text = $"Status: Loaded profile '{profile.Name}'";
-        }
-
-        private async void DeleteProfileButton_Click(object sender, RoutedEventArgs e)
-        {
-            string name = (profileNameBox.Text ?? string.Empty).Trim();
-            if (name.Length == 0) { await Dialogs.ShowMessageAsync(this, "Profiles", "Choose a profile to delete."); return; }
-            string path = GetProfilePath(name);
-            if (File.Exists(path)) File.Delete(path);
-            LoadProfileList();
-            statusLabel.Text = $"Status: Deleted profile '{name}'";
-        }
-
         private void ApplyProfile(InputProfile profile)
         {
-            profileNameBox.Text = profile.Name;
 
             if (!engine.IsConnected) controllerTypeBox.SelectedItem = ControllerLayouts.Get(profile.ControllerType);   // never swap a live pad just because a profile was loaded
 

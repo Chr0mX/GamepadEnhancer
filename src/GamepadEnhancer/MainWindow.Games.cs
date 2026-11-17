@@ -144,6 +144,7 @@ namespace GamepadEnhancer
 
         private void ApplyGameProfile(GameDefinition game, InputProfile profile, ProfileSource source)
         {
+            if (!string.Equals(activeGame.Id, game.Id, StringComparison.Ordinal)) { loadedProfileName = null; profileSnapshot = null; }   // a profile belongs to the game it was loaded in
             activeGame = game;
             activeSource = source;
             loadingProfile = true;
@@ -208,13 +209,13 @@ namespace GamepadEnhancer
         private async void RestoreGameDefaults_Click(object sender, RoutedEventArgs e)
         {
             bool yes = await Dialogs.ConfirmAsync(this, "Restore defaults",
-                $"Discard your changes to the {activeGame.DisplayName} config and go back to its built-in defaults? Other configs are not affected.");
+                $"Discard your changes to {activeGame.DisplayName} and go back to its built-in defaults? Other games and your saved profiles are not affected.");
             if (!yes) return;
             gameSaveTimer.Stop();
             gameStore.DeleteUser(activeGame.Id);
             InputProfile defaults = GameProfiles.Defaults(activeGame, GlobalProfile);
             ApplyGameProfile(activeGame, defaults, GameProfiles.BuiltIn(activeGame) != null ? ProfileSource.BuiltIn : ProfileSource.Global);
-            statusLabel.Text = $"Status: {activeGame.DisplayName} config restored to its defaults";
+            statusLabel.Text = $"Status: {activeGame.DisplayName} restored to its defaults";
         }
 
         private void UpdateGameLabels()
@@ -226,15 +227,16 @@ namespace GamepadEnhancer
             {
                 ProfileSource.User => "your saved customization",
                 ProfileSource.BuiltIn => "built-in default",
-                _ => "the Default config (no layout of its own for this game)"
+                _ => "the Default profile (no layout of its own for this game)"
             };
-            activeGameLabel.Text = $"Config: {activeGame.DisplayName}   ·   Loaded: {src}" + (modified ? "   ·   modified" : "   ·   unchanged");
+            activeGameLabel.Text = $"Game: {activeGame.DisplayName}   ·   Loaded: {src}" + (modified ? "   ·   modified" : "   ·   unchanged");
             activeGameSourceLabel.Text = activeGame.Verified
                 ? (string.IsNullOrEmpty(activeGame.Layout) || activeGame.Layout == "n/a" ? activeGame.Source : $"Native layout: {activeGame.Layout}. Source: {activeGame.Source}")
                 : activeGame.Source;
             activeConfigSummary = $"{src}" + (modified ? " · modified" : " · unchanged");
             activeConfigModified = modified;
             RefreshGameViews();
+            RefreshProfileState();
         }
 
         // ── Diagram data ────────────────────────────────────────────────────────
