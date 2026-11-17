@@ -54,5 +54,32 @@ namespace GamepadEnhancer.Tests
             }
             window.Close();
         }
+
+        [AvaloniaFact]
+        public void TheOneDiagramFollowsThePageAndTheLayoutSwitch()
+        {
+            var window = new MainWindow();
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            window.ShowPageForTests("controller");
+            Assert.Equal(DiagramMode.Controls, window.DiagramForTests.Mode);
+
+            window.ShowPageForTests("paddles");
+            Assert.Equal(DiagramMode.Paddles, window.DiagramForTests.Mode);
+            Assert.True(PaddleSlots.TryParseId(window.DiagramForTests.SelectedId, out _));   // a paddle is selected, so the editor is useful at once
+
+            window.ShowPageForTests("controller");
+            Assert.Equal(DiagramMode.Controls, window.DiagramForTests.Mode);
+
+            window.SelectLayoutForTests("xbox360");
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(PadFamily.Xbox360, window.FamilyForTests);
+            Assert.Equal(PadFamily.Xbox360, window.DiagramForTests.Family);
+            window.SelectLayoutForTests("dualshock4");
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(PadFamily.DualShock4, window.DiagramForTests.Family);
+            window.Close();
+        }
     }
 }
