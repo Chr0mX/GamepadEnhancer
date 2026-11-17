@@ -6,10 +6,11 @@ namespace GamepadEnhancer.Tests
     public class PaddleLayoutTests
     {
         [Theory]
-        [InlineData(PadFamily.DualShock4)]
-        [InlineData(PadFamily.Xbox360)]
-        public void PaddleChipsFitTheCanvasAndNeverCoverEachOtherOrAMarker(PadFamily family)
+        [InlineData(false)]
+        [InlineData(true)]
+        public void PaddleChipsFitTheCanvasAndNeverCoverEachOtherOrAMarker(bool xbox)
         {
+            PadFamily family = xbox ? PadFamily.Xbox360 : PadFamily.DualShock4;
             var slots = ControllerLayout.ForPaddles(family);
             Assert.Equal(4, slots.Count);
             foreach (LayoutSlot s in slots)
