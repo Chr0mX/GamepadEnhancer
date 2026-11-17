@@ -218,5 +218,31 @@ namespace GamepadEnhancer.Tests
             Assert.Equal("dashboard", window.CurrentPageKey);
             window.Close();
         }
+
+        [AvaloniaTheory]
+        [InlineData(720, 520)]
+        [InlineData(800, 560)]
+        [InlineData(900, 640)]
+        [InlineData(1000, 700)]
+        [InlineData(1100, 700)]
+        [InlineData(1280, 820)]
+        public void WindowedSizesKeepTheHeaderAndTheDiagramsReadable(int width, int height)
+        {
+            var window = new MainWindow { Width = width, Height = height };
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+            Assert.True(window.HeaderOverflowForTests() <= 1, $"At {width}x{height} the header needs {window.HeaderOverflowForTests():0} px more than it has");
+
+            foreach (string key in new[] { "controller", "paddles" })
+            {
+                window.ShowPageForTests(key);
+                window.UpdateLayout();
+                Dispatcher.UIThread.RunJobs();
+                double scale = window.DiagramForTests.ScaleForTests;
+                Assert.True(scale >= 0.65, $"At {width}x{height} the {key} diagram is drawn at {scale:0.00}x, so its 9 px labels are about {9 * scale:0.0} px");
+            }
+            window.Close();
+        }
     }
 }

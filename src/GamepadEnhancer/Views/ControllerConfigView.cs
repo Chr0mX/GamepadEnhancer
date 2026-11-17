@@ -232,6 +232,8 @@ namespace GamepadEnhancer
 
         // ── Interaction ─────────────────────────────────────────────────────────
 
+        internal double ScaleForTests => Fit().Scale;
+
         private (double Scale, double Ox, double Oy) Fit()
         {
             if (overview)

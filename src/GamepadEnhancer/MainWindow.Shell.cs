@@ -103,6 +103,14 @@ namespace GamepadEnhancer
         internal ScrollViewer CurrentPageScroller => pages[currentPage] as ScrollViewer;
         internal void SelectLayoutForTests(string layoutId) => controllerTypeBox.SelectedItem = ControllerLayouts.Get(layoutId);
         internal PadFamily FamilyForTests => SelectedFamily();
+
+        /// <summary>How many pixels the header's visible items need beyond the width it has (0 or less = everything fits).</summary>
+        internal double HeaderOverflowForTests()
+        {
+            if (headerBar.Child is not Grid g) return 0;
+            double need = g.Children.OfType<Control>().Where(c => c.IsVisible).Sum(c => c.DesiredSize.Width);
+            return need - g.Bounds.Width;
+        }
         internal string BindingTitleForTests(string action) => bindingTitleLabels.TryGetValue(action, out TextBlock t) ? t.Text : null;
         internal string ActiveControllerLabelForTests => activeControllerLabel.Text;
         internal string DiagramChipTitleForTests(string id) => ControllerLayout.Find(diagram.Family, id)?.Title;
