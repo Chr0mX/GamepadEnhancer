@@ -43,7 +43,7 @@ namespace GamepadEnhancer.Tests
         }
     }
 
-    public class ControllerLayoutTests
+    public class ControllerLayoutDefTests
     {
         [Fact]
         public void TheSameCanonicalIdShowsADifferentLabelPerController()
