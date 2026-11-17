@@ -27,6 +27,10 @@ namespace GamepadEnhancer
         /// <summary>How long the last mouse output is held with no movement before the stick recenters.</summary>
         public int MouseReleaseMs { get; init; } = 30;
         public bool MouseInvertY { get; init; }
+        /// <summary>The four rear paddles (slot order of <see cref="PaddleSlots"/>); empty = none configured.</summary>
+        public PaddleSetting[] Paddles { get; init; } = Array.Empty<PaddleSetting>();
+        /// <summary>Hardware paddle index (0..3) feeding each slot; null = 0,1,2,3.</summary>
+        public int[] PaddleSourceIndex { get; init; }
         public Dictionary<string, BindingSetting> Bindings { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }

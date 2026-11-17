@@ -28,7 +28,10 @@
         <Button Content="Import..." Margin="0,4,6,4" Click="ImportProfileButton_Click" ToolTip.Tip="Load a profile file (.json) and add it to the list" />
         <Button Content="Export..." Margin="0,4,6,4" Click="ExportProfileButton_Click" ToolTip.Tip="Save the current mapping to a file you can share or edit" />
         <Button Content="Folder" Margin="0,4,10,4" Click="OpenProfilesFolderButton_Click" ToolTip.Tip="Open the profiles folder" />
-        <ToggleButton x:Name="apexToggle" Content="Apex" Margin="0,4,18,4" Click="ApexToggle_Click" ToolTip.Tip="On: the built-in Apex keyboard + mouse layout. Off: your editable Default PS4 profile (nothing bound until you remap it)." />
+        <TextBlock Text="Game" VerticalAlignment="Center" Margin="0,4,8,4" />
+        <ComboBox x:Name="gameComboBox" MinWidth="200" Margin="0,4,6,4" VerticalAlignment="Center" SelectionChanged="GameComboBox_SelectionChanged"
+                  ToolTip.Tip="Each game has its own default layout and its own saved customizations." />
+        <Button Content="Restore game defaults" Margin="0,4,18,4" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes for the selected game and go back to its built-in defaults." />
 
         <ToggleButton x:Name="darkModeToggle" Content="Dark mode" IsChecked="True" Margin="0,4,18,4" Click="DarkModeToggle_Click" />
 
@@ -51,6 +54,36 @@
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
           <StackPanel Margin="0,12,0,12" Spacing="12">
             <Border Classes="card">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="h" Text="Controller" />
+                <TextBlock x:Name="activeGameLabel" FontWeight="SemiBold" TextWrapping="Wrap" Text="" />
+                <TextBlock x:Name="activeGameSourceLabel" Classes="muted" TextWrapping="Wrap" Text="" />
+                <TextBlock Classes="muted" TextWrapping="Wrap"
+                           Text="Click a control (or use the arrow keys) to select it and change what it does. Highlighted controls are being pressed; the rear view has the four paddles. The game line shows what the selected game does on that pad button." />
+                <Border x:Name="diagramHost" Height="540" MinHeight="320" />
+              </StackPanel>
+            </Border>
+            <Border Classes="card">
+              <StackPanel Spacing="8">
+                <TextBlock x:Name="slotTitle" Classes="h" Text="Select a control" />
+                <TextBlock x:Name="slotNative" Classes="muted" TextWrapping="Wrap" Text="" />
+                <WrapPanel x:Name="slotPickerRow" Orientation="Horizontal" />
+                <WrapPanel x:Name="slotTurboRow" Orientation="Horizontal" IsVisible="False">
+                  <CheckBox x:Name="slotTurboBox" Content="Turbo" Margin="0,0,8,4" />
+                  <NumericUpDown x:Name="slotTurboHz" Minimum="1" Maximum="30" Value="12" Increment="1" FormatString="0" MinWidth="100" Margin="0,0,6,4" />
+                  <TextBlock Text="Hz" VerticalAlignment="Center" Margin="0,0,0,4" />
+                </WrapPanel>
+                <WrapPanel x:Name="paddleRow" Orientation="Horizontal" IsVisible="False">
+                  <CheckBox x:Name="paddleEnableBox" Content="Enable this paddle" Margin="0,0,12,4" />
+                  <Button x:Name="paddleLearnButton" Content="Detect paddle..." Margin="0,0,0,4" ToolTip.Tip="Press the physical paddle you want to use for this slot." />
+                </WrapPanel>
+                <TextBlock x:Name="paddleStatusLabel" Classes="muted" TextWrapping="Wrap" Text="" />
+                <TextBlock x:Name="slotHint" Classes="muted" TextWrapping="Wrap" Text="" />
+              </StackPanel>
+            </Border>
+            <Expander Header="All bindings (list view)" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="12" Margin="0,8,0,0">
+            <Border Classes="card">
               <StackPanel Spacing="10">
                 <TextBlock Classes="h" Text="Buttons" />
                 <TextBlock Classes="muted" TextWrapping="Wrap"
@@ -66,6 +99,8 @@
                 <UniformGrid x:Name="leftStickGrid" Columns="2" />
               </StackPanel>
             </Border>
+              </StackPanel>
+            </Expander>
             <Border Classes="card">
               <StackPanel Spacing="10">
                 <TextBlock Classes="h" Text="Right stick  ·  mouse movement" />

@@ -28,6 +28,11 @@ namespace GamepadEnhancer
         /// <summary>Token of the other PC's Network API (stored in plain text in settings.json, like the receiver's own token).</summary>
         public string RemoteToken { get; set; } = "";
 
+        /// <summary>The selected game's id (see GameCatalog); apex by default, which is what the app used to start on.</summary>
+        public string ActiveGame { get; set; } = "apex";
+        /// <summary>Which hardware paddle (0..3 = Paddle1..4) feeds each of the four paddle slots; see PaddleSlots.NormalizeSourceMap.</summary>
+        public int[] PaddleSourceIndex { get; set; } = { 0, 1, 2, 3 };
+
         /// <summary>Revision of the shipped default mapping already applied to profiles/Default.json (see DefaultProfile.MappingVersion).</summary>
         public int DefaultMappingVersion { get; set; }
 

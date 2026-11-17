@@ -79,6 +79,14 @@ namespace GamepadEnhancer
         private bool submitPending;                      // set by Tick, executed by Loop after the lock is released
         private string lastStatus;
 
+        /// <summary>Physical controller reader for the rear paddles (null = none). Read once per tick, so no extra polling rate.</summary>
+        public volatile IPaddleSource PaddleSource;
+        /// <summary>Rear paddle processing and keyboard / mouse injection.</summary>
+        public PaddleProcessor Paddles { get; } = new();
+        private volatile int lastMask;
+        /// <summary>Pad-action bits pressed at the last tick (for live feedback in the UI).</summary>
+        public int LastMask => lastMask;
+
         /// <summary>Controls set over the network (see NetworkApiServer); cleared whenever the pad disconnects.</summary>
         public RemoteControlState Remote { get; } = new();
 
@@ -154,9 +162,18 @@ namespace GamepadEnhancer
             if (t != null && t != Thread.CurrentThread) t.Join(500);
             ReleaseController();
             lock (sync) ResetState();
+            Paddles.ReleaseAll();   // nothing a paddle was holding may stay pressed
+            Paddles.Flush();
+            lastMask = 0;
             IsRemote = false;
             Snapshots.Reset(Family, false, false);
             lastStatus = null;
+        }
+
+        private PaddleReading ReadPaddles()
+        {
+            try { return PaddleSource?.Read() ?? PaddleReading.None; }
+            catch { return PaddleReading.None; }
         }
 
         private void ReleaseController()
@@ -187,6 +204,7 @@ namespace GamepadEnhancer
 
         public void OnKey(string name, bool isDown)
         {
+            if (Paddles.IsInjected(name)) return;   // a key a paddle is pressing itself, not the user's input
             lock (sync)
             {
                 if (isDown) activeKeys.Add(name); else activeKeys.Remove(name);
@@ -197,6 +215,7 @@ namespace GamepadEnhancer
         public void OnMouseButton(string button, bool isDown)
         {
             // Mouse buttons can be bound to pad actions like keys ("Mouse Left", "Mouse X1", ...).
+            if (Paddles.IsInjected(button)) return;
             lock (sync)
             {
                 if (isDown) activeKeys.Add(button); else activeKeys.Remove(button);
@@ -250,6 +269,7 @@ namespace GamepadEnhancer
                     try
                     {
                         Tick();
+                        Paddles.Flush();   // paddle -> key / mouse presses, sent outside the engine lock
                         if (submitPending)
                         {
                             submitPending = false;
@@ -310,7 +330,9 @@ namespace GamepadEnhancer
                 double processedX = outX, processedY = outY;
 
                 RemoteFrame rf = Remote.Snapshot(now);
-                int mask = PressedMask(s, now) | rf.ButtonMask;
+                int paddleMask = Paddles.Update(ReadPaddles(), s.Paddles, s.PaddleSourceIndex);
+                int mask = PressedMask(s, now) | rf.ButtonMask | paddleMask;
+                lastMask = mask;
                 if (useXbox && xbox != null)
                 {
                     short rx = StickMath.PercentToXboxAxis(outX);
@@ -379,7 +401,7 @@ namespace GamepadEnhancer
             double mouseX, double mouseY, double processedX, double processedY, double finalRightX, double finalRightY)
         {
             bool xb = useXbox;
-            int rawMask = RawMask(s) | rf.ButtonMask;
+            int rawMask = RawMask(s) | rf.ButtonMask | Paddles.LastPadMask;
             var (physical, processed, final) = PadStateMath.Build(xb, rf, rawMask, mask,
                 mouseX, mouseY, processedX, processedY, finalRightX, finalRightY, padLx, padLy);
             Snapshots.Publish(physical, processed, final, now);

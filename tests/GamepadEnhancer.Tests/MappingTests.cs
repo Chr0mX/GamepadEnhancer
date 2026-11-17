@@ -84,17 +84,6 @@ namespace GamepadEnhancer.Tests
             Assert.All(map.Values, e => { Assert.Equal("None", e.Input); Assert.False(e.Turbo); });
         }
 
-        [Theory]
-        [InlineData("Apex", true)]
-        [InlineData("apex", true)]
-        [InlineData("  APEX ", true)]
-        [InlineData("Apex2", false)]
-        [InlineData("Default", false)]
-        [InlineData("", false)]
-        [InlineData(null, false)]
-        public void ApexNameIsReserved(string name, bool expected) =>
-            Assert.Equal(expected, DefaultProfile.IsApexName(name));
-
         [Fact]
         public void LeftStickDefaultsAreKeyboardOnly()
         {
@@ -103,45 +92,6 @@ namespace GamepadEnhancer.Tests
             Assert.False(InputChoices.IsAllowed("Left Stick Up", MouseInputNames.Left));
             Assert.True(InputChoices.IsAllowed("Left Stick Up", "W"));
             Assert.True(InputChoices.IsAllowed("A / Cross", MouseInputNames.Left));
-        }
-    }
-
-    public class ApexHintsTests
-    {
-        [Theory]
-        [InlineData(ControllerEngine.ActionACross, "Jump")]
-        [InlineData(ControllerEngine.ActionBCircle, "Crouch")]
-        [InlineData(ControllerEngine.ActionXSquare, "Reload")]
-        [InlineData(ControllerEngine.ActionYTriangle, "Cycle Weapon")]
-        [InlineData(ControllerEngine.ActionLbL1, "Tactical")]
-        [InlineData(ControllerEngine.ActionRbR1, "Ping")]
-        [InlineData(ControllerEngine.ActionLtL2, "Aim Down Sight")]
-        [InlineData(ControllerEngine.ActionRtR2, "Attack")]
-        [InlineData(ControllerEngine.ActionLsL3, "Sprint")]
-        [InlineData(ControllerEngine.ActionRsR3, "Melee")]
-        [InlineData(ControllerEngine.ActionDPadUp, "Health")]
-        [InlineData(ControllerEngine.ActionDPadRight, "Fire Mode")]
-        [InlineData(ControllerEngine.ActionDPadDown, "Grenade")]
-        [InlineData(ControllerEngine.ActionDPadLeft, "Extra Character Action")]
-        [InlineData(ControllerEngine.ActionBackShare, "Map")]
-        [InlineData(ControllerEngine.ActionStartOptions, "Inventory")]
-        public void ButtonsShowTheirApexAction(string action, string expectedPart) =>
-            Assert.Contains(expectedPart, ApexHints.For(action));
-
-        [Fact]
-        public void ActionsNotOnThePresetHaveNoHint()
-        {
-            foreach (string a in new[] { ControllerEngine.ActionGuidePs, ControllerEngine.ActionTouchpad,
-                ControllerEngine.ActionLeftStickUp, ControllerEngine.ActionLeftStickDown,
-                ControllerEngine.ActionLeftStickLeft, ControllerEngine.ActionLeftStickRight })
-                Assert.Null(ApexHints.For(a));
-        }
-
-        [Fact]
-        public void EveryHintBelongsToARealAction()
-        {
-            int withHint = ControllerEngine.BindingActions.Count(a => ApexHints.For(a) != null);
-            Assert.Equal(16, withHint);
         }
     }
 

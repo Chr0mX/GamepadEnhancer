@@ -1,0 +1,27 @@
+{
+  "Id": "apex",
+  "Name": "Apex Legends",
+  "Verified": true,
+  "Source": "Apex Legends in-game Controller Presets screen, preset Default (recommended preset in EA's accessibility notes), stick layout Default. Transcribed from a screenshot supplied by the project owner (Nov 2026); the screenshot shows the Xbox One pad with PlayStation button icons. Other presets (Bumper Jumper, Button Puncher, Evolved, Grenadier, Ninja) and the Southpaw/Legacy stick layouts are not modelled.",
+  "Layout": "Default preset, Default sticks",
+  "Notes": "Ultimate Ability is L1 + R1 together (not a separate button). Left stick moves, right stick looks. PS button and touchpad click are not on the preset.",
+  "ProfileResource": "GamepadEnhancer.Apex.json",
+  "Native": {
+    "A / Cross": "Jump",
+    "B / Circle": "Crouch (toggle)",
+    "X / Square": "Interact / Pickup / Reload  ·  hold: Interact / Pickup",
+    "Y / Triangle": "Cycle Weapon / Holster  ·  hold: Holster",
+    "LB / L1": "Tactical Ability",
+    "RB / R1": "Ping  ·  hold: Ping Wheel",
+    "LT / L2": "Aim Down Sight",
+    "RT / R2": "Attack",
+    "LS / L3": "Sprint / Toggle Zoom",
+    "RS / R3": "Melee",
+    "DPad Up": "Use Health/Shield Kit  ·  hold: Health Wheel",
+    "DPad Right": "Toggle Fire Mode  ·  hold: Equip Survival Item",
+    "DPad Down": "Equip Grenade  ·  hold: Grenade Wheel",
+    "DPad Left": "Extra Character Action  ·  hold: Emote Wheel",
+    "Back / Share": "Map (toggle)",
+    "Start / Options": "Inventory (toggle)"
+  }
+}

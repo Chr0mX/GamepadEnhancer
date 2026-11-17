@@ -1,0 +1,10 @@
+{
+  "Id": "warzone",
+  "Name": "Call of Duty: Warzone",
+  "Verified": false,
+  "Source": "NOT VERIFIED YET. The native layout has not been transcribed because it could not be read from an authoritative source in the build environment. Partial, unconfirmed hints from guides: Circle = crouch / prone / slide, R3 = melee, touchpad = map, Options = pause menu. Nothing is shown or bound for Warzone until the in-game Controller screen (Default button layout, Default stick layout, PlayStation) is transcribed into this file.",
+  "Layout": "Default button layout, Default stick layout",
+  "Notes": "Fill in Native (action name -> label) and optionally ProfileResource, then set Verified to true.",
+  "ProfileResource": null,
+  "Native": {}
+}

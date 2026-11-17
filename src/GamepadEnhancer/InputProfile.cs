@@ -38,6 +38,10 @@ namespace GamepadEnhancer
         public int MouseReleaseMs { get; set; } = 30;
         public bool MouseInvertY { get; set; }
 
+        /// <summary>Rear paddle mappings (LeftUpper, LeftLower, RightUpper, RightLower). Null in profiles written before paddle support.</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public Dictionary<string, PaddleEntry> Paddles { get; set; }
+
         /// <summary>Action name -> binding. Null only in profiles written by older builds.</summary>
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public Dictionary<string, MappingEntry> Mappings { get; set; }
@@ -155,6 +159,8 @@ namespace GamepadEnhancer
             p.TurboEnabled = null;
             p.TurboHz = null;
 
+            if (p.Paddles != null) p.Paddles = PaddleMappings.Build(PaddleMappings.Resolve(p, warnings));
+
             p.ControllerType = p.ControllerType == "Xbox 360" ? "Xbox 360" : "PS4";
             p.MouseSensitivityX = Math.Clamp(p.MouseSensitivityX, 0.5, 100.0);
             p.MouseSensitivityY = Math.Clamp(p.MouseSensitivityY, 0.5, 100.0);
@@ -184,29 +190,24 @@ namespace GamepadEnhancer
         /// <summary>Revision of the shipped default profile; stored in settings.json once the upgrade has been applied.</summary>
         public const int MappingVersion = 4;
 
-        /// <summary>True for the built-in profile's name (case-insensitive, ignoring surrounding spaces).</summary>
-        public static bool IsApexName(string name) =>
-            string.Equals((name ?? string.Empty).Trim(), ApexName, StringComparison.OrdinalIgnoreCase);
-
         /// <summary>The embedded Default profile: PS4, nothing bound.</summary>
         public static InputProfile Create() => Load(ResourceName, new InputProfile { Name = "Default" });
 
         /// <summary>The embedded Apex profile (falls back to an empty one named Apex only if the resource is missing).</summary>
         public static InputProfile CreateApex() => Load(ApexResourceName, new InputProfile { Name = ApexName });
 
-        private static InputProfile Load(string resource, InputProfile fallback)
+        private static InputProfile Load(string resource, InputProfile fallback) => LoadResource(resource) ?? fallback;
+
+        /// <summary>An embedded profile by resource name, or null when it is missing or unreadable.</summary>
+        public static InputProfile LoadResource(string resource)
         {
             try
             {
                 using Stream stream = typeof(DefaultProfile).Assembly.GetManifestResourceStream(resource);
-                if (stream != null)
-                {
-                    InputProfile profile = JsonSerializer.Deserialize<InputProfile>(stream);
-                    if (profile != null) return profile;
-                }
+                if (stream != null) return JsonSerializer.Deserialize<InputProfile>(stream);
             }
             catch { }
-            return fallback;
+            return null;
         }
 
         public static bool ShouldUpgradeDefault(int storedVersion) => storedVersion < MappingVersion;

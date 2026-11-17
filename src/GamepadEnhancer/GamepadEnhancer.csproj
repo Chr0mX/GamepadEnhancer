@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Windows TFM: the rear paddles are read through Windows.Gaming.Input (Gamepad.GetCurrentReading). -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>GamepadEnhancer</AssemblyName>
@@ -16,6 +17,8 @@
     <EmbeddedResource Include="Defaults\Default.json" LogicalName="GamepadEnhancer.Default.json" />
     <!-- The built-in Apex layout (keyboard + mouse, PS4 pad); always loaded from here, never from profiles/. -->
     <EmbeddedResource Include="Defaults\Apex.json" LogicalName="GamepadEnhancer.Apex.json" />
+    <!-- One JSON file per supported game (name, source of the defaults, native controller labels, default profile). Add a file to add a game. -->
+    <EmbeddedResource Include="Defaults\Games\*.json" LogicalName="GamepadEnhancer.Games.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

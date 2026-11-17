@@ -22,5 +22,5 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [build] Done. Binary is in src\GamepadEnhancer\bin\Release\net8.0\
+echo [build] Done. Binary is in src\GamepadEnhancer\bin\Release\net8.0-windows10.0.19041.0\
 endlocal
