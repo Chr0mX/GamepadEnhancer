@@ -2,6 +2,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:v="using:GamepadEnhancer">
 
+  <Styles.Resources>
+    <ResourceDictionary>
+
   <!-- SettingRow: title + explanation, control on the right (drops below on a narrow window via the Wrap panel) -->
   <ControlTheme x:Key="{x:Type v:SettingRow}" TargetType="v:SettingRow">
     <Setter Property="Padding" Value="0,10" />
@@ -40,4 +43,6 @@
       </ControlTemplate>
     </Setter>
   </ControlTheme>
+    </ResourceDictionary>
+  </Styles.Resources>
 </Styles>
