@@ -64,6 +64,7 @@
 
               <!-- Virtual controller -->
               <v:Section x:Name="cardVirtual" Title="VIRTUAL CONTROLLER" Grid.Column="0" Grid.Row="0">
+                <StackPanel>
                 <UniformGrid Columns="2">
                   <Border Classes="tile" Margin="0,0,3,3"><StackPanel><TextBlock Classes="tilelab" Text="STATE" /><v:StatusBadge x:Name="dashVirtualBadge" Margin="0,3,0,0" /></StackPanel></Border>
                   <Border Classes="tile" Margin="3,0,0,3"><StackPanel><TextBlock Classes="tilelab" Text="OUTPUT RATE" /><StackPanel Orientation="Horizontal" Spacing="4"><TextBlock x:Name="dashRateText" Classes="val blue" Text="0" /><TextBlock Classes="unit" Text="reports/s" VerticalAlignment="Bottom" Margin="0,0,0,2" /></StackPanel></StackPanel></Border>
@@ -72,10 +73,12 @@
                 </UniformGrid>
                 <TextBlock x:Name="dashVirtualDetail" Classes="caption" Margin="0,8,0,0" />
                 <TextBlock x:Name="dashOutputDetail" Classes="caption" Margin="0,2,0,0" />
+              </StackPanel>
               </v:Section>
 
               <!-- Inputs and network -->
               <v:Section x:Name="cardInputs" Title="INPUTS AND NETWORK" Grid.Column="2" Grid.Row="0">
+                <StackPanel>
                 <UniformGrid Columns="2">
                   <Border Classes="tile" Margin="0,0,3,3"><StackPanel><TextBlock Classes="tilelab" Text="PHYSICAL PAD" /><v:StatusBadge x:Name="dashPhysicalBadge" Margin="0,3,0,0" /></StackPanel></Border>
                   <Border Classes="tile" Margin="3,0,0,3"><StackPanel><TextBlock Classes="tilelab" Text="NETWORK API" /><v:StatusBadge x:Name="dashNetworkBadge" Margin="0,3,0,0" /></StackPanel></Border>
@@ -84,6 +87,7 @@
                 </UniformGrid>
                 <TextBlock x:Name="dashPhysicalDetail" Classes="caption" Margin="0,8,0,0" />
                 <TextBlock x:Name="dashNetworkDetail" Classes="caption" Margin="0,2,0,0" />
+              </StackPanel>
               </v:Section>
 
               <!-- Active configuration -->
