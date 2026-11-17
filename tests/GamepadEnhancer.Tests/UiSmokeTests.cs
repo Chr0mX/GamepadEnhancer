@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Skia;
 using System.IO;
 using Avalonia.Threading;
@@ -133,6 +135,23 @@ namespace GamepadEnhancer.Tests
             }
             window.Close();
             Assert.True(wide.Count == 0, $"At {width}x{height} these pages overflow sideways: " + string.Join("; ", wide));
+        }
+
+        /// <summary>The bundled Inter and JetBrains Mono must really be the fonts in use, not a silent system fallback.</summary>
+        [AvaloniaFact]
+        public void BundledFontsResolveToInterAndJetBrainsMono()
+        {
+            var window = new MainWindow();
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            foreach (var (key, expected) in new[] { ("UiFont", "Inter"), ("MonoFont", "JetBrains Mono") })
+            {
+                Assert.True(Application.Current.TryFindResource(key, Application.Current.ActualThemeVariant, out object value), key + " is missing");
+                var family = Assert.IsType<FontFamily>(value);
+                Assert.True(FontManager.Current.TryGetGlyphTypeface(new Typeface(family), out IGlyphTypeface glyphs), key + " did not resolve to a font");
+                Assert.True(glyphs.FamilyName.Contains(expected, System.StringComparison.OrdinalIgnoreCase), $"{key} resolved to \"{glyphs.FamilyName}\", expected {expected}");
+            }
+            window.Close();
         }
     }
 }

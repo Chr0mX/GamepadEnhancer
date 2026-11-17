@@ -216,6 +216,8 @@ namespace GamepadEnhancer
             dashRtLabel.Text = xbox ? "RT" : "R2";
             barLt.Fraction = st.Lt;
             barRt.Fraction = st.Rt;
+            plotL.Add(st.Lx, st.Ly);
+            plotR.Add(st.Rx, st.Ry);
             dashLeftStick.Text = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:+0.00;-0.00;+0.00}  {1:+0.00;-0.00;+0.00}", st.Lx, st.Ly);
             dashRightStick.Text = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:+0.00;-0.00;+0.00}  {1:+0.00;-0.00;+0.00}", st.Rx, st.Ry);
 
@@ -340,7 +342,6 @@ namespace GamepadEnhancer
             double controllerH = wide ? Math.Clamp(content - 310 - 90, 380, 640) * 0.78 : Math.Clamp(content * 0.62, 320, 560);
             diagramHost.Height = controllerH;
             paddleDiagramHost.Height = wide ? Math.Clamp(content - 310 - 90, 340, 600) * 0.7 : Math.Clamp(content * 0.56, 300, 520);
-            dashPadHost.Height = Math.Clamp(content * 0.3, 260, 440);
 
             // three monitor stages across: shrink the drawn controllers to fit the column
             int fit = 100;
@@ -356,30 +357,29 @@ namespace GamepadEnhancer
             }
         }
 
-        /// <summary>The dashboard card grid: four across, two across, or one column.</summary>
+        /// <summary>
+        /// The dashboard card grid on twelve columns: wide = four cards across then three; medium = two then two then one then two;
+        /// narrow = a single column.
+        /// </summary>
         private void ArrangeDashboard(double content)
         {
-            var cards = new[] { cardVirtual, cardInputs, cardConfig, cardAxes, cardPad, cardEvents };
+            var cards = new[] { cardStickL, cardStickR, cardVirtual, cardConfig, cardPad, cardAxes, cardEvents };
             if (content >= 1180)
             {
-                dashGrid.ColumnDefinitions = new ColumnDefinitions("*,12,*,12,*,12,*");
-                dashGrid.RowDefinitions = new RowDefinitions("Auto,12,Auto");
-                Place(cardVirtual, 0, 0, 1); Place(cardInputs, 2, 0, 1); Place(cardConfig, 4, 0, 1); Place(cardAxes, 6, 0, 1);
-                Place(cardPad, 0, 2, 3); Place(cardEvents, 4, 2, 3);
+                Place(cardStickL, 0, 0, 3); Place(cardStickR, 3, 0, 3); Place(cardVirtual, 6, 0, 3); Place(cardConfig, 9, 0, 3);
+                Place(cardPad, 0, 1, 4); Place(cardAxes, 4, 1, 4); Place(cardEvents, 8, 1, 4);
             }
             else if (content >= 760)
             {
-                dashGrid.ColumnDefinitions = new ColumnDefinitions("*,12,*");
-                dashGrid.RowDefinitions = new RowDefinitions("Auto,12,Auto,12,Auto,12,Auto");
-                Place(cardVirtual, 0, 0, 1); Place(cardInputs, 2, 0, 1); Place(cardConfig, 0, 2, 1); Place(cardAxes, 2, 2, 1);
-                Place(cardPad, 0, 4, 3); Place(cardEvents, 0, 6, 3);
+                Place(cardStickL, 0, 0, 6); Place(cardStickR, 6, 0, 6); Place(cardVirtual, 0, 1, 6); Place(cardConfig, 6, 1, 6);
+                Place(cardPad, 0, 2, 12); Place(cardAxes, 0, 3, 6); Place(cardEvents, 6, 3, 6);
             }
             else
             {
-                dashGrid.ColumnDefinitions = new ColumnDefinitions("*");
-                dashGrid.RowDefinitions = new RowDefinitions("Auto,12,Auto,12,Auto,12,Auto,12,Auto,12,Auto");
-                for (int i = 0; i < cards.Length; i++) Place(cards[i], 0, i * 2, 1);
+                for (int i = 0; i < cards.Length; i++) Place(cards[i], 0, i, 12);
             }
+            int rows = content >= 1180 ? 2 : content >= 760 ? 4 : cards.Length;
+            dashGrid.RowDefinitions = new RowDefinitions(string.Join(",", Enumerable.Repeat("Auto", rows)));
         }
 
         private static void Place(Control c, int col, int row, int colSpan)

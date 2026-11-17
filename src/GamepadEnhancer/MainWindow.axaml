@@ -64,74 +64,77 @@
 
           <!-- ───────── Dashboard ───────── -->
           <ScrollViewer x:Name="pageDashboard" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Grid x:Name="dashGrid" Margin="16,12,16,20" ColumnDefinitions="*,12,*,12,*,12,*" RowDefinitions="Auto,12,Auto" MaxWidth="1600" HorizontalAlignment="Stretch">
+            <Grid x:Name="dashGrid" Margin="16" ColumnSpacing="12" RowSpacing="12" MaxWidth="1600" HorizontalAlignment="Stretch"
+                  ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,*">
+
+              <v:Section x:Name="cardStickL" Title="LEFT STICK">
+                <v:StickPlot x:Name="plotL" Height="230" />
+              </v:Section>
+              <v:Section x:Name="cardStickR" Title="RIGHT STICK">
+                <v:StickPlot x:Name="plotR" Height="230" />
+              </v:Section>
 
               <!-- Virtual controller -->
-              <v:Section x:Name="cardVirtual" Title="VIRTUAL CONTROLLER" Grid.Column="0" Grid.Row="0">
+              <v:Section x:Name="cardVirtual" Title="VIRTUAL CONTROLLER">
                 <StackPanel>
-                <UniformGrid Columns="2">
-                  <Border Classes="tile" Margin="0,0,6,6"><StackPanel><TextBlock Classes="tilelab" Text="STATE" /><v:StatusBadge x:Name="dashVirtualBadge" Margin="0,3,0,0" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="6,0,0,6"><StackPanel><TextBlock Classes="tilelab" Text="OUTPUT RATE" /><StackPanel Orientation="Horizontal" Spacing="4"><TextBlock x:Name="dashRateText" Classes="val blue" Text="0" /><TextBlock Classes="unit" Text="reports/s" VerticalAlignment="Bottom" Margin="0,0,0,2" /></StackPanel></StackPanel></Border>
-                  <Border Classes="tile" Margin="0,6,6,0"><StackPanel><TextBlock Classes="tilelab" Text="TYPE" /><TextBlock x:Name="dashVirtualTitle" Classes="val purple" FontSize="13" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="6,6,0,0"><StackPanel><TextBlock Classes="tilelab" Text="PATH" /><v:StatusBadge x:Name="dashOutputBadge" Margin="0,3,0,0" /></StackPanel></Border>
-                </UniformGrid>
-                <TextBlock x:Name="dashVirtualDetail" Classes="caption" Margin="0,8,0,0" />
-                <TextBlock x:Name="dashOutputDetail" Classes="caption" Margin="0,2,0,0" />
-              </StackPanel>
-              </v:Section>
-
-              <!-- Inputs and network -->
-              <v:Section x:Name="cardInputs" Title="INPUTS AND NETWORK" Grid.Column="2" Grid.Row="0">
-                <StackPanel>
-                <UniformGrid Columns="2">
-                  <Border Classes="tile" Margin="0,0,6,6"><StackPanel><TextBlock Classes="tilelab" Text="PHYSICAL PAD" /><v:StatusBadge x:Name="dashPhysicalBadge" Margin="0,3,0,0" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="6,0,0,6"><StackPanel><TextBlock Classes="tilelab" Text="NETWORK API" /><v:StatusBadge x:Name="dashNetworkBadge" Margin="0,3,0,0" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="0,6,6,0"><StackPanel><TextBlock Classes="tilelab" Text="CAPTURE" /><TextBlock x:Name="dashCaptureText" Classes="val orange" FontSize="13" /></StackPanel></Border>
-                  <Border Classes="tile" Margin="6,6,0,0"><StackPanel><TextBlock Classes="tilelab" Text="MOUSE LOOK" /><TextBlock x:Name="dashMouseText" Classes="val green" FontSize="13" /></StackPanel></Border>
-                </UniformGrid>
-                <TextBlock x:Name="dashPhysicalDetail" Classes="caption" Margin="0,8,0,0" />
-                <TextBlock x:Name="dashNetworkDetail" Classes="caption" Margin="0,2,0,0" />
-              </StackPanel>
-              </v:Section>
-
-              <!-- Active configuration -->
-              <v:Section x:Name="cardConfig" Title="ACTIVE CONFIGURATION" Grid.Column="4" Grid.Row="0">
-                <StackPanel Spacing="3">
-                  <Border Classes="tile"><StackPanel><TextBlock Classes="tilelab" Text="GAME CONFIG" /><TextBlock x:Name="dashConfigText" Classes="val blue" FontSize="13" /><TextBlock x:Name="dashConfigDetail" Classes="caption" /></StackPanel></Border>
-                  <Border Classes="tile"><StackPanel><TextBlock Classes="tilelab" Text="PROFILE" /><TextBlock x:Name="dashProfileTitle" Classes="val purple" FontSize="13" /><TextBlock x:Name="dashProfileText" Classes="caption" /></StackPanel></Border>
                   <UniformGrid Columns="2">
-                    <Border Classes="tile" Margin="0,0,3,0"><StackPanel><TextBlock Classes="tilelab" Text="PADDLES" /><TextBlock x:Name="dashPaddleText" Classes="val green" FontSize="13" /></StackPanel></Border>
-                    <Border Classes="tile" Margin="3,0,0,0"><StackPanel><TextBlock Classes="tilelab" Text="BLOCKING" /><TextBlock x:Name="dashBlockText" Classes="val orange" FontSize="13" /></StackPanel></Border>
+                    <Border Classes="tile" Margin="0,0,6,6"><StackPanel><TextBlock Classes="tilelab" Text="STATE" /><v:StatusBadge x:Name="dashVirtualBadge" Margin="0,3,0,0" /></StackPanel></Border>
+                    <Border Classes="tile" Margin="6,0,0,6"><StackPanel><TextBlock Classes="tilelab" Text="OUTPUT RATE" /><StackPanel Orientation="Horizontal" Spacing="4"><TextBlock x:Name="dashRateText" Classes="val blue" Text="0" /><TextBlock Classes="unit" Text="reports/s" VerticalAlignment="Bottom" Margin="0,0,0,3" /></StackPanel></StackPanel></Border>
+                    <Border Classes="tile" Margin="0,6,6,0"><StackPanel><TextBlock Classes="tilelab" Text="TYPE" /><TextBlock x:Name="dashVirtualTitle" Classes="val purple" FontSize="13" /></StackPanel></Border>
+                    <Border Classes="tile" Margin="6,6,0,0"><StackPanel><TextBlock Classes="tilelab" Text="PATH" /><v:StatusBadge x:Name="dashOutputBadge" Margin="0,3,0,0" /></StackPanel></Border>
                   </UniformGrid>
+                  <TextBlock x:Name="dashVirtualDetail" Classes="caption" Margin="0,10,0,0" />
+                  <TextBlock x:Name="dashOutputDetail" Classes="caption" Margin="0,2,0,0" />
                 </StackPanel>
               </v:Section>
 
-              <!-- Triggers and sticks -->
-              <v:Section x:Name="cardAxes" Title="TRIGGERS AND STICKS" Grid.Column="6" Grid.Row="0">
-                <StackPanel Spacing="8">
-                  <StackPanel Spacing="3"><TextBlock x:Name="dashLtLabel" Classes="tilelab" Text="LT" /><v:BarMeter x:Name="barLt" Height="24" ColorKey="ValueBlueBrush" /></StackPanel>
-                  <StackPanel Spacing="3"><TextBlock x:Name="dashRtLabel" Classes="tilelab" Text="RT" /><v:BarMeter x:Name="barRt" Height="24" ColorKey="DangerBrush" /></StackPanel>
+              <!-- Details: key / value rows, like an inspector -->
+              <v:Section x:Name="cardConfig" Title="DETAILS">
+                <StackPanel>
+                  <TextBlock Classes="tilelab" Text="CONFIGURATION" Margin="0,0,0,6" />
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Game config" VerticalAlignment="Center" /><TextBlock x:Name="dashConfigText" Classes="mono" Grid.Column="1" TextTrimming="CharacterEllipsis" MaxWidth="170" /></Grid>
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Loaded" VerticalAlignment="Center" /><TextBlock x:Name="dashConfigDetail" Classes="mono" Grid.Column="1" Foreground="{DynamicResource MutedTextBrush}" TextTrimming="CharacterEllipsis" MaxWidth="170" /></Grid>
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Profile" VerticalAlignment="Center" /><TextBlock x:Name="dashProfileTitle" Classes="mono" Grid.Column="1" TextTrimming="CharacterEllipsis" MaxWidth="170" /></Grid>
+                  <Border Classes="divider" Margin="0,4,0,10" />
+                  <TextBlock Classes="tilelab" Text="INPUT AND NETWORK" Margin="0,0,0,6" />
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Physical pad" VerticalAlignment="Center" /><v:StatusBadge x:Name="dashPhysicalBadge" Grid.Column="1" /></Grid>
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Network API" VerticalAlignment="Center" /><v:StatusBadge x:Name="dashNetworkBadge" Grid.Column="1" /></Grid>
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Capture" VerticalAlignment="Center" /><TextBlock x:Name="dashCaptureText" Classes="mono" Grid.Column="1" Foreground="{DynamicResource ValueOrangeBrush}" /></Grid>
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Mouse look" VerticalAlignment="Center" /><TextBlock x:Name="dashMouseText" Classes="mono" Grid.Column="1" Foreground="{DynamicResource ValueGreenBrush}" /></Grid>
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Rear paddles" VerticalAlignment="Center" /><TextBlock x:Name="dashPaddleText" Classes="mono" Grid.Column="1" Foreground="{DynamicResource ValueGreenBrush}" /></Grid>
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6"><TextBlock Classes="caption" Text="Input blocking" VerticalAlignment="Center" /><TextBlock x:Name="dashBlockText" Classes="mono" Grid.Column="1" Foreground="{DynamicResource ValueOrangeBrush}" /></Grid>
+                  <TextBlock x:Name="dashPhysicalDetail" Classes="caption" Margin="0,4,0,0" />
+                  <TextBlock x:Name="dashNetworkDetail" Classes="caption" Margin="0,2,0,0" />
+                  <TextBlock x:Name="dashProfileText" Classes="caption" Margin="0,2,0,0" />
+                </StackPanel>
+              </v:Section>
+
+              <!-- Pad picture -->
+              <v:Section x:Name="cardPad" Title="CONTROLLER">
+                <v:Section.Actions>
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button Content="Open mapping" Classes="soft" Tag="controller" Click="GoTo_Click" />
+                    <Button Content="Games" Tag="games" Click="GoTo_Click" />
+                  </StackPanel>
+                </v:Section.Actions>
+                <Border x:Name="dashPadHost" Height="300" MinHeight="220" />
+              </v:Section>
+
+              <!-- Triggers -->
+              <v:Section x:Name="cardAxes" Title="TRIGGERS">
+                <StackPanel Spacing="10">
+                  <StackPanel Spacing="4"><TextBlock x:Name="dashLtLabel" Classes="tilelab" Text="LT" /><v:BarMeter x:Name="barLt" Height="24" ColorKey="ValueBlueBrush" /></StackPanel>
+                  <StackPanel Spacing="4"><TextBlock x:Name="dashRtLabel" Classes="tilelab" Text="RT" /><v:BarMeter x:Name="barRt" Height="24" ColorKey="DangerBrush" /></StackPanel>
                   <UniformGrid Columns="2">
-                    <Border Classes="tile" Margin="0,0,3,0"><StackPanel><TextBlock Classes="tilelab" Text="LEFT STICK" /><TextBlock x:Name="dashLeftStick" Classes="val" FontSize="12" Text="+0.00  +0.00" /></StackPanel></Border>
-                    <Border Classes="tile" Margin="3,0,0,0"><StackPanel><TextBlock Classes="tilelab" Text="RIGHT STICK" /><TextBlock x:Name="dashRightStick" Classes="val" FontSize="12" Text="+0.00  +0.00" /></StackPanel></Border>
+                    <Border Classes="tile" Margin="0,0,6,0"><StackPanel><TextBlock Classes="tilelab" Text="LEFT STICK" /><TextBlock x:Name="dashLeftStick" Classes="val" FontSize="12" Text="+0.00  +0.00" /></StackPanel></Border>
+                    <Border Classes="tile" Margin="6,0,0,0"><StackPanel><TextBlock Classes="tilelab" Text="RIGHT STICK" /><TextBlock x:Name="dashRightStick" Classes="val" FontSize="12" Text="+0.00  +0.00" /></StackPanel></Border>
                   </UniformGrid>
                   <TextBlock Classes="caption" Text="Final output sent to the virtual pad; zero while nothing is connected." />
                 </StackPanel>
               </v:Section>
 
-              <!-- Pad picture -->
-              <v:Section x:Name="cardPad" Title="CONTROLLER" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="2">
-                <v:Section.Actions>
-                  <StackPanel Orientation="Horizontal" Spacing="6">
-                    <Button Content="Open mapping" Classes="primary" Tag="controller" Click="GoTo_Click" />
-                    <Button Content="Games &amp; profiles" Tag="games" Click="GoTo_Click" />
-                  </StackPanel>
-                </v:Section.Actions>
-                <Border x:Name="dashPadHost" Height="360" MinHeight="240" />
-              </v:Section>
-
               <!-- Event stream -->
-              <v:Section x:Name="cardEvents" Title="EVENT STREAM" Description="Button presses and releases on the final output, newest first." Grid.Column="4" Grid.ColumnSpan="3" Grid.Row="2">
+              <v:Section x:Name="cardEvents" Title="EVENT STREAM" Description="Button presses and releases on the final output, newest first.">
                 <TextBlock x:Name="dashEventLog" Classes="mono" TextWrapping="NoWrap" MinHeight="200" />
               </v:Section>
             </Grid>

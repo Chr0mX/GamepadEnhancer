@@ -134,4 +134,67 @@ namespace GamepadEnhancer
             c.DrawText(t, new Point((r.Width - t.Width) / 2, (r.Height - t.Height) / 2));
         }
     }
+
+    /// <summary>
+    /// A square stick plot: gate circle, grid, a fading trail of the most recent positions and the current point. Fed with the
+    /// final stick output (-1..1, +Y down as in the monitor). Positions are kept in a small ring so memory is fixed.
+    /// </summary>
+    internal sealed class StickPlot : InstrumentView
+    {
+        private const int Capacity = 180;
+        private readonly (double X, double Y)[] trail = new (double, double)[Capacity];
+        private int head, count;
+        private double x, y;
+
+        public void Add(double nx, double ny)
+        {
+            x = nx; y = ny;
+            if (count > 0)
+            {
+                var last = trail[(head - 1 + Capacity) % Capacity];
+                if (last.X == nx && last.Y == ny && nx == 0 && ny == 0) { InvalidateVisual(); return; }   // centred and still: nothing to add
+            }
+            trail[head] = (nx, ny);
+            head = (head + 1) % Capacity;
+            if (count < Capacity) count++;
+            InvalidateVisual();
+        }
+
+        public void Clear() { head = count = 0; x = y = 0; InvalidateVisual(); }
+
+        public override void Render(DrawingContext c)
+        {
+            IBrush bg = Res("CanvasBrush", Brushes.Black), line = Res("BorderBrushDefault", Brushes.Gray), dim = Res("MutedTextBrush", Brushes.Gray),
+                   accent = Res("AccentBrush", Brushes.DodgerBlue), red = Res("DangerBrush", Brushes.Red);
+            double label = 22;
+            double size = Math.Min(Bounds.Width, Bounds.Height - label);
+            if (size < 40) return;
+            double left = (Bounds.Width - size) / 2;
+            var box = new Rect(left, 0, size, size);
+            c.DrawRectangle(bg, null, box, 8, 8);
+            var centre = new Point(left + size / 2, size / 2);
+            double r = size / 2 - 6;
+            var gridPen = new Pen(new SolidColorBrush(Color.FromArgb(18, 255, 255, 255)), 1);
+            c.DrawLine(gridPen, new Point(centre.X - r, centre.Y), new Point(centre.X + r, centre.Y));
+            c.DrawLine(gridPen, new Point(centre.X, centre.Y - r), new Point(centre.X, centre.Y + r));
+            c.DrawEllipse(null, gridPen, centre, r / 2, r / 2);
+            c.DrawEllipse(null, new Pen(new SolidColorBrush(Color.FromArgb(102, 79, 140, 255)), 1.2), centre, r, r);
+
+            for (int i = 0; i < count; i++)
+            {
+                var p = trail[(head - count + i + Capacity) % Capacity];
+                double a = 0.15 + 0.6 * i / Math.Max(1, count - 1);
+                double mag = Math.Sqrt(p.X * p.X + p.Y * p.Y), px = p.X, py = p.Y;
+                if (mag > 1) { px /= mag; py /= mag; }
+                c.DrawEllipse(new SolidColorBrush(Color.FromArgb((byte)(255 * a), 79, 140, 255)), null, new Point(centre.X + px * r, centre.Y + py * r), 1.6, 1.6);
+            }
+            double m = Math.Sqrt(x * x + y * y), cx = x, cy = y;
+            if (m > 1) { cx /= m; cy /= m; }
+            c.DrawEllipse(red, null, new Point(centre.X + cx * r, centre.Y + cy * r), 4, 4);
+
+            string t = string.Format(CultureInfo.InvariantCulture, "X: {0:+0.000;-0.000;+0.000}   Y: {1:+0.000;-0.000;+0.000}", x, y);
+            FormattedText ft = Text(t, 11, dim);
+            c.DrawText(ft, new Point(left + (size - ft.Width) / 2, size + 5));
+        }
+    }
 }
