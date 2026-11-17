@@ -1,6 +1,6 @@
 # Input mappings and profiles
 
-A profile maps **PC input to a virtual PS4 / Xbox 360 pad**. Two profiles ship inside the app: **Default** (a PS4 pad with nothing bound, editable and saved as `profiles/Default.json`, to remap yourself) and **Apex** (built in: the keyboard + mouse layout below). The app starts on Apex; the **Apex** toggle on the top bar switches between the two. Apex cannot be overwritten or deleted: change it, then save under another name. Every pad action has its own stored name, so a profile written for one pad type works for the other (L1 is LB, Share is Back, Options is Start, PS is Guide; the Touchpad has no Xbox equivalent and is ignored there).
+A profile maps **PC input to a virtual PS4 / Xbox 360 pad**. Profiles are per game now (see [GAMES.md](GAMES.md)): **Apex Legends** ships the keyboard + mouse layout below as its built-in default, and any other game uses your global `profiles/Default.json` (a PS4 pad with nothing bound, to remap yourself). Rear paddles are described in [PADDLES.md](PADDLES.md) and are stored in a `Paddles` block of the same profile file. Every pad action has its own stored name, so a profile written for one pad type works for the other (L1 is LB, Share is Back, Options is Start, PS is Guide; the Touchpad has no Xbox equivalent and is ignored there).
 
 Three kinds of PC input are kept clearly apart, in the picker groups, in the small tag next to each picker, and in the file:
 

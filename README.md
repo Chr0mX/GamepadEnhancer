@@ -11,7 +11,10 @@ Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm
 - Choose **Xbox 360** or **PS4** virtual controller
 - Bind **PC keyboard keys** to virtual controller inputs, with optional per-action **turbo** (1-30 Hz)
 - **Input capture** dropdown: Low-Level Hooks (default) or Raw Input (background capture with `RIDEV_INPUTSINK`); one active at a time, held inputs are released when switching; saved in `settings.json`. See [docs/INPUT_CAPTURE.md](docs/INPUT_CAPTURE.md)
-- **Two built-in profiles:** **Apex** (the app starts on it: a PS4 keyboard + mouse layout with WASD = left stick, mouse movement = right stick, Space = Cross, mouse buttons on R1 / L2 / R2 / R3, ...; built in, cannot be overwritten) and **Default** (a PS4 pad with nothing bound, to remap yourself; saved as `profiles/Default.json`). The **Apex** toggle on the top bar switches between them. Upgrading replaces an older `profiles/Default.json` once (the old one is kept as `Default.json.bak`). Full table and file format: [docs/MAPPINGS.md](docs/MAPPINGS.md). Older profile files, including ones with drift, filtering, recoil or disengage fields, load fine.
+- **Game profiles:** pick a game on the top bar and its own layout loads. Apex Legends ships with a keyboard + mouse layout and its native controller labels; Warzone is listed but its native layout is not verified yet, so nothing is invented for it; any other game uses your global `profiles/Default.json`. Customizations are saved per game, built-in defaults stay separate, and **Restore game defaults** resets only the selected game. See [docs/GAMES.md](docs/GAMES.md).
+- **Interactive controller diagram:** a drawn DualShock 4 / Xbox 360 with every button, stick direction, the right stick (mouse) and the rear paddles; click a control to see and change its mapping, controls light up while pressed, and the list view is still there under *All bindings*.
+- **Rear paddles:** four independently mapped paddles (virtual button, key or mouse button) read from a physical controller through Windows.Gaming.Input; see [docs/PADDLES.md](docs/PADDLES.md) for how it works and its limits.
+- Profiles can be imported, exported and edited by hand ([docs/MAPPINGS.md](docs/MAPPINGS.md)). Older profile files load unchanged.
 - **Network API:** accept MAKCU-style text commands (`km.controller(id,value[,hold_ms])`, `km.controller_clear()`) over TCP from another computer and play them on the virtual pad, with a token and off by default; the same app can also **send** its pad to another PC. See [docs/NETWORK_API.md](docs/NETWORK_API.md)
 - **Mouse buttons over the same link:** a client that subscribes with `km.mouse_stream(1)` gets this PC's mouse buttons pushed back as `km.mouse(mask)` on the connection it already uses for commands (one address, port and token), for example to give Axiom a remote aim button. See [docs/NETWORK_API.md](docs/NETWORK_API.md)
 - **Input blocking and mouse look:** while a chosen game is focused, swallow the keyboard/mouse input you mapped to pad actions so only the controller reaches the game, bind mouse buttons and the wheel to pad actions, and let mouse movement drive the right stick (off by default). See [docs/BLOCKING.md](docs/BLOCKING.md)
@@ -81,13 +84,15 @@ The pure logic (input block policy, mouse look, process matching, key names) is 
 | `src/GamepadEnhancer/Input` | Low-level hooks, Raw Input, input state, settings, foreground window |
 | `src/GamepadEnhancer/Network` | Network API server, remote link, MAKCU command parser |
 | `src/GamepadEnhancer/Views`, `MainWindow.axaml` | Avalonia UI (controller monitor in `ControllerView` / `MonitorPanel` / `MonitorWindow`) |
-| `src/GamepadEnhancer/Defaults/` | `Default.json` (empty PS4) and `Apex.json` (built-in layout), shipped inside the app |
+| `src/GamepadEnhancer/Defaults/` | `Default.json` (empty PS4), `Apex.json` and `Games/*.json` (one file per supported game), shipped inside the app |
 | `tests/GamepadEnhancer.Tests` | Unit tests |
 | `docs/`, `site/` | Markdown docs, release notes, documentation site |
 
 ## Documentation
 
-- [docs/MAPPINGS.md](docs/MAPPINGS.md): default mapping, profile format, import / export
+- [docs/GAMES.md](docs/GAMES.md): game profiles, defaults and how to add a game
+- [docs/PADDLES.md](docs/PADDLES.md): rear paddles and their limits
+- [docs/MAPPINGS.md](docs/MAPPINGS.md): Apex mapping, profile format, import / export
 - [docs/INPUT_CAPTURE.md](docs/INPUT_CAPTURE.md): Low-Level Hooks vs Raw Input
 - [docs/NETWORK_API.md](docs/NETWORK_API.md): Network API and `km.mouse` mouse buttons
 - [docs/BLOCKING.md](docs/BLOCKING.md): input blocking and mouse look
