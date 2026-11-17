@@ -220,6 +220,9 @@
           </StackPanel>
         </Border>
 
+        <!-- Model for the game list (the Games page ListBox is the visible selector); kept so game switching logic stays unchanged -->
+        <ComboBox x:Name="gameComboBox" IsVisible="False" SelectionChanged="GameComboBox_SelectionChanged" />
+
         <!-- ───────── Games ───────── -->
         <ScrollViewer x:Name="pageGames" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
           <StackPanel Margin="28,24,28,28" Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
