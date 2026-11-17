@@ -46,7 +46,7 @@ namespace GamepadEnhancer.Tests
         public void BuiltInApexIsExactlyTheRequestedMapping()
         {
             InputProfile d = DefaultProfile.CreateApex();
-            Assert.Equal("Apex", d.Name);
+            Assert.Equal("Apex Legends", d.Name);
             Assert.Equal("PS4", d.ControllerType);
             Assert.True(d.MouseLookEnabled);     // right stick = mouse movement
             var warnings = new List<string>();
