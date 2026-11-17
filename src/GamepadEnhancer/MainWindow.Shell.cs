@@ -385,6 +385,7 @@ namespace GamepadEnhancer
         private static void Place(Control c, int col, int row, int colSpan)
         {
             Grid.SetColumn(c, col); Grid.SetRow(c, row); Grid.SetColumnSpan(c, colSpan);
+            c.Margin = new Thickness(0, 0, 12, 12);   // the 12 px card gap (the grid itself has 4 px so the page padding stays 16)
         }
 
         /// <summary>Lays three or more children in one row (wide) or one above the other (narrow), keeping any existing gap columns.</summary>

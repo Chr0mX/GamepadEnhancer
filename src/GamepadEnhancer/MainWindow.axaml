@@ -64,7 +64,7 @@
 
           <!-- ───────── Dashboard ───────── -->
           <ScrollViewer x:Name="pageDashboard" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Grid x:Name="dashGrid" Margin="16" ColumnSpacing="12" RowSpacing="12" MaxWidth="1600" HorizontalAlignment="Stretch"
+            <Grid x:Name="dashGrid" Margin="16,16,4,4" MaxWidth="1600" HorizontalAlignment="Stretch"
                   ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,*">
 
               <v:Section x:Name="cardStickL" Title="LEFT STICK">
