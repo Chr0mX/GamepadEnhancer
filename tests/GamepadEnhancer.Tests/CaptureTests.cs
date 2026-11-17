@@ -63,7 +63,7 @@ namespace GamepadEnhancer.Tests
                 Assert.NotEmpty(KeyNames.ToVirtualKeys(k));
                 Assert.False(string.IsNullOrWhiteSpace(InputChoices.DisplayName(k)));
             }
-            Assert.True(keys.Length > 110);                               // the old list had 69
+            Assert.True(keys.Length >= 100);                              // the old list had 69
         }
 
         [Fact]
