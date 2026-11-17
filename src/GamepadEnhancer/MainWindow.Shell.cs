@@ -423,9 +423,9 @@ namespace GamepadEnhancer
                 var action = new TextBlock { Text = text, Classes = { "caption" }, TextWrapping = Avalonia.Media.TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
                 Grid.SetColumn(action, 1);
                 row.Children.Add(action);
-                var key = new Border { Classes = { "kbd" }, Child = new TextBlock { Text = SlotMappingText(input), Classes = { "mono" } } };
-                Grid.SetColumn(key, 2);
-                row.Children.Add(key);
+                var keyChip = new Border { Classes = { "kbd" }, Child = new TextBlock { Text = SlotMappingText(input), Classes = { "mono" } } };
+                Grid.SetColumn(keyChip, 2);
+                row.Children.Add(keyChip);
                 rows.Add(new Border { Padding = new Thickness(0, 7), BorderThickness = new Thickness(0, 0, 0, 1), BorderBrush = (Avalonia.Media.IBrush)(Application.Current.FindResource("BorderBrushSubtle") ?? Avalonia.Media.Brushes.Transparent), Child = row });
             }
             gameNativeList.ItemsSource = rows;
