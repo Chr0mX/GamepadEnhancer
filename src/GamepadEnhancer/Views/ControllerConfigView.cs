@@ -580,7 +580,18 @@ namespace GamepadEnhancer
             if (s.IsPaddle && !enabled) line2 = "Off";
             else if (!string.IsNullOrEmpty(native)) line2 = mapping + "  ·  " + native;
             if (s.IsPaddle && !available) line2 += "  (not detected)";
-            line2 = Ellipsize(line2, 35);
+            bool big = chip.H > ControllerLayout.ChipH + 8;   // the paddle view's larger chips get three lines
+            string line3 = null;
+            if (big)
+            {
+                line2 = s.IsPaddle && !enabled ? "Off" : mapping;
+                var notes = new List<string>();
+                if (!(s.IsPaddle && !enabled) && !string.IsNullOrEmpty(native)) notes.Add(native);
+                if (s.IsPaddle && !available) notes.Add("not detected");
+                line3 = notes.Count == 0 ? null : Ellipsize(string.Join("  ·  ", notes), 34);
+                line2 = Ellipsize(line2, 24);
+            }
+            else line2 = Ellipsize(line2, 35);
 
             double flash = FlashAmount(s.Id);
             Rect r = new(chip.X, chip.Y, chip.W, chip.H);
@@ -591,9 +602,18 @@ namespace GamepadEnhancer
                 c.DrawRectangle(ChipFill, PenFor(selected ? WhiteBrush : pressed ? Accent : FaintEdge, selected ? 2 : 1.2), r, 8, 8);
                 if (flash > 0) c.DrawRectangle(new SolidColorBrush(Color.FromArgb((byte)(80 * flash), 0x4C, 0xD7, 0x87)), null, r, 8, 8);
                 c.DrawRectangle(accent, null, new Rect(r.X + 1, r.Y + 6, 3.5, r.Height - 12), 2, 2);
-                DrawText(c, s.Title.ToUpperInvariant(), 9, TextDim, new Point(r.X + 12, r.Y + 4), false, true);
                 bool unset = accent == DimBrush;
-                DrawText(c, line2, 11, unset ? TextDim : TextBright, new Point(r.X + 12, r.Y + 17), false, false);
+                if (big)
+                {
+                    DrawText(c, Ellipsize(s.Title.ToUpperInvariant(), 26), 11, TextDim, new Point(r.X + 14, r.Y + 7), false, true);
+                    DrawText(c, line2, 15, unset ? TextDim : TextBright, new Point(r.X + 14, r.Y + 24), false, false);
+                    if (line3 != null) DrawText(c, line3, 10.5, TextDim, new Point(r.X + 14, r.Y + 46), false, false);
+                }
+                else
+                {
+                    DrawText(c, s.Title.ToUpperInvariant(), 9, TextDim, new Point(r.X + 12, r.Y + 4), false, true);
+                    DrawText(c, line2, 11, unset ? TextDim : TextBright, new Point(r.X + 12, r.Y + 17), false, false);
+                }
             }
         }
 

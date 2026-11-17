@@ -340,9 +340,12 @@ namespace GamepadEnhancer
             Arrange2(gamesGrid, gamesLeft, gameDetailSection, content >= 900, "320,12,*");
             ArrangeN(monitorStages, new Control[] { monitorStagePhysical, monitorStageProcessed, monitorStageFinal }, content >= 1000, 12);
 
-            double controllerH = wide ? Math.Clamp(content - 310 - 90, 380, 640) * 0.78 : Math.Clamp(content * 0.62, 320, 560);
-            diagramHost.Height = controllerH;
-            paddleDiagramHost.Height = wide ? Math.Clamp(content - 310 - 90, 340, 600) * 0.7 : Math.Clamp(content * 0.56, 300, 520);
+            // The diagram is drawn on an 880 x 620 canvas scaled to fit its host. Give the host that same aspect ratio so the scale
+            // stays close to 1 (a short host shrank every label); the page scrolls if the result is tall.
+            double diagramW = Math.Max(300, wide ? content - 32 - 12 - 310 : content - 32);
+            double diagramH = Math.Clamp(diagramW * ControllerLayout.Height / ControllerLayout.Width, 300, 660);
+            diagramHost.Height = diagramH;
+            paddleDiagramHost.Height = diagramH;
 
             // three monitor stages across: shrink the drawn controllers to fit the column
             int fit = 100;

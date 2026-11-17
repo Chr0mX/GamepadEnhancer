@@ -26,6 +26,9 @@ namespace GamepadEnhancer
         /// <summary>Explicit chip position (diagram coordinates); null = the default column for <see cref="Side"/> and <see cref="Row"/>.</summary>
         public double? ChipX { get; init; }
         public double? ChipY { get; init; }
+        /// <summary>Explicit chip size; null = the standard chip. The paddle view uses bigger chips (only four of them, so there is room).</summary>
+        public double? ChipWidth { get; init; }
+        public double? ChipHeight { get; init; }
 
         public bool IsPaddle => PaddleSlots.TryParseId(Id, out _);
 
@@ -73,7 +76,7 @@ namespace GamepadEnhancer
         /// <summary>Position of a slot's label chip in diagram coordinates.</summary>
         public static (double X, double Y, double W, double H) ChipRect(LayoutSlot s)
         {
-            if (s.ChipX.HasValue && s.ChipY.HasValue) return (s.ChipX.Value, s.ChipY.Value, ChipW, ChipH);
+            if (s.ChipX.HasValue && s.ChipY.HasValue) return (s.ChipX.Value, s.ChipY.Value, s.ChipWidth ?? ChipW, s.ChipHeight ?? ChipH);
             switch (s.Side)
             {
                 case SlotSide.Left: return (12, 16 + s.Row * (ChipH + ChipGap), ChipW, ChipH);
@@ -90,6 +93,9 @@ namespace GamepadEnhancer
             foreach (LayoutSlot s in slots) if (s.ChipContains(x, y)) return s;
             return slots.Where(s => s.MarkerContains(x, y)).OrderBy(s => s.MW * s.MH).FirstOrDefault();
         }
+
+        /// <summary>The paddle chips are larger than the standard ones: a title line, a bigger mapping line and a note line.</summary>
+        public const double PaddleChipW = 224, PaddleChipH = 64;
 
         private static readonly Dictionary<PadFamily, IReadOnlyList<LayoutSlot>> PaddleCache = new();
 
@@ -115,8 +121,9 @@ namespace GamepadEnhancer
                         Side = left ? SlotSide.Left : SlotSide.Right,
                         Row = i % 2,
                         MX = px[i], MY = py[i], MW = 24, MH = 56, Shape = SlotShape.RoundRect,
-                        ChipX = left ? 12 : Width - 12 - ChipW,
-                        ChipY = 290 + (i % 2) * 72
+                        ChipWidth = PaddleChipW, ChipHeight = PaddleChipH,
+                        ChipX = left ? 12 : Width - 12 - PaddleChipW,
+                        ChipY = 280 + (i % 2) * (PaddleChipH + 12)
                     });
                 }
                 return PaddleCache[family] = list;
