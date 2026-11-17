@@ -389,8 +389,9 @@ namespace GamepadEnhancer.Tests
 
             LayoutSlot cross = ControllerLayout.Find(PadFamily.DualShock4, ControllerEngine.ActionACross);
             Assert.Equal(cross.Id, ControllerLayout.HitTest(PadFamily.DualShock4, cross.MX, cross.MY).Id);        // its marker
-            LayoutSlot paddle = ControllerLayout.Find(PadFamily.DualShock4, PaddleSlots.Id(1));
-            Assert.Equal(paddle.Id, ControllerLayout.HitTest(PadFamily.DualShock4, paddle.MX, paddle.MY).Id);
+            LayoutSlot paddle = ControllerLayout.Find(PadFamily.Xbox360, PaddleSlots.Id(1));   // a DualShock 4 has no rear paddles
+            Assert.Equal(paddle.Id, ControllerLayout.HitTest(PadFamily.Xbox360, paddle.MX, paddle.MY).Id);
+            Assert.Null(ControllerLayout.Find(PadFamily.DualShock4, PaddleSlots.Id(1)));
             Assert.Null(ControllerLayout.HitTest(PadFamily.DualShock4, 5, ControllerLayout.Height - 5));
         }
 
