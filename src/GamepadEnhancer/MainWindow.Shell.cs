@@ -338,11 +338,14 @@ namespace GamepadEnhancer
         {
             if (sidebar == null) return;
             double content = windowWidth - sidebar.Width;
-            brandText.IsVisible = windowWidth >= 760;
+            // Header items appear only when they fit (measured by WindowedSizesKeepTheHeaderAndTheDiagramsReadable): the name needs
+            // about 880 px, the output / capture / network tags 1040 px, the profile pill 1240 px. Narrower windows use the Profile
+            // menu button on the Games page.
+            brandText.IsVisible = windowWidth >= 880;
             versionText.IsVisible = windowWidth >= 900;
-            headerConfigPill.IsVisible = windowWidth >= 1100;   // narrower windows use the Profile menu button on the Games page
-            tagCapture.IsVisible = windowWidth >= 1000;
-            tagNetwork.IsVisible = windowWidth >= 1000;
+            headerConfigPill.IsVisible = windowWidth >= 1240;
+            tagCapture.IsVisible = windowWidth >= 1040;
+            tagNetwork.IsVisible = windowWidth >= 1040;
             bool wide = content >= 980;
             wideLayout = wide;
             ArrangeDashboard(content);
