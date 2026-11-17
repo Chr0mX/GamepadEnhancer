@@ -45,24 +45,24 @@ Same keys as the PS4 Default (A = Cross, B = Circle, X = Square, Y = Triangle, L
 | Pad action (PS4 / Xbox) | Input | Kind |
 |---|---|---|
 | Cross / A | `Space` | Keyboard |
-| Circle / B | `Ctrl` | Keyboard |
+| Circle / B | `C` | Keyboard |
 | Square / X | `R` | Keyboard |
-| Triangle / Y | `E` | Keyboard |
+| Triangle / Y | `Wheel Up` | Mouse wheel |
 | L1 / LB | `Q` | Keyboard |
-| R1 / RB | `Mouse X1` (Mouse 4, side) | Mouse button |
+| R1 / RB | `G` | Keyboard |
 | L2 / LT | `Mouse Right` | Mouse button |
 | R2 / RT | `Mouse Left` | Mouse button |
 | L3 / left stick click | `Shift` | Keyboard |
-| R3 / right stick click | `Mouse Middle` (Mouse 3) | Mouse button |
-| D-Pad Up / Down / Left / Right | `4` / `F1` / `B` / `G` | Keyboard |
+| R3 / right stick click | `V` | Keyboard |
+| D-Pad Up / Down / Left / Right | `1` / `2` / `3` / `4` | Keyboard |
 | Options / Start | `Escape` | Keyboard |
-| Share / Back | `Tab` | Keyboard |
-| PS / Guide | `Home` | Keyboard |
-| Touchpad click | not bound | |
+| Share / Back | `F12` | Keyboard |
+| PS / Guide | not bound | |
+| Touchpad click | `M` | Keyboard |
 | Left stick Up / Down / Left / Right | `W` / `S` / `A` / `D` | Keyboard |
 | Right stick Up / Down / Left / Right | Mouse movement Up / Down / Left / Right | Mouse movement |
 
-Nothing else is bound (the Touchpad click is left empty), and turbo is off everywhere.
+Turbo is off everywhere. This is the same table as the Default config.
 
 ### What each button does in Apex Legends
 The game only sees a controller, so what matters is the pad button; in-game PC keybinds are irrelevant. This is Apex's **default controller preset** (the app also shows it under each button):

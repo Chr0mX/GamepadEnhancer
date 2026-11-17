@@ -18,7 +18,7 @@
       "TurboHz": 12
     },
     "CROUCH": {
-      "Input": "Ctrl",
+      "Input": "C",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
@@ -30,8 +30,8 @@
       "TurboHz": 12
     },
     "CYCLE_WEAPON": {
-      "Input": "E",
-      "Kind": "Keyboard",
+      "Input": "Wheel Up",
+      "Kind": "MouseWheel",
       "Turbo": false,
       "TurboHz": 12
     },
@@ -42,8 +42,8 @@
       "TurboHz": 12
     },
     "PING": {
-      "Input": "Mouse X1",
-      "Kind": "MouseButton",
+      "Input": "G",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
@@ -60,7 +60,7 @@
       "TurboHz": 12
     },
     "MAP": {
-      "Input": "Tab",
+      "Input": "F12",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
@@ -78,44 +78,44 @@
       "TurboHz": 12
     },
     "MELEE": {
-      "Input": "Mouse Middle",
-      "Kind": "MouseButton",
+      "Input": "V",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "HEAL": {
-      "Input": "4",
+      "Input": "1",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "GRENADE": {
-      "Input": "F1",
+      "Input": "2",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "CHARACTER_ACTION": {
-      "Input": "B",
+      "Input": "3",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "FIRE_MODE": {
-      "Input": "G",
+      "Input": "4",
       "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },
     "HOME": {
-      "Input": "Home",
-      "Kind": "Keyboard",
+      "Input": "None",
+      "Kind": "None",
       "Turbo": false,
       "TurboHz": 12
     },
     "TOUCHPAD": {
-      "Input": "None",
-      "Kind": "None",
+      "Input": "M",
+      "Kind": "Keyboard",
       "Turbo": false,
       "TurboHz": 12
     },

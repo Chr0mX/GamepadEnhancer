@@ -13,23 +13,23 @@ namespace GamepadEnhancer.Tests
         private static readonly Dictionary<string, string> Expected = new(StringComparer.OrdinalIgnoreCase)
         {
             ["FACE_SOUTH"] = "Space",
-            ["FACE_EAST"] = "Ctrl",
+            ["FACE_EAST"] = "C",
             ["FACE_WEST"] = "R",
-            ["FACE_NORTH"] = "E",
+            ["FACE_NORTH"] = "Wheel Up",
             ["LB"] = "Q",
-            ["RB"] = "Mouse X1",
+            ["RB"] = "G",
             ["LT"] = "Mouse Right",
             ["RT"] = "Mouse Left",
             ["LS_CLICK"] = "Shift",
-            ["RS_CLICK"] = "Mouse Middle",
-            ["DPAD_UP"] = "4",
-            ["DPAD_DOWN"] = "F1",
-            ["DPAD_LEFT"] = "B",
-            ["DPAD_RIGHT"] = "G",
+            ["RS_CLICK"] = "V",
+            ["DPAD_UP"] = "1",
+            ["DPAD_DOWN"] = "2",
+            ["DPAD_LEFT"] = "3",
+            ["DPAD_RIGHT"] = "4",
             ["START"] = "Escape",
-            ["SELECT"] = "Tab",
-            ["HOME"] = "Home",
-            ["TOUCHPAD"] = "None",
+            ["SELECT"] = "F12",
+            ["HOME"] = "None",
+            ["TOUCHPAD"] = "M",
             ["LS_UP"] = "W",
             ["LS_DOWN"] = "S",
             ["LS_LEFT"] = "A",
@@ -64,8 +64,9 @@ namespace GamepadEnhancer.Tests
         public void ApexKindsMatchTheInputs()
         {
             var map = ProfileMappings.Resolve(DefaultProfile.CreateApex(), null);
-            Assert.Equal("MouseButton", map["RB"].Kind);
-            Assert.Equal("MouseButton", map["RS_CLICK"].Kind);
+            Assert.Equal("MouseButton", map["LT"].Kind);
+            Assert.Equal("MouseButton", map["RT"].Kind);
+            Assert.Equal("MouseWheel", map["FACE_NORTH"].Kind);
             Assert.Equal("Keyboard", map["FACE_SOUTH"].Kind);
             Assert.Equal("Keyboard", map["LS_UP"].Kind);
         }
