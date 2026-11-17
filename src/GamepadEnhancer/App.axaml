@@ -12,36 +12,36 @@
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
           <!-- surfaces -->
-          <SolidColorBrush x:Key="CanvasBrush" Color="#0F1115" />
-          <SolidColorBrush x:Key="SidebarBrush" Color="#12151A" />
-          <SolidColorBrush x:Key="SurfaceBrush" Color="#161920" />
-          <SolidColorBrush x:Key="RaisedBrush" Color="#1D212B" />
-          <SolidColorBrush x:Key="HoverBrush" Color="#242936" />
-          <SolidColorBrush x:Key="PressedBrush" Color="#2B3140" />
+          <SolidColorBrush x:Key="CanvasBrush" Color="#101114" />
+          <SolidColorBrush x:Key="SidebarBrush" Color="#0D0E10" />
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#16181C" />
+          <SolidColorBrush x:Key="RaisedBrush" Color="#1C1F24" />
+          <SolidColorBrush x:Key="HoverBrush" Color="#242830" />
+          <SolidColorBrush x:Key="PressedBrush" Color="#2B303A" />
           <!-- borders -->
-          <SolidColorBrush x:Key="BorderBrushSubtle" Color="#242934" />
-          <SolidColorBrush x:Key="BorderBrushDefault" Color="#2F3542" />
-          <SolidColorBrush x:Key="BorderBrushStrong" Color="#434B5C" />
+          <SolidColorBrush x:Key="BorderBrushSubtle" Color="#23262C" />
+          <SolidColorBrush x:Key="BorderBrushDefault" Color="#2A2E35" />
+          <SolidColorBrush x:Key="BorderBrushStrong" Color="#3A3F48" />
           <!-- text -->
-          <SolidColorBrush x:Key="TextBrush" Color="#E6E8EC" />
-          <SolidColorBrush x:Key="MutedTextBrush" Color="#A0A8B8" />
-          <SolidColorBrush x:Key="FaintTextBrush" Color="#757D8E" />
+          <SolidColorBrush x:Key="TextBrush" Color="#E4E6EA" />
+          <SolidColorBrush x:Key="MutedTextBrush" Color="#98A0AB" />
+          <SolidColorBrush x:Key="FaintTextBrush" Color="#6F7782" />
           <!-- the single accent, plus its tint for selected/active backgrounds -->
-          <SolidColorBrush x:Key="AccentBrush" Color="#4C8DFF" />
-          <SolidColorBrush x:Key="AccentHoverBrush" Color="#6AA0FF" />
-          <SolidColorBrush x:Key="AccentTintBrush" Color="#1A2A47" />
-          <SolidColorBrush x:Key="AccentTextBrush" Color="#7DAAFF" />
-          <SolidColorBrush x:Key="OnAccentBrush" Color="#0B1020" />
+          <SolidColorBrush x:Key="AccentBrush" Color="#7EA6FF" />
+          <SolidColorBrush x:Key="AccentHoverBrush" Color="#98B8FF" />
+          <SolidColorBrush x:Key="AccentTintBrush" Color="#1F2A44" />
+          <SolidColorBrush x:Key="AccentTextBrush" Color="#9DBBFF" />
+          <SolidColorBrush x:Key="OnAccentBrush" Color="#0D1424" />
           <!-- status -->
-          <SolidColorBrush x:Key="SuccessBrush" Color="#3FB68B" />
-          <SolidColorBrush x:Key="WarningBrush" Color="#E5A23C" />
-          <SolidColorBrush x:Key="DangerBrush" Color="#E5484D" />
-          <SolidColorBrush x:Key="DangerTintBrush" Color="#3A1D20" />
-          <Color x:Key="SystemAccentColor">#4C8DFF</Color>
-          <Color x:Key="SystemAccentColorLight1">#6AA0FF</Color>
-          <Color x:Key="SystemAccentColorLight2">#8DB7FF</Color>
-          <Color x:Key="SystemAccentColorDark1">#3A78E6</Color>
-          <Color x:Key="SystemAccentColorDark2">#2C63C9</Color>
+          <SolidColorBrush x:Key="SuccessBrush" Color="#4FBF93" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#E0A53F" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#EF6B6B" />
+          <SolidColorBrush x:Key="DangerTintBrush" Color="#3A1F22" />
+          <Color x:Key="SystemAccentColor">#7EA6FF</Color>
+          <Color x:Key="SystemAccentColorLight1">#98B8FF</Color>
+          <Color x:Key="SystemAccentColorLight2">#B3CBFF</Color>
+          <Color x:Key="SystemAccentColorDark1">#6890E6</Color>
+          <Color x:Key="SystemAccentColorDark2">#5478CC</Color>
 
           <!-- Fluent control resources, pointed at the tokens above so hover/pressed/focus/disabled come from them -->
           <StaticResource x:Key="ButtonBackground" ResourceKey="RaisedBrush" />
@@ -162,11 +162,12 @@
       </ResourceDictionary.ThemeDictionaries>
 
       <!-- Legacy keys some code-built controls still read. -->
-      <x:Double x:Key="ControlHeight">32</x:Double>
+      <x:Double x:Key="ControlHeight">30</x:Double>
       <x:Double x:Key="NavItemHeight">36</x:Double>
       <CornerRadius x:Key="RadiusControl">6</CornerRadius>
-      <CornerRadius x:Key="RadiusPanel">8</CornerRadius>
+      <CornerRadius x:Key="RadiusPanel">6</CornerRadius>
       <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI, Inter, sans-serif</FontFamily>
+      <FontFamily x:Key="DisplayFont">Bahnschrift SemiCondensed, Bahnschrift, Segoe UI Semibold, Segoe UI, sans-serif</FontFamily>
       <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, Menlo, monospace</FontFamily>
     </ResourceDictionary>
   </Application.Resources>

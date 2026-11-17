@@ -270,6 +270,12 @@ namespace GamepadEnhancer
 
         private void UpdateDiagramLive()
         {
+            if (dashPad != null && dashPad.IsEffectivelyVisible)
+            {
+                dashPad.Family = SelectedFamily();
+                dashPad.PressedActionMask = engine.IsConnected ? engine.LastMask : 0;
+                dashPad.Refresh();
+            }
             if (diagram == null || !diagram.IsEffectivelyVisible) return;
             lastReading = paddleSource.Read();
             paddleSeenMask |= lastReading.Mask;

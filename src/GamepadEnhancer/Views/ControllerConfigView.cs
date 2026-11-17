@@ -155,6 +155,7 @@ namespace GamepadEnhancer
         private readonly Dictionary<string, DateTime> flashes = new(StringComparer.OrdinalIgnoreCase);
         private readonly DispatcherTimer flashTimer;
         private PadFamily family = PadFamily.DualShock4;
+        private bool overview;
         private DiagramMode mode = DiagramMode.Controls;
         private string selectedId;
 
@@ -197,6 +198,13 @@ namespace GamepadEnhancer
             set { if (family != value) { family = value; InvalidateVisual(); } }
         }
 
+        /// <summary>Read-only picture of the pad (no header, connectors or label chips), cropped to the controller. Used on the dashboard.</summary>
+        public bool Overview
+        {
+            get => overview;
+            set { if (overview != value) { overview = value; InvalidateVisual(); } }
+        }
+
         public DiagramMode Mode
         {
             get => mode;
@@ -226,6 +234,14 @@ namespace GamepadEnhancer
 
         private (double Scale, double Ox, double Oy) Fit()
         {
+            if (overview)
+            {
+                // the controller body only: x 190..690, y 90..440 of the 880 x 620 drawing
+                const double vx = 190, vy = 90, vw = 500, vh = 350;
+                double k = Math.Min(Bounds.Width / vw, Bounds.Height / vh);
+                if (k <= 0 || double.IsNaN(k)) k = 1;
+                return (k, (Bounds.Width - vw * k) / 2 - vx * k, (Bounds.Height - vh * k) / 2 - vy * k);
+            }
             double s = Math.Min(Bounds.Width / ControllerLayout.Width, Bounds.Height / ControllerLayout.Height);
             if (s <= 0 || double.IsNaN(s)) s = 1;
             return (s, (Bounds.Width - ControllerLayout.Width * s) / 2, (Bounds.Height - ControllerLayout.Height * s) / 2);
@@ -283,12 +299,12 @@ namespace GamepadEnhancer
             context.DrawRectangle(BackdropFill, null, new Rect(Bounds.Size));
             using (context.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(ox, oy)))
             {
-                DrawHeader(context);
+                if (!overview) DrawHeader(context);
                 if (mode == DiagramMode.Paddles) DrawRearBody(context); else DrawBodies(context);
                 IReadOnlyList<LayoutSlot> slots = Slots();
-                foreach (LayoutSlot s in slots) DrawConnector(context, s);
+                if (!overview) foreach (LayoutSlot s in slots) DrawConnector(context, s);
                 foreach (LayoutSlot s in DrawOrder()) DrawMarker(context, s);
-                foreach (LayoutSlot s in slots) DrawChip(context, s);
+                if (!overview) foreach (LayoutSlot s in slots) DrawChip(context, s);
             }
         }
 
@@ -343,6 +359,7 @@ namespace GamepadEnhancer
             }
 
             // Rear view (the same silhouette, smaller, with the paddles on its grips)
+            if (overview) return;
             DrawText(c, "REAR VIEW", 10, TextDim, new Point(440, 418), true, true);
             using (c.PushTransform(Matrix.CreateScale(0.5, 0.5) * Matrix.CreateTranslation(220, 359)))
             {

@@ -25,13 +25,13 @@ namespace GamepadEnhancer
         private string currentPage = "dashboard";
         private readonly Dictionary<string, Control> pages = new();
         private readonly List<RadioButton> navButtons = new();
-        private readonly List<TextBlock> navTexts = new();
+        private ControllerConfigView dashPad;
+        private int monitorFitPercent = 100;
         private DispatcherTimer shellTimer;
         private string loadedProfileName;
         private string activeConfigSummary = "";
         private bool activeConfigModified;
         private bool suppressLayoutSwitch;
-        private bool sidebarCompact;
         private bool wideLayout = true;
 
         // ── Startup ─────────────────────────────────────────────────────────────
@@ -43,23 +43,22 @@ namespace GamepadEnhancer
             pages["games"] = pageGames;
             pages["paddles"] = pagePaddles;
             pages["mouse"] = pageMouse;
-            pages["profiles"] = pageProfiles;
             pages["monitor"] = pageMonitor;
             pages["network"] = pageNetwork;
-            pages["settings"] = pageSettings;
 
             foreach (RadioButton rb in sidebar.GetLogicalDescendants().OfType<RadioButton>().Where(r => r.Classes.Contains("nav")))
             {
                 navButtons.Add(rb);
                 if (ToolTip.GetTip(rb) is string tip) AutomationProperties.SetName(rb, tip);
             }
-            navTexts.AddRange(sidebar.GetLogicalDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("navtext")));
 
             // the shared editor lives in a host on whichever page is showing
             if (inspectorCard.Parent is Panel holder) holder.Children.Remove(inspectorCard);
             inspectorCard.IsVisible = true;
             inspectorHostController.Child = inspectorCard;
 
+            dashPad = new ControllerConfigView { Overview = true, IsHitTestVisible = false, MinWidth = 0, MinHeight = 0, Family = SelectedFamily() };
+            dashPadHost.Child = dashPad;
             BuildLayoutSwitch();
             BuildPaddleSummary();
             dataPathLabel.Text = $"Profiles: {profilesDirectory}{Environment.NewLine}Settings: {AppSettings.DefaultPath}";
@@ -78,7 +77,12 @@ namespace GamepadEnhancer
 
         // ── Navigation ──────────────────────────────────────────────────────────
 
-        internal static readonly string[] PageKeys = { "dashboard", "controller", "games", "paddles", "mouse", "profiles", "monitor", "network", "settings" };
+        internal static readonly string[] PageKeys = { "dashboard", "controller", "games", "paddles", "mouse", "monitor", "network" };
+        private static readonly Dictionary<string, string> PageTitles = new()
+        {
+            ["dashboard"] = "DASHBOARD", ["controller"] = "CONTROLLER", ["games"] = "GAMES & PROFILES", ["paddles"] = "REAR PADDLES",
+            ["mouse"] = "MOUSE LOOK", ["monitor"] = "MONITOR", ["network"] = "NETWORK & INPUT"
+        };
         internal string CurrentPageKey => currentPage;
         internal void ShowPageForTests(string key) => NavigateTo(key);
         internal ControllerConfigView DiagramForTests => diagram;
@@ -109,6 +113,7 @@ namespace GamepadEnhancer
             EndCapture(null);
             foreach (var pair in pages) pair.Value.IsVisible = ReferenceEquals(pair.Value, page);
             currentPage = key;
+            if (PageTitles.TryGetValue(key, out string title)) pageTitleText.Text = title;
 
             if (key == "controller")
             {
@@ -144,31 +149,47 @@ namespace GamepadEnhancer
         private void ApplyShellLayout(double windowWidth)
         {
             if (sidebar == null) return;
-            bool compact = windowWidth < 900;
-            if (compact != sidebarCompact || sidebar.Width < 1)
-            {
-                sidebarCompact = compact;
-                sidebar.Width = compact ? 56 : 232;
-                foreach (TextBlock t in navTexts) t.IsVisible = !compact;
-                sidebarFooter.IsVisible = !compact;
-                foreach (RadioButton rb in navButtons) rb.Padding = compact ? new Thickness(0) : new Thickness(10, 0);
-                foreach (RadioButton rb in navButtons) rb.HorizontalContentAlignment = compact ? HorizontalAlignment.Center : HorizontalAlignment.Left;
-            }
-
             double content = windowWidth - sidebar.Width;
             bool wide = content >= 980;
             wideLayout = wide;
-            dashTiles.Columns = content >= 1000 ? 4 : 2;
-            Arrange2(controllerGrid, diagramPanel, inspectorHostController, wide, "*,16,380");
-            Arrange2(paddleGrid, paddleDiagramPanel, paddleSidePanel, wide, "*,16,380");
-            Arrange2(dashLower, dashConfigSection, dashQuickSection, content >= 900, "*,16,*");
-            Arrange2(gamesGrid, gameListSection, gameDetailSection, content >= 900, "360,16,*");
-            Arrange2(profilesGrid, profileListSection, profileEditSection, content >= 900, "360,16,*");
-            Arrange2(networkGrid, netReceiveSection, netSendSection, content >= 900, "*,16,*");
-            double h = Math.Clamp(content * 0.5, 360, 580);
-            diagramHost.Height = wide ? Math.Clamp(content - 380 - 100, 360, 600) * 0.95 : Math.Clamp(content * 0.62, 320, 560);
-            paddleDiagramHost.Height = wide ? Math.Clamp(content - 380 - 100, 320, 560) * 0.9 : Math.Clamp(content * 0.56, 300, 520);
-            _ = h;
+            Arrange2(dashGrid, dashMain, dashSide, content >= 1000, "*,24,320");
+            Arrange2(controllerGrid, diagramPanel, inspectorHostController, wide, "*,16,310");
+            Arrange2(paddleGrid, paddleDiagramPanel, paddleSidePanel, wide, "*,16,310");
+            Arrange2(gamesGrid, gamesLeft, gameDetailSection, content >= 900, "320,16,*");
+            ArrangeN(networkGrid, new Control[] { netReceiveSection, netSendSection, netInputSection }, content >= 1180);
+            ArrangeN(monitorStages, new Control[] { monitorStagePhysical, monitorStageProcessed, monitorStageFinal }, content >= 1000, 12);
+
+            double controllerH = wide ? Math.Clamp(content - 310 - 90, 380, 640) * 0.78 : Math.Clamp(content * 0.62, 320, 560);
+            diagramHost.Height = controllerH;
+            paddleDiagramHost.Height = wide ? Math.Clamp(content - 310 - 90, 340, 600) * 0.7 : Math.Clamp(content * 0.56, 300, 520);
+            dashPadHost.Height = Math.Clamp(content * 0.3, 260, 440);
+
+            // three monitor stages across: shrink the drawn controllers to fit the column
+            int fit = 100;
+            if (content >= 1000)
+            {
+                double col = (content - 40 - 2 * 12 - 2 * 24) / 3;
+                fit = (int)Math.Clamp(col / ControllerView.CanvasW * 100, 50, 100);
+            }
+            if (fit != monitorFitPercent)
+            {
+                monitorFitPercent = fit;
+                if (monitorPanels != null) ApplyMonitorSettings();
+            }
+        }
+
+        /// <summary>Lays three or more children in one row (wide) or one above the other (narrow), keeping any existing gap columns.</summary>
+        private static void ArrangeN(Grid grid, Control[] items, bool wide, double gap = 16)
+        {
+            string cols = wide ? string.Join("," + gap + ",", items.Select(_ => "*")) : "*";
+            grid.ColumnDefinitions = new ColumnDefinitions(cols);
+            grid.RowDefinitions = new RowDefinitions(wide ? "Auto" : string.Join(",", items.Select(_ => "Auto")));
+            for (int i = 0; i < items.Length; i++)
+            {
+                Grid.SetColumn(items[i], wide ? i * 2 : 0);
+                Grid.SetRow(items[i], wide ? 0 : i);
+                items[i].Margin = wide || i == 0 ? new Thickness(0) : new Thickness(0, 14, 0, 0);
+            }
         }
 
         /// <summary>Lays two children side by side (wide) or one above the other (narrow) in the same grid.</summary>
@@ -221,8 +242,7 @@ namespace GamepadEnhancer
             {
                 case "dashboard": RefreshDashboard(); break;
                 case "paddles": RefreshPaddlePage(); break;
-                case "network": RefreshNetworkBadges(); break;
-                case "settings": RefreshBlockBadge(); break;
+                case "network": RefreshNetworkBadges(); RefreshBlockBadge(); break;
             }
         }
 
@@ -236,8 +256,8 @@ namespace GamepadEnhancer
             else
                 statusBarBadge.Set(BadgeState.Off, $"Not connected · {layout.Name} selected");
             statusBarConfig.Text = activeGame.DisplayName + (string.IsNullOrEmpty(loadedProfileName) ? "" : $" · profile {loadedProfileName}");
-            dashConnectButton.IsEnabled = !engine.IsConnected;
-            dashDisconnectButton.IsEnabled = engine.IsConnected;
+            connectButton.IsVisible = !engine.IsConnected;
+            disconnectButton.IsVisible = engine.IsConnected;
         }
 
         private void RefreshDashboard()
@@ -246,14 +266,16 @@ namespace GamepadEnhancer
             if (engine.IsConnected)
             {
                 dashVirtualBadge.Set(BadgeState.Ok, "Connected");
-                dashVirtualDetail.Text = ControllerLayouts.ForDevice(engine.Family).Title;
+                dashVirtualTitle.Text = ControllerLayouts.ForDevice(engine.Family).Title;
+                dashVirtualDetail.Text = engine.IsRemote ? "Sending to another PC" : "ViGEmBus on this PC";
                 dashOutputBadge.Set(BadgeState.Ok, engine.IsRemote ? "Sending to another PC" : "ViGEm (this PC)");
                 dashOutputDetail.Text = engine.IsRemote ? $"{appSettings.RemoteHost}:{appSettings.RemotePort}" : "ViGEmBus virtual device";
             }
             else
             {
                 dashVirtualBadge.Set(BadgeState.Off, "Not connected");
-                dashVirtualDetail.Text = $"{layout.Title} selected";
+                dashVirtualTitle.Text = layout.Title;
+                dashVirtualDetail.Text = "Selected · not connected";
                 dashOutputBadge.Set(BadgeState.Off, "Idle");
                 dashOutputDetail.Text = appSettings.RemoteSendEnabled ? $"Will send to {appSettings.RemoteHost}:{appSettings.RemotePort}" : "Will use ViGEmBus on this PC (it must be installed)";
             }
@@ -282,8 +304,10 @@ namespace GamepadEnhancer
             }
 
             dashConfigText.Text = activeGame.DisplayName;
-            dashConfigDetail.Text = $"Loaded: {activeConfigSummary}";
-            dashProfileText.Text = string.IsNullOrEmpty(loadedProfileName) ? "Profile: none loaded (profiles are files you load on the Profiles page)" : $"Profile: {loadedProfileName}";
+            dashPad.Family = SelectedFamily();
+            dashConfigDetail.Text = activeConfigSummary;
+            dashProfileTitle.Text = string.IsNullOrEmpty(loadedProfileName) ? "None loaded" : loadedProfileName;
+            dashProfileText.Text = string.IsNullOrEmpty(loadedProfileName) ? "profiles are files you load" : "loaded profile file";
             dashMouseText.Text = mouseLookBox.IsChecked == true ? "On" : "Off";
             int assigned = paddleSettings.Count(p => p.IsActive);
             dashPaddleText.Text = assigned == 0 ? "None assigned" : $"{assigned} of {PaddleSlots.Count} active";
@@ -372,7 +396,7 @@ namespace GamepadEnhancer
         private void RefreshGameViews()
         {
             if (!shellReady || gameDetailName == null) return;
-            string key = $"{activeGame.Id}|{activeSource}|{activeConfigModified}|{ActiveLayout().Id}|{gameStore?.HasUser(activeGame.Id)}";
+            string key = $"{activeGame.Id}|{activeSource}|{activeConfigModified}|{ActiveLayout().Id}|{gameStore?.HasUser(activeGame.Id)}|{string.Join(",", Inputs.Buttons.Select(SlotMappingText))}";
             if (key == lastGameViewKey) return;
             lastGameViewKey = key;
 
@@ -394,12 +418,15 @@ namespace GamepadEnhancer
             {
                 string text = activeGame.NativeLabel(input);
                 if (text == null) continue;
-                var row = new Grid { ColumnDefinitions = new ColumnDefinitions("120,*"), Margin = new Thickness(0, 0, 0, 6) };
-                row.Children.Add(new TextBlock { Text = layout.Label(input), Classes = { "caption" }, FontWeight = Avalonia.Media.FontWeight.SemiBold });
-                var action = new TextBlock { Text = text, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
+                var row = new Grid { ColumnDefinitions = new ColumnDefinitions("110,*,Auto"), Margin = new Thickness(0, 0, 0, 0) };
+                row.Children.Add(new TextBlock { Text = layout.Label(input), FontWeight = Avalonia.Media.FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+                var action = new TextBlock { Text = text, Classes = { "caption" }, TextWrapping = Avalonia.Media.TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
                 Grid.SetColumn(action, 1);
                 row.Children.Add(action);
-                rows.Add(row);
+                var key = new Border { Classes = { "kbd" }, Child = new TextBlock { Text = SlotMappingText(input), Classes = { "mono" } } };
+                Grid.SetColumn(key, 2);
+                row.Children.Add(key);
+                rows.Add(new Border { Padding = new Thickness(0, 7), BorderThickness = new Thickness(0, 0, 0, 1), BorderBrush = (Avalonia.Media.IBrush)(Application.Current.FindResource("BorderBrushSubtle") ?? Avalonia.Media.Brushes.Transparent), Child = row });
             }
             gameNativeList.ItemsSource = rows;
             gameNativeEmpty.IsVisible = rows.Count == 0;

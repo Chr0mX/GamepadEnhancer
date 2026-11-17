@@ -35,7 +35,7 @@ namespace GamepadEnhancer
         private NetworkApiServer networkApi;
         private bool suppressNetworkChange;
         private bool suppressInputMethodChange;
-        private MonitorPanel monitorPanel;
+        private MonitorPanel[] monitorPanels;   // physical, processed and final, shown side by side
         private MonitorWindow monitorWindow;
         private bool suppressMonitorChange;
 
@@ -626,6 +626,8 @@ namespace GamepadEnhancer
         {
             connectButton.IsEnabled = !connected;
             disconnectButton.IsEnabled = connected;
+            connectButton.IsVisible = !connected;
+            disconnectButton.IsVisible = connected;
             if (!connected) statusLabel.Text = "Status: Not connected";
             UpdateActiveControllerLabel();
             RefreshShellStatus();
@@ -866,8 +868,15 @@ namespace GamepadEnhancer
             monitorOverlayBox.IsChecked = appSettings.MonitorOverlayMode;
             suppressMonitorChange = false;
 
-            monitorPanel = new MonitorPanel(engine);
-            monitorHost.Child = monitorPanel;
+            monitorPanels = new[]
+            {
+                new MonitorPanel(engine) { View = PadView.Physical },
+                new MonitorPanel(engine) { View = PadView.Processed },
+                new MonitorPanel(engine) { View = PadView.Final }
+            };
+            monitorHostPhysical.Child = monitorPanels[0];
+            monitorHostProcessed.Child = monitorPanels[1];
+            monitorHostFinal.Child = monitorPanels[2];
             ApplyMonitorSettings();
         }
 
@@ -883,10 +892,13 @@ namespace GamepadEnhancer
             appSettings.MonitorOverlayMode = monitorOverlayBox.IsChecked == true;
 
             PadView view = SelectedMonitorView();
-            monitorPanel.View = view;
-            monitorPanel.RefreshHz = appSettings.MonitorRefreshHz;
-            monitorPanel.ScalePercent = appSettings.MonitorScalePercent;
-            monitorPanel.Compact = appSettings.MonitorCompact;
+            int scale = Math.Min(appSettings.MonitorScalePercent, monitorFitPercent);
+            foreach (MonitorPanel p in monitorPanels)
+            {
+                p.RefreshHz = appSettings.MonitorRefreshHz;
+                p.ScalePercent = scale;
+                p.Compact = appSettings.MonitorCompact;
+            }
             monitorViewHint.Text = ViewHint(view);
             monitorPopoutButton.IsEnabled = appSettings.MonitorEnabled;
 
@@ -928,10 +940,13 @@ namespace GamepadEnhancer
         /// <summary>The tab view only draws (and only asks the engine for snapshots) while it can be seen.</summary>
         private void UpdateMonitorRunning()
         {
-            if (monitorPanel == null) return;
+            if (monitorPanels == null) return;
             bool visible = currentPage == "monitor" && WindowState != WindowState.Minimized;
-            if (appSettings.MonitorEnabled && visible) monitorPanel.Start();
-            else monitorPanel.Stop();
+            foreach (MonitorPanel p in monitorPanels)
+            {
+                if (appSettings.MonitorEnabled && visible) p.Start();
+                else p.Stop();
+            }
         }
 
         private void MonitorPopout_Click(object sender, RoutedEventArgs e)
@@ -960,7 +975,7 @@ namespace GamepadEnhancer
         protected override void OnClosed(EventArgs e)
         {
             StopGames();
-            try { monitorPanel?.Stop(); } catch { }
+            try { if (monitorPanels != null) foreach (MonitorPanel p in monitorPanels) p.Stop(); } catch { }
             try { monitorWindow?.Close(); } catch { }
             try { networkApi?.Dispose(); } catch { }
             try { blockTimer?.Stop(); } catch { }
