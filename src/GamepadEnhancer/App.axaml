@@ -42,6 +42,50 @@
           <Color x:Key="SystemAccentColorLight2">#8DB7FF</Color>
           <Color x:Key="SystemAccentColorDark1">#3A78E6</Color>
           <Color x:Key="SystemAccentColorDark2">#2C63C9</Color>
+
+          <!-- Fluent control resources, pointed at the tokens above so hover/pressed/focus/disabled come from them -->
+          <StaticResource x:Key="ButtonBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
+          <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="PressedBrush" />
+          <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ButtonForeground" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ButtonForegroundDisabled" ResourceKey="FaintTextBrush" />
+          <StaticResource x:Key="ButtonBorderBrush" ResourceKey="BorderBrushDefault" />
+          <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="BorderBrushStrong" />
+          <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <StaticResource x:Key="TextControlBackground" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="SidebarBrush" />
+          <StaticResource x:Key="TextControlBorderBrush" ResourceKey="BorderBrushDefault" />
+          <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="AccentBrush" />
+          <StaticResource x:Key="TextControlBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <StaticResource x:Key="TextControlForeground" ResourceKey="TextBrush" />
+          <StaticResource x:Key="TextControlForegroundPointerOver" ResourceKey="TextBrush" />
+          <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="TextBrush" />
+          <StaticResource x:Key="TextControlForegroundDisabled" ResourceKey="FaintTextBrush" />
+          <StaticResource x:Key="TextControlPlaceholderForeground" ResourceKey="FaintTextBrush" />
+          <StaticResource x:Key="ComboBoxBackground" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="SidebarBrush" />
+          <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderBrushDefault" />
+          <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="AccentBrush" />
+          <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="BorderBrushDefault" />
+          <StaticResource x:Key="ListBoxItemBackgroundPointerOver" ResourceKey="HoverBrush" />
+          <StaticResource x:Key="ListBoxItemBackgroundSelected" ResourceKey="AccentTintBrush" />
+          <StaticResource x:Key="ListBoxItemBackgroundSelectedPointerOver" ResourceKey="AccentTintBrush" />
+          <StaticResource x:Key="ListBoxItemBackgroundSelectedPressed" ResourceKey="AccentTintBrush" />
+          <StaticResource x:Key="ToolTipBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ToolTipForeground" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ToolTipBorderBrush" ResourceKey="BorderBrushStrong" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="CanvasBrush" Color="#F3F4F7" />
@@ -70,6 +114,50 @@
           <Color x:Key="SystemAccentColorLight2">#6B9BF3</Color>
           <Color x:Key="SystemAccentColorDark1">#2559C4</Color>
           <Color x:Key="SystemAccentColorDark2">#1C47A0</Color>
+
+          <!-- Fluent control resources, pointed at the tokens above so hover/pressed/focus/disabled come from them -->
+          <StaticResource x:Key="ButtonBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
+          <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="PressedBrush" />
+          <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ButtonForeground" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ButtonForegroundDisabled" ResourceKey="FaintTextBrush" />
+          <StaticResource x:Key="ButtonBorderBrush" ResourceKey="BorderBrushDefault" />
+          <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="BorderBrushStrong" />
+          <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <StaticResource x:Key="TextControlBackground" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="SidebarBrush" />
+          <StaticResource x:Key="TextControlBorderBrush" ResourceKey="BorderBrushDefault" />
+          <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="AccentBrush" />
+          <StaticResource x:Key="TextControlBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <StaticResource x:Key="TextControlForeground" ResourceKey="TextBrush" />
+          <StaticResource x:Key="TextControlForegroundPointerOver" ResourceKey="TextBrush" />
+          <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="TextBrush" />
+          <StaticResource x:Key="TextControlForegroundDisabled" ResourceKey="FaintTextBrush" />
+          <StaticResource x:Key="TextControlPlaceholderForeground" ResourceKey="FaintTextBrush" />
+          <StaticResource x:Key="ComboBoxBackground" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="SurfaceBrush" />
+          <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="SidebarBrush" />
+          <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderBrushDefault" />
+          <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="BorderBrushStrong" />
+          <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="AccentBrush" />
+          <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="BorderBrushSubtle" />
+          <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="BorderBrushDefault" />
+          <StaticResource x:Key="ListBoxItemBackgroundPointerOver" ResourceKey="HoverBrush" />
+          <StaticResource x:Key="ListBoxItemBackgroundSelected" ResourceKey="AccentTintBrush" />
+          <StaticResource x:Key="ListBoxItemBackgroundSelectedPointerOver" ResourceKey="AccentTintBrush" />
+          <StaticResource x:Key="ListBoxItemBackgroundSelectedPressed" ResourceKey="AccentTintBrush" />
+          <StaticResource x:Key="ToolTipBackground" ResourceKey="RaisedBrush" />
+          <StaticResource x:Key="ToolTipForeground" ResourceKey="TextBrush" />
+          <StaticResource x:Key="ToolTipBorderBrush" ResourceKey="BorderBrushStrong" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
 
