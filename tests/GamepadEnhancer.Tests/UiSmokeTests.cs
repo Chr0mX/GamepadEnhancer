@@ -244,5 +244,49 @@ namespace GamepadEnhancer.Tests
             }
             window.Close();
         }
+
+        [AvaloniaFact]
+        public void BindingRowsHighlightOnlyWhileTheBindingIsReallyRunning()
+        {
+            var window = new MainWindow();
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            window.ShowPageForTests("bindings");
+            window.SetLiveForTests(true);
+
+            var held = new BindingDef { Id = "held", Input = "Space", Condition = BindingCondition.Held,
+                Outputs = new[] { new BindingOutput { Kind = BindingOutputKind.PadButton, Name = "FACE_SOUTH" } } };
+            var latch = new BindingDef { Id = "latch", Input = "F", Condition = BindingCondition.Press, Toggle = true,
+                Outputs = new[] { new BindingOutput { Kind = BindingOutputKind.PadButton, Name = "RB" } } };
+            var off = new BindingDef { Id = "off", Input = "G", Condition = BindingCondition.Held, Enabled = false };
+            window.AddBindingForTests(held); window.AddBindingForTests(latch); window.AddBindingForTests(off);
+            Dispatcher.UIThread.RunJobs();
+            BindingRuntime rt = window.BindingRuntimeForTests;
+
+            // enabled but idle: not highlighted
+            rt.Update(10); window.RefreshBindingStatusForTests();
+            Assert.False(window.RowHasClassForTests("held", "running"));
+            Assert.Equal("Waiting for input", window.RowStatusForTests("held"));
+            Assert.Equal("Disabled", window.RowStatusForTests("off"));
+
+            // the input goes down: the row lights up at once, and goes dark when it is released
+            rt.OnEdge("Space", true, 20); rt.Update(20); window.RefreshBindingStatusForTests();
+            Assert.True(window.RowHasClassForTests("held", "running"));
+            Assert.Equal("Running", window.RowStatusForTests("held"));
+            rt.OnEdge("Space", false, 40); rt.Update(40); window.RefreshBindingStatusForTests();
+            Assert.False(window.RowHasClassForTests("held", "running"));
+
+            // a toggled binding stays lit after the input is released, until the next press
+            rt.OnEdge("F", true, 50); rt.OnEdge("F", false, 70); rt.Update(80); window.RefreshBindingStatusForTests();
+            Assert.True(window.RowHasClassForTests("latch", "latched"));
+            Assert.Equal("Toggled active", window.RowStatusForTests("latch"));
+            rt.OnEdge("F", true, 500); rt.OnEdge("F", false, 520); rt.Update(530); window.RefreshBindingStatusForTests();
+            Assert.False(window.RowHasClassForTests("latch", "latched"));
+
+            // not connected: nothing can be running, whatever the settings say
+            window.SetLiveForTests(false); window.RefreshBindingStatusForTests();
+            Assert.Equal("Not connected", window.RowStatusForTests("held"));
+            window.Close();
+        }
     }
 }

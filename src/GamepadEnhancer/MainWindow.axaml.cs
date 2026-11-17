@@ -213,6 +213,7 @@ namespace GamepadEnhancer
                 MouseReleaseMs = (int)(mouseReleaseBox.Value ?? 30m),
                 MouseInvertY = mouseInvertYBox.IsChecked == true,
                 Paddles = (PaddleSetting[])paddleSettings.Clone(),
+                AdvancedBindings = advancedBindings.ToArray(),
                 PaddleSourceIndex = (int[])paddleSourceMap.Clone(),
                 Bindings = bindings
             };
@@ -672,6 +673,7 @@ namespace GamepadEnhancer
             MouseReleaseMs = (int)(mouseReleaseBox.Value ?? 30m),
             MouseInvertY = mouseInvertYBox.IsChecked == true,
             Paddles = PaddleMappings.Build(paddleSettings),
+            AdvancedBindings = BindingEntries.Build(advancedBindings),
             Mappings = ProfileMappings.Build(ControllerEngine.BindingActions.Select(a =>
             {
                 BindingControlSet c = bindingControls[a];
@@ -704,6 +706,7 @@ namespace GamepadEnhancer
             mouseInvertYBox.IsChecked = profile.MouseInvertY;
 
             paddleSettings = PaddleMappings.Resolve(profile);
+            LoadAdvancedBindings(profile.AdvancedBindings);
             Dictionary<string, MappingEntry> map = ProfileMappings.Resolve(profile);
             foreach (string action in ControllerEngine.BindingActions)
             {

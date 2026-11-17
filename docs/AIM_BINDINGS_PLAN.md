@@ -1,6 +1,6 @@
 # Aim Settings and Advanced Bindings: audit and plan
 
-Status: **audit and plan only. No feature code has been written.** Branch `MIX`.
+Status: audit and plan. **Phase 1 (binding foundation, conditions, toggle, running state) is now written** (see BINDINGS.md); Phases 2-5 are not started. Branch `MIX`.
 
 ## 1. What the repository actually is (audit)
 

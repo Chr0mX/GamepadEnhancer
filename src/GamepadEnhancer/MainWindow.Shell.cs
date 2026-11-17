@@ -47,6 +47,7 @@ namespace GamepadEnhancer
             pages["mouse"] = pageMouse;
             pages["monitor"] = pageMonitor;
             pages["network"] = pageNetwork;
+            pages["bindings"] = pageBindings;
 
             foreach (RadioButton rb in sidebar.GetLogicalDescendants().OfType<RadioButton>().Where(r => r.Classes.Contains("nav")))
             {
@@ -81,6 +82,7 @@ namespace GamepadEnhancer
             shellTimer.Start();
 
             shellReady = true;
+            InitializeBindingsPage();
             ApplyPaddleSupport();
             ShowPage("dashboard");
             SyncLayoutSwitch();
@@ -91,10 +93,10 @@ namespace GamepadEnhancer
 
         // ── Navigation ──────────────────────────────────────────────────────────
 
-        internal static readonly string[] PageKeys = { "dashboard", "controller", "games", "paddles", "mouse", "monitor", "network" };
+        internal static readonly string[] PageKeys = { "dashboard", "controller", "bindings", "games", "paddles", "mouse", "monitor", "network" };
         private static readonly Dictionary<string, string> PageTitles = new()
         {
-            ["dashboard"] = "DASHBOARD", ["controller"] = "CONTROLLER", ["games"] = "GAMES & PROFILES", ["paddles"] = "REAR PADDLES",
+            ["dashboard"] = "DASHBOARD", ["controller"] = "CONTROLLER", ["bindings"] = "BINDINGS", ["games"] = "GAMES & PROFILES", ["paddles"] = "REAR PADDLES",
             ["mouse"] = "MOUSE LOOK", ["monitor"] = "MONITOR", ["network"] = "NETWORK & INPUT"
         };
         internal string CurrentPageKey => currentPage;
@@ -156,6 +158,7 @@ namespace GamepadEnhancer
             }
             SetScopeActive(key == "mouse");
             SetDashActive(key == "dashboard");
+            SetBindingsPageActive(key == "bindings");
             UpdateMonitorRunning();
             RefreshShell();
         }

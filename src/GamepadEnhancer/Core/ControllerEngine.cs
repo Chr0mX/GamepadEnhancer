@@ -76,6 +76,8 @@ namespace GamepadEnhancer
         public volatile IPaddleSource PaddleSource;
         /// <summary>Rear paddle processing and keyboard / mouse injection.</summary>
         public PaddleProcessor Paddles { get; } = new();
+        /// <summary>Advanced bindings: conditions, toggle, output ownership. The engine only feeds it edges and reads its outputs.</summary>
+        internal BindingRuntime Bindings { get; } = new();
         private volatile int lastMask;
         /// <summary>Pad-action bits pressed at the last tick (for live feedback in the UI).</summary>
         public int LastMask => lastMask;
@@ -101,7 +103,11 @@ namespace GamepadEnhancer
         public EngineSettings Settings
         {
             get => settings;
-            set => settings = value ?? EngineSettings.Default;
+            set
+            {
+                settings = value ?? EngineSettings.Default;
+                Bindings.SetBindings(settings.AdvancedBindings);
+            }
         }
 
         /// <summary>Raised from the engine thread (or hook thread) whenever the status line changes.</summary>
@@ -157,6 +163,8 @@ namespace GamepadEnhancer
             lock (sync) ResetState();
             Paddles.ReleaseAll();   // nothing a paddle was holding may stay pressed
             Paddles.Flush();
+            Bindings.ReleaseAll();  // nor anything a binding was holding (latched toggles included)
+            Bindings.Flush(Paddles.Injector);
             lastMask = 0;
             IsRemote = false;
             Snapshots.Reset(Family, false, false);
@@ -186,6 +194,7 @@ namespace GamepadEnhancer
             submitPending = false;
             turboHeldSinceMs.Clear();
             wheelPulseUntilMs.Clear();
+            Bindings.ReleaseAll();
             mouseLook.Reset();
             padLx = padLy = 0.0;
             Remote.Clear();
@@ -197,22 +206,24 @@ namespace GamepadEnhancer
 
         public void OnKey(string name, bool isDown)
         {
-            if (Paddles.IsInjected(name)) return;   // a key a paddle is pressing itself, not the user's input
+            if (Paddles.IsInjected(name) || Bindings.IsInjected(name)) return;   // a key a paddle or a binding is pressing itself, not the user's input
             lock (sync)
             {
                 if (isDown) activeKeys.Add(name); else activeKeys.Remove(name);
             }
+            Bindings.OnEdge(name, isDown, NowMs());
         }
 
         /// <summary>Mouse button event; <paramref name="button"/> is "Mouse Left", "Mouse Right", "Mouse Middle", "Mouse X1" or "Mouse X2".</summary>
         public void OnMouseButton(string button, bool isDown)
         {
             // Mouse buttons can be bound to pad actions like keys ("Mouse Left", "Mouse X1", ...).
-            if (Paddles.IsInjected(button)) return;
+            if (Paddles.IsInjected(button) || Bindings.IsInjected(button)) return;
             lock (sync)
             {
                 if (isDown) activeKeys.Add(button); else activeKeys.Remove(button);
             }
+            Bindings.OnEdge(button, isDown, NowMs());
         }
 
         public void OnWheel(int direction)
@@ -225,6 +236,7 @@ namespace GamepadEnhancer
                     string name = direction > 0 ? MouseInputNames.WheelUp : MouseInputNames.WheelDown;
                     activeKeys.Add(name);
                     wheelPulseUntilMs[name] = NowMs() + WheelPulseMs;
+                    Bindings.OnEdge(name, true, NowMs());
                 }
             }
         }
@@ -242,7 +254,7 @@ namespace GamepadEnhancer
             foreach (var pair in wheelPulseUntilMs)
                 if (now >= pair.Value) (done ??= new List<string>()).Add(pair.Key);
             if (done == null) return;
-            foreach (string name in done) { wheelPulseUntilMs.Remove(name); activeKeys.Remove(name); }
+            foreach (string name in done) { wheelPulseUntilMs.Remove(name); activeKeys.Remove(name); Bindings.OnEdge(name, false, now); }
         }
 
         private long NowMs() => clock.ElapsedMilliseconds;
@@ -263,6 +275,7 @@ namespace GamepadEnhancer
                     {
                         Tick();
                         Paddles.Flush();   // paddle -> key / mouse presses, sent outside the engine lock
+                        Bindings.Flush(Paddles.Injector);   // binding key / mouse outputs, likewise
                         if (submitPending)
                         {
                             submitPending = false;
@@ -324,7 +337,9 @@ namespace GamepadEnhancer
 
                 RemoteFrame rf = Remote.Snapshot(now);
                 int paddleMask = Paddles.Update(ReadPaddles(), s.Paddles, s.PaddleSourceIndex);
-                int mask = PressedMask(s, now) | rf.ButtonMask | paddleMask;
+                Bindings.Update(now);
+                int baseMask = PressedMask(s, now) | rf.ButtonMask | paddleMask;
+                int mask = baseMask | Bindings.PadMask;
                 lastMask = mask;
                 if (useXbox && xbox != null)
                 {
@@ -334,6 +349,9 @@ namespace GamepadEnhancer
                     xbox.SetAxisValue(Xbox360Axis.RightThumbX, rx);
                     xbox.SetAxisValue(Xbox360Axis.RightThumbY, rsY);
                     ApplyXboxBindings(mask);
+                    byte bl = Bindings.TriggerLevel(true), br = Bindings.TriggerLevel(false);   // binding triggers can be partial pulls
+                    if (bl > 0 && !Has(baseMask, ActionLtL2)) xbox.SetSliderValue(Xbox360Slider.LeftTrigger, bl);
+                    if (br > 0 && !Has(baseMask, ActionRtR2)) xbox.SetSliderValue(Xbox360Slider.RightTrigger, br);
                     ApplyXboxLeftAndTriggers(rf, mask);
                     MarkReport(rx, rsY, mask, now, rf.Signature);
                     if (Snapshots.Enabled)
@@ -348,6 +366,9 @@ namespace GamepadEnhancer
                     ds4.SetAxisValue(DualShock4Axis.RightThumbX, rx);
                     ds4.SetAxisValue(DualShock4Axis.RightThumbY, rsY);
                     ApplyDs4Bindings(mask);
+                    byte bl = Bindings.TriggerLevel(true), br = Bindings.TriggerLevel(false);
+                    if (bl > 0 && !Has(baseMask, ActionLtL2)) ds4.SetSliderValue(DualShock4Slider.LeftTrigger, bl);
+                    if (br > 0 && !Has(baseMask, ActionRtR2)) ds4.SetSliderValue(DualShock4Slider.RightTrigger, br);
                     ApplyDs4LeftAndTriggers(rf, mask);
                     MarkReport(rx, rsY, mask, now, rf.Signature);
                     if (Snapshots.Enabled)
@@ -380,6 +401,7 @@ namespace GamepadEnhancer
             {
                 if (s.Bindings.TryGetValue(BindingActions[i], out BindingSetting b)
                     && !string.Equals(b.Key, "None", StringComparison.OrdinalIgnoreCase)
+                    && !Bindings.Suppresses(b.Key)
                     && activeKeys.Contains(b.Key))
                     mask |= 1 << i;
             }
@@ -537,6 +559,7 @@ namespace GamepadEnhancer
                 turboHeldSinceMs.Remove(action);
                 return false;
             }
+            if (Bindings.Suppresses(b.Key)) { turboHeldSinceMs.Remove(action); return false; }   // a manual binding owns this input
             if (!activeKeys.Contains(b.Key)) { turboHeldSinceMs.Remove(action); return false; }
             if (!b.Turbo) { turboHeldSinceMs.Remove(action); return true; }
 

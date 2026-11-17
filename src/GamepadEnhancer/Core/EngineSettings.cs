@@ -31,6 +31,8 @@ namespace GamepadEnhancer
         public PaddleSetting[] Paddles { get; init; } = Array.Empty<PaddleSetting>();
         /// <summary>Hardware paddle index (0..3) feeding each slot; null = 0,1,2,3.</summary>
         public int[] PaddleSourceIndex { get; init; }
+        /// <summary>Advanced bindings (conditions, toggle, several outputs). Empty = none; the simple <see cref="Bindings"/> above keep working as the automatic bindings.</summary>
+        public BindingDef[] AdvancedBindings { get; init; } = Array.Empty<BindingDef>();
         public Dictionary<string, BindingSetting> Bindings { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }

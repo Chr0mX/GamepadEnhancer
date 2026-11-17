@@ -269,6 +269,7 @@ namespace GamepadEnhancer
                 MappingEntry x = ma[action], y = mb[action];
                 if (!string.Equals(x.Input, y.Input, StringComparison.OrdinalIgnoreCase) || x.Turbo != y.Turbo || x.TurboHz != y.TurboHz) return false;
             }
+            if (!BindingEntries.Equivalent(BindingEntries.Resolve(a.AdvancedBindings), BindingEntries.Resolve(b.AdvancedBindings))) return false;
             PaddleSetting[] pa = PaddleMappings.Resolve(a), pb = PaddleMappings.Resolve(b);
             for (int i = 0; i < PaddleSlots.Count; i++)
                 if (pa[i].Enabled != pb[i].Enabled || pa[i].Kind != pb[i].Kind || !string.Equals(pa[i].Input, pb[i].Input, StringComparison.OrdinalIgnoreCase)) return false;

@@ -118,6 +118,16 @@
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="12" />
   </Style>
+  <!-- a binding that is executing right now; "latched" is a toggled binding that keeps running after the input is released -->
+  <Style Selector="Border.bindrow.running">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+  </Style>
+  <Style Selector="Border.bindrow.latched">
+    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
   <Style Selector="Border.rowline">
     <Setter Property="Padding" Value="0,7" />
     <Setter Property="BorderThickness" Value="0,0,0,1" />

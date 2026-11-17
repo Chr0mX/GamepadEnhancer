@@ -48,6 +48,10 @@ namespace GamepadEnhancer
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public Dictionary<string, PaddleEntry> Paddles { get; set; }
 
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        /// <summary>Advanced bindings (input + condition + toggle + outputs). Missing or null = none; older files and older apps are unaffected.</summary>
+        public List<BindingEntry> AdvancedBindings { get; set; }
+
         /// <summary>Action name -> binding. Null only in profiles written by older builds.</summary>
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public Dictionary<string, MappingEntry> Mappings { get; set; }
@@ -211,6 +215,7 @@ namespace GamepadEnhancer
             p.TurboHz = null;
 
             if (p.Paddles != null) p.Paddles = PaddleMappings.Build(PaddleMappings.Resolve(p, warnings));
+            p.AdvancedBindings = BindingEntries.Build(BindingEntries.Resolve(p.AdvancedBindings, warnings));
 
             p.Schema = 2;
             p.ControllerType = ControllerLayouts.Get(p.ControllerType).Id;
