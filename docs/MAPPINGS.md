@@ -36,6 +36,10 @@ Where a binding had alternatives, the first one is used and the rest stay one cl
 
 The Action / RPG variant of the triggers and bumpers (Left/Right click on R1/L1 and so on) is not shipped as its own config; pick those keys in the editor. PrtSc is not a bindable key.
 
+## Default (Xbox 360) config
+
+Same keys as the PS4 Default (A = Cross, B = Circle, X = Square, Y = Triangle, LB / RB = L1 / R1, LT / RT = L2 / R2, LS / RS = L3 / R3, right stick = mouse, D-Pad `1 2 3 4`), with two differences: **View (Back) = `M`**, and **Share / Touchpad are unbound** because the virtual Xbox 360 pad has neither (F12 and PrtSc are therefore not used; `Tab` is the other View option). Picking it selects the Xbox 360 output type when no pad is connected.
+
 ## Apex Legends config (built in)
 
 | Pad action (PS4 / Xbox) | Input | Kind |

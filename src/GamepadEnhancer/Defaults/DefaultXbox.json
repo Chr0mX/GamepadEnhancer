@@ -1,0 +1,145 @@
+{
+  "Name": "Default (Xbox 360)",
+  "ControllerType": "Xbox 360",
+  "MouseLookEnabled": true,
+  "MouseSensitivityX": 8.0,
+  "MouseSensitivityY": 8.0,
+  "MouseCurve": 1.0,
+  "MouseGameDeadZonePercent": 0,
+  "MouseReleaseMs": 30,
+  "MouseInvertY": false,
+  "Mappings": {
+    "A / Cross": {
+      "Input": "Space",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "B / Circle": {
+      "Input": "C",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "X / Square": {
+      "Input": "R",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "Y / Triangle": {
+      "Input": "Wheel Up",
+      "Kind": "MouseWheel",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "LB / L1": {
+      "Input": "Q",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "RB / R1": {
+      "Input": "G",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "LT / L2": {
+      "Input": "Mouse Right",
+      "Kind": "MouseButton",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "RT / R2": {
+      "Input": "Mouse Left",
+      "Kind": "MouseButton",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "Back / Share": {
+      "Input": "M",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "Start / Options": {
+      "Input": "Escape",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "LS / L3": {
+      "Input": "Shift",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "RS / R3": {
+      "Input": "V",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "DPad Up": {
+      "Input": "1",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "DPad Down": {
+      "Input": "2",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "DPad Left": {
+      "Input": "3",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "DPad Right": {
+      "Input": "4",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "Guide / PS": {
+      "Input": "None",
+      "Kind": "None",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "Touchpad Click": {
+      "Input": "None",
+      "Kind": "None",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "Left Stick Up": {
+      "Input": "W",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "Left Stick Down": {
+      "Input": "S",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "Left Stick Left": {
+      "Input": "A",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    },
+    "Left Stick Right": {
+      "Input": "D",
+      "Kind": "Keyboard",
+      "Turbo": false,
+      "TurboHz": 12
+    }
+  }
+}

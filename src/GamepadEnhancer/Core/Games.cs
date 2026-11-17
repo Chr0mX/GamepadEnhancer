@@ -45,7 +45,7 @@ namespace GamepadEnhancer
         public static GameDefinition Generic { get; } = new GameDefinition
         {
             Id = GenericId,
-            Name = "Default",
+            Name = "Default (PS4)",
             Verified = true,
             Source = "Built-in PS4 to keyboard + mouse default (docs/MAPPINGS.md). Any game without its own layout uses it.",
             Layout = "n/a",
@@ -96,8 +96,13 @@ namespace GamepadEnhancer
                 }
                 catch { /* a broken game file must not stop the app: that game is just missing */ }
             }
-            list.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
-            list.Insert(0, Generic);   // "Default" is listed first, then the games alphabetically
+            // the Default configs first, then the games alphabetically
+            list.Sort((a, b) =>
+            {
+                int ga = a.Id.StartsWith("default", StringComparison.Ordinal) ? 0 : 1, gb = b.Id.StartsWith("default", StringComparison.Ordinal) ? 0 : 1;
+                return ga != gb ? ga.CompareTo(gb) : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+            });
+            list.Insert(0, Generic);   // "Default (PS4)" is the very first entry
             return list;
         }
     }

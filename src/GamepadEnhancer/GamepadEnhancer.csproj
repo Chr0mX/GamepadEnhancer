@@ -15,6 +15,7 @@
   <ItemGroup>
     <!-- The default profile ships inside the app (read-only); profiles/Default.json is seeded from it on first run. -->
     <EmbeddedResource Include="Defaults\Default.json" LogicalName="GamepadEnhancer.Default.json" />
+    <EmbeddedResource Include="Defaults\DefaultXbox.json" LogicalName="GamepadEnhancer.DefaultXbox.json" />
     <!-- The built-in Apex layout (keyboard + mouse, PS4 pad); always loaded from here, never from profiles/. -->
     <EmbeddedResource Include="Defaults\Apex.json" LogicalName="GamepadEnhancer.Apex.json" />
     <!-- One JSON file per supported game (name, source of the defaults, native controller labels, default profile). Add a file to add a game. -->

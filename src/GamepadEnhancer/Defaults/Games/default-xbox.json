@@ -1,0 +1,10 @@
+{
+  "Id": "default-xbox",
+  "Name": "Default (Xbox 360)",
+  "Verified": true,
+  "Source": "Built-in Xbox 360 to keyboard + mouse default (docs/MAPPINGS.md). Same keys as the PS4 Default except View (Back) = M; the virtual Xbox 360 pad has no Share button or touchpad, so F12 is unbound.",
+  "Layout": "n/a",
+  "Notes": "Selects the Xbox 360 output type when no pad is connected.",
+  "ProfileResource": "GamepadEnhancer.DefaultXbox.json",
+  "Native": {}
+}

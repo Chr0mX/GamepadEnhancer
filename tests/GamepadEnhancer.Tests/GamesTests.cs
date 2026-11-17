@@ -87,7 +87,8 @@ namespace GamepadEnhancer.Tests
             var ids = GameCatalog.All.Select(g => g.Id).ToList();
             Assert.Equal(ids.Count, ids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
             Assert.Equal(GameCatalog.GenericId, ids[0]);
-            Assert.Equal("Default", GameCatalog.Generic.Name);
+            Assert.Equal("Default (PS4)", GameCatalog.Generic.Name);
+            Assert.Equal("default-xbox", ids[1]);
             Assert.Contains("Apex Legends", GameCatalog.All.Select(g => g.Name));
             Assert.All(ids, id => Assert.True(GameCatalog.IsValidId(id)));
         }

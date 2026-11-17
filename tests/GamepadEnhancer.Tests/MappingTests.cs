@@ -113,11 +113,32 @@ namespace GamepadEnhancer.Tests
         }
 
         [Fact]
+        public void TheXboxDefaultIsThePs4DefaultWithViewAsBackAndNoShare()
+        {
+            GameDefinition xbox = GameCatalog.Get("default-xbox");
+            Assert.Equal("Default (Xbox 360)", xbox.Name);
+            InputProfile x = GameProfiles.BuiltIn(xbox);
+            Assert.Equal("Xbox 360", x.ControllerType);
+            Assert.True(x.MouseLookEnabled);
+            var warnings = new List<string>();
+            var map = ProfileMappings.Resolve(x, warnings);
+            Assert.Empty(warnings);
+            foreach (var pair in DefaultExpected)
+            {
+                string want = pair.Key == "Back / Share" ? "M" : pair.Key == "Touchpad Click" ? "None" : pair.Value;
+                Assert.Equal(want, map[pair.Key].Input);
+            }
+            var keys = map.Values.Select(e => e.Input).Where(i => i != "None").ToList();
+            Assert.Equal(keys.Count, keys.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            Assert.False(GameProfiles.Equivalent(x, DefaultProfile.Create()));
+        }
+
+        [Fact]
         public void DefaultAndApexAreDifferentConfigs()
         {
             Assert.False(GameProfiles.Equivalent(DefaultProfile.Create(), DefaultProfile.CreateApex()));
             Assert.Equal("Apex Legends", GameProfiles.BuiltIn(GameCatalog.Get("apex")).Name);
-            Assert.Equal("Default", GameProfiles.BuiltIn(GameCatalog.Generic).Name);
+            Assert.Equal("Default (PS4)", GameProfiles.BuiltIn(GameCatalog.Generic).Name);
         }
 
         [Fact]

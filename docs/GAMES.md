@@ -27,7 +27,8 @@ Two different things are kept apart:
 |---|---|---|---|
 | Apex Legends | the Apex layout in [MAPPINGS.md](MAPPINGS.md) | verified | Apex's in-game *Controller Presets* screen, preset **Default**, stick layout **Default** (screenshot supplied by the project owner; it shows the Xbox One pad with PlayStation icons). Other presets and stick layouts are not modelled. |
 | Call of Duty: Warzone | none yet | **not verified yet, nothing is shown** | The native layout could not be read from an authoritative source while building this. Guides suggest Circle = crouch / prone / slide, R3 = melee, touchpad = map, Options = pause menu, but the rest is unconfirmed, so no label or binding is shipped. |
-| Default | the PS4 to keyboard + mouse layout in [MAPPINGS.md](MAPPINGS.md) | none | global fallback for every game without its own layout |
+| Default (Xbox 360) | the same keys as Default (PS4) with View (Back) = `M` and no Share / Touchpad; selects the Xbox 360 output | none | pick it for an Xbox 360 pad |
+| Default (PS4) | the PS4 to keyboard + mouse layout in [MAPPINGS.md](MAPPINGS.md) | none | global fallback for every game without its own layout |
 
 ## Adding or updating a game
 Each game is one JSON file in `src/GamepadEnhancer/Defaults/Games/<id>.json`, embedded automatically:
