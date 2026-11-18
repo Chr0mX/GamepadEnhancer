@@ -7,7 +7,7 @@ Four layers, each ignorant of the others' vocabulary:
 | 1. Physical input ids | "which control on the pad?" | `Core/Canonical/Ids.cs` (`Inputs`) |
 | 2. Controller layouts | "what is that control called on *this* pad?" | `Defaults/Controllers/*.json`, `ControllerLayouts` |
 | 3. Game actions + native layouts | "what does the game do, and on which physical input?" | `Defaults/Games/<id>.json`, `GameDefinition` |
-| 4. Output bindings | "what PC key / mouse / virtual-pad input does it drive?" | profile `Mappings`, `Paddles` |
+| 4. Output bindings | "what PC key / mouse / virtual-pad input does it drive?" | profile `Mappings` (the automatic bindings), `Paddles`, `AdvancedBindings` ([BINDINGS.md](BINDINGS.md)) |
 
 ## 1. Physical ids (neutral, never brand names)
 `FACE_SOUTH/EAST/WEST/NORTH`, `LB RB LT RT`, `SELECT START HOME TOUCHPAD`, `LS_CLICK RS_CLICK`, `DPAD_UP/DOWN/LEFT/RIGHT`,
@@ -41,3 +41,9 @@ with labels resolved for the current controller. DualShock/DualSense paddles are
 
 ## Diagram
 `Core/ControllerLayout.cs` holds the marker geometry per virtual device (DualShock 4 and Xbox 360 each have their own silhouette and control positions, drawn in `Views/ControllerConfigView.cs`). Face-button style/colours and an optional centre glyph (the Xbox logo on Guide) come from the controller layout JSON (`FaceStyle`, `FaceColors`, `Glyphs`).
+
+## Advanced bindings
+`Core/Bindings/` holds a second, optional binding layer on top of `Mappings`: `BindingModel` (definitions, conditions), `ConditionEvaluator`
+(one state machine per binding), `OutputOwnership` (who holds which output), `BindingRuntime` (edge queue, tick update, layers, turbo, status
+snapshot) and `BindingEntries` (file form and validation). `ControllerEngine` forwards timestamped input edges, calls `Update` once per tick
+and ORs the result into the report it already writes; it remains the only writer to the pad. Details and rules: [BINDINGS.md](BINDINGS.md).

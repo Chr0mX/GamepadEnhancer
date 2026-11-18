@@ -185,7 +185,6 @@ namespace GamepadEnhancer
 
         // ── Settings snapshot → engine ───────────────────────────────────────────
 
-        private void AnySettingChanged(object sender, SelectionChangedEventArgs e) => PushSettings();
         private void AnySettingChangedChecked(object sender, RoutedEventArgs e) => PushSettings();
         private void AnySettingChangedNumeric(object sender, NumericUpDownValueChangedEventArgs e) => PushSettings();
 
@@ -857,6 +856,9 @@ namespace GamepadEnhancer
         protected override void OnClosed(EventArgs e)
         {
             StopGames();
+            shellTimer?.Stop();
+            bindingStatusTimer?.Stop();
+            bindingLearnTimer?.Stop();
             try { SetScopeActive(false); SetDashActive(false); } catch { }
             try { if (monitorPanels != null) foreach (MonitorPanel p in monitorPanels) p.Stop(); } catch { }
             try { monitorWindow?.Close(); } catch { }

@@ -42,7 +42,6 @@ namespace GamepadEnhancer
         private static readonly IBrush ShadowBrush = A("#000000", 38);
         private static readonly IBrush DotBrush = A("#8B8FA3", 90);
 
-        private static readonly Color DimLine = Color.Parse("#4B4E63");
         private static readonly IBrush DimBrush = B("#4B4E63"), BoundBrush = B("#4F8CFF"), WhiteBrush = B("#FFFFFF");
         private static readonly IBrush KeyBrush = B("#6C9CFF"), MouseBrush = B("#4CD787"), PadBrush = B("#FFB84C");
 

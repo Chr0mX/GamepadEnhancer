@@ -7,7 +7,8 @@ GamepadEnhancer's window is a dark-first, single-accent desktop utility: a persi
 |---|---|
 | Dashboard | Live state first: the controller picture (pressed buttons light up), left and right stick plots, triggers and the button event stream, then the virtual controller, output path, physical controller, Network API status; output path (ViGEm or another PC), physical controller, Network API status; the active game and profile; the state of mouse look, paddles, blocking and input capture, each with an "Open" shortcut |
 | Controller | The interactive diagram (Xbox 360 / PS4 switch above it), the editor for the selected control, and the list view of all bindings |
-| Games | Configs list (Default, Apex Legends, Warzone), built-in versus saved-changes state, source of the defaults, the game's native layout, Restore defaults |
+| Bindings | The advanced bindings list: input, condition selector, Toggle, layer, enabled switch, live running state, Details (timing, turbo, outputs), copy / paste, a "How layers work" box (see [BINDINGS.md](BINDINGS.md)) |
+| Games | Games list (Default, Apex Legends, Warzone), built-in versus saved-changes state, source of the defaults, the game's native layout, Restore defaults |
 | Rear paddles | A large rear view with the four paddles, the same editor, a four-row overview with live "held" dots and the hardware paddle each slot reads |
 | Mouse look | Enable, movement (sensitivity, curve, invert) and right-stick output (dead zone, release) |
 | Profiles (Games page) | The loaded profile with an unsaved-changes marker and its file details, plus the Profile menu button; the same menu is in the header |
@@ -15,7 +16,7 @@ GamepadEnhancer's window is a dark-first, single-accent desktop utility: a persi
 | Network | Two separate sections: Receive (Network API server) and Send (control a PC that has ViGEmBus) |
 | Input & settings | Capture method, input blocking and game programs, appearance, data folders |
 
-The virtual controller type and Connect/Disconnect stay in the sidebar footer on every page. Below about 900 px the sidebar collapses to icons and two-column pages stack.
+The virtual controller type switch and Connect / Disconnect stay in the header on every page. The sidebar is always the 64 px icon rail (it scrolls when the window is short), and two-column pages stack below about 980 px of content width.
 
 ## Design system
 - **Tokens** (`App.axaml`): surfaces, borders, text, one accent plus its tint, status colours, for Dark and Light. Text/background pairs keep at least 4.5:1 contrast. The Fluent control resources (button, text box, combo box, list item, tooltip states) are pointed at these tokens, so hover, pressed, focus and disabled states come from the same place.

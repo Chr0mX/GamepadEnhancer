@@ -7,8 +7,6 @@ namespace GamepadEnhancer
     {
         public const byte Ds4Center = 128;
 
-        public static int ClampPercent(int value) => Math.Clamp(value, -100, 100);
-
         public static short PercentToXboxAxis(int percent) => PercentToXboxAxis((double)percent);
 
         public static byte PercentToDs4Axis(int percent) => PercentToDs4Axis((double)percent);

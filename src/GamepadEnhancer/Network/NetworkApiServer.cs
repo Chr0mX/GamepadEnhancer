@@ -28,7 +28,6 @@ namespace GamepadEnhancer
         private TcpListener listener;
         private CancellationTokenSource cts;
         private TcpClient current;
-        private volatile bool authedClient;
 
         /// <param name="mouseSource">This PC's physical mouse button mask, pushed to clients that send km.mouse_stream(1). Null = none.</param>
         public NetworkApiServer(RemoteControlState state, Func<string> token, Func<bool> padConnected, Func<byte> mouseSource = null)
@@ -125,7 +124,6 @@ namespace GamepadEnhancer
                         TcpClient previous;
                         lock (sync) { previous = current; current = client; }
                         try { previous?.Close(); } catch { }       // newest client wins
-                        authedClient = true;
                         Raise("Network API: client connected");
                         await SendLine("OK" + MakcuCommandParser.Prompt);
                         continue;
@@ -160,7 +158,6 @@ namespace GamepadEnhancer
                 if (wasCurrent)
                 {
                     state.Clear();                                  // a dropped client must never leave a stick or button held
-                    authedClient = false;
                     Raise("Network API: client disconnected");
                 }
             }

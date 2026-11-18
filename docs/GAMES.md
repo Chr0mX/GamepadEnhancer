@@ -1,6 +1,6 @@
 # Configs and game profiles
 
-GamepadEnhancer is game-aware: choose a **config** (Default, or a game) on the top bar and it loads that game's own layout. Every game keeps its own saved customization, so changing one game never touches another.
+GamepadEnhancer is game-aware: choose a **game** (Default, or a game) on the Games page and it loads that game's own layout. Every game keeps its own saved customization, so changing one game never touches another.
 
 ## What a "game profile" is
 Two different things are kept apart:
@@ -13,13 +13,13 @@ Two different things are kept apart:
 2. **The game's built-in default** (shipped inside the app).
 3. **The global fallback**: the **Default** config (your saved changes to it, else its built-in layout).
 
-**Default** is itself a selectable config (the first entry in the **Config** list) and is the layout for any game that has none of its own. A game with no built-in default (Warzone, until verified) also falls to level 3. It never borrows another game's mappings.
+**Default** is itself a selectable config (the first entry in the **Games** list) and is the layout for any game that has none of its own. A game with no built-in default (Warzone, until verified) also falls to level 3. It never borrows another game's mappings.
 
 ## How customizations are kept
 - Built-in defaults live in the app and are never written to `profiles/`, so your edits cannot overwrite them and an update can improve them.
 - Whatever is on screen for the selected game is saved automatically (about a second after you stop changing things, when you switch games, and when the app closes). If it is identical to the built-in default, no file is kept.
 - Switching games saves the current game first, then loads the other; nothing is lost either way.
-- **Restore game defaults** (top bar) deletes only that game's saved customization and reloads its built-in default.
+- **Restore defaults** (Games page, and the last item of the Profile menu) deletes only that game's saved customization and reloads its built-in default.
 - Named profiles (Save / Load / Import / Export) still work: loading one puts it on screen as the selected game's working configuration.
 
 ## Supported games and where their data comes from

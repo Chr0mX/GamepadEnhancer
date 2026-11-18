@@ -263,7 +263,7 @@ namespace GamepadEnhancer
                 using Stream stream = typeof(DefaultProfile).Assembly.GetManifestResourceStream(resource);
                 if (stream != null) return JsonSerializer.Deserialize<InputProfile>(stream);
             }
-            catch { }
+            catch (JsonException) { /* an unreadable embedded profile falls back to the caller's default */ }
             return null;
         }
 
@@ -327,21 +327,5 @@ namespace GamepadEnhancer
 
         private static void WriteDefault(string path) =>
             File.WriteAllText(path, JsonSerializer.Serialize(Create(), new JsonSerializerOptions { WriteIndented = true }));
-
-        /// <summary>profiles/Default.json (the user's editable copy) if it loads, otherwise the embedded Default.</summary>
-        public static InputProfile LoadDefaultFile(string profilesDirectory)
-        {
-            try
-            {
-                string path = Path.Combine(profilesDirectory, FileName);
-                if (File.Exists(path))
-                {
-                    InputProfile profile = JsonSerializer.Deserialize<InputProfile>(File.ReadAllText(path));
-                    if (profile != null) return profile;
-                }
-            }
-            catch { /* unreadable or corrupt: use the embedded default */ }
-            return Create();
-        }
     }
 }

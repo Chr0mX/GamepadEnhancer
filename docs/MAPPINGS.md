@@ -1,6 +1,6 @@
 # Input mappings and profiles
 
-A profile maps **PC input to a virtual PS4 / Xbox 360 pad**. Configs are selectable from the top bar (see [GAMES.md](GAMES.md)): **Default** (the PS4 to keyboard + mouse layout below), **Apex Legends** (its own layout, further down) and, once verified, other games. Rear paddles are described in [PADDLES.md](PADDLES.md) and are stored in a `Paddles` block of the same profile file.
+A profile maps **PC input to a virtual PS4 / Xbox 360 pad**. Games are selectable on the Games page (see [GAMES.md](GAMES.md)): **Default** (the PS4 to keyboard + mouse layout below), **Apex Legends** (its own layout, further down) and, once verified, other games. Rear paddles are described in [PADDLES.md](PADDLES.md) and are stored in a `Paddles` block of the same profile file.
 
 Three kinds of PC input are kept clearly apart, in the picker groups, in the small tag next to each picker, and in the file:
 
@@ -133,12 +133,12 @@ Left-stick directions take keyboard keys only, and a rear paddle takes a key or 
 
 ## Import, export and edit
 
-On the top bar, next to the profile box:
+The **Profile menu** (the button in the header, also on the Games page):
 
-- **Save / Load / Delete** work on `profiles/`.
+- **Save / Save as / Duplicate / Rename / Delete** and picking a name to load it work on `profiles/`.
 - **Export...** writes the current screen (not only what was saved) to a `.json` file anywhere, to share or edit by hand.
 - **Import...** reads such a file (max 256 KB), clears anything invalid, adds it to `profiles/` under a unique name (never overwriting) and applies it. If something was cleared the status line and a message say what.
-- **Folder** opens `profiles/`, where every file can also be edited in a text editor and then loaded.
+- **Open profiles folder** opens `profiles/`, where every file can also be edited in a text editor and then loaded.
 
 ## The shipped default and upgrades
 

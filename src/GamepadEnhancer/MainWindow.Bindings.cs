@@ -487,7 +487,6 @@ namespace GamepadEnhancer
         private bool? liveOverrideForTests;
         internal void SetLiveForTests(bool? live) => liveOverrideForTests = live;
         internal BindingRuntime BindingRuntimeForTests => engine.Bindings;
-        internal IReadOnlyList<BindingDef> AdvancedBindingsForTests => advancedBindings;
         internal void AddBindingForTests(BindingDef def) { advancedBindings.Add(def); BindingsChanged(rebuild: false); RebuildBindingList(); }
         internal bool RowHasClassForTests(string id, string cls) => bindingRows.TryGetValue(id, out BindingRowView r) && r.Card.Classes.Contains(cls);
         internal string RowStatusForTests(string id) => bindingRows.TryGetValue(id, out BindingRowView r) ? r.Status.Text : null;

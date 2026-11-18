@@ -114,7 +114,6 @@ namespace GamepadEnhancer
             return need - g.Bounds.Width;
         }
         internal string BindingTitleForTests(string action) => bindingTitleLabels.TryGetValue(action, out TextBlock t) ? t.Text : null;
-        internal string ActiveControllerLabelForTests => activeControllerLabel.Text;
         internal string DiagramChipTitleForTests(string id) => ControllerLayout.Find(diagram.Family, id)?.Title;
 
         private void Nav_Changed(object sender, RoutedEventArgs e)

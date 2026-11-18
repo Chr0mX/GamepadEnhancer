@@ -21,8 +21,6 @@ namespace GamepadEnhancer
 
         public IEnumerable<string> HeldOutputs => owners.Where(p => p.Value.Count > 0).Select(p => p.Key).ToList();
 
-        public bool IsOwnedBy(string owner, string output) => owners.TryGetValue(output, out var map) && map.ContainsKey(owner);
-
         /// <summary>Makes <paramref name="owner"/> hold the output. Returns true when the output's level changed.</summary>
         public bool Claim(string owner, string output, int magnitude = 100)
         {
