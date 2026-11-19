@@ -1,7 +1,12 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using Nefarius.ViGEm.Client.Targets.DualShock4;
 using Nefarius.ViGEm.Client.Targets.Xbox360;
 using Xunit;
@@ -749,6 +754,331 @@ namespace GamepadEnhancer.Tests
             Assert.Contains("not installed", ex.Message);
             Assert.False(engine.IsConnected);
             Assert.Equal("ViGEm", engine.Backend);   // nothing was switched silently
+        }
+    }
+
+    internal sealed class FakeSignatureReader : IVhfSignatureReader
+    {
+        public VhfSignature Catalog = Good();
+        public VhfSignature Tool = Good();
+        public static VhfSignature Good(string subject = "CN=Example Publisher") => new(VhfSignatureKind.Trusted, subject, "CN=Public CA", "AB12", "ok");
+        public static VhfSignature Of(VhfSignatureKind kind) => new(kind, "CN=Someone", "CN=Someone Else", "00", "test");
+        public VhfSignature Read(string path) => path.EndsWith(".cat", StringComparison.OrdinalIgnoreCase) ? Catalog : Tool;
+    }
+
+    internal sealed class TempDir : IDisposable
+    {
+        public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ge-vhf-" + Guid.NewGuid().ToString("N"));
+        public TempDir() { Directory.CreateDirectory(Path); }
+        public void Dispose() { try { Directory.Delete(Path, true); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
+    }
+
+    public class VhfPackageVerifierTests
+    {
+        private static readonly string[] Payload =
+        {
+            "driver/VibeshineVhfGamepad.inf", "driver/VibeshineVhfGamepad.dll", "driver/VibeshineVhfGamepad.cat", "tools/VibeshineVhfGamepadDeviceSetup.exe"
+        };
+
+        /// <summary>Writes a package folder the way upstream lays it out, with a manifest whose hashes are right unless told otherwise.</summary>
+        private static void MakePackage(string root, string platform = "x64", int protocol = 2, int schema = 1, bool omitFromManifest = false, bool badJson = false)
+        {
+            foreach (string rel in Payload)
+            {
+                string path = System.IO.Path.Combine(root, rel.Replace('/', System.IO.Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+                File.WriteAllText(path, "content of " + rel);
+            }
+            var files = new List<object>();
+            foreach (string rel in Payload.Skip(omitFromManifest ? 1 : 0))
+                files.Add(new { path = rel, sha256 = VhfPackageVerifier.Sha256Of(System.IO.Path.Combine(root, rel.Replace('/', System.IO.Path.DirectorySeparatorChar))) });
+            files.Add(new { path = "mouse_mapper/VibeshineVhfMouseMapper.inf", sha256 = new string('a', 64) });   // a file this app never installs and the package omits
+            string manifest = badJson ? "{ not json" : JsonSerializer.Serialize(new
+            {
+                schema_version = schema,
+                source_revision = "93dc007a608b341aa998378221f8958f045ee7f2",
+                driver_ver = "11/14/2026,0.1.0.11",
+                platform,
+                protocol_version = protocol,
+                files
+            });
+            File.WriteAllText(System.IO.Path.Combine(root, "manifest.json"), manifest);
+        }
+
+        private static VhfPackageReport Check(Action<string> arrange, FakeSignatureReader reader = null, string platform = "x64")
+        {
+            using var dir = new TempDir();
+            arrange(dir.Path);
+            return new VhfPackageVerifier(reader ?? new FakeSignatureReader(), platform).Verify(dir.Path);
+        }
+
+        [Fact]
+        public void AValidSignedPackagePassesAndCanBeInstalledThroughTheElevatedSetupTool()
+        {
+            using var dir = new TempDir();
+            MakePackage(dir.Path);
+            VhfPackageReport report = new VhfPackageVerifier(new FakeSignatureReader(), "x64").Verify(dir.Path);
+            Assert.True(report.Ok, report.Summary());
+            Assert.Equal("11/14/2026,0.1.0.11", report.DriverVer);
+            Assert.Equal(2, report.ProtocolVersion);
+
+            var install = VhfInstaller.InstallStartInfo(report);
+            Assert.EndsWith("VibeshineVhfGamepadDeviceSetup.exe", install.FileName);
+            Assert.Contains("install --inf", install.Arguments);
+            Assert.Contains("VibeshineVhfGamepad.inf", install.Arguments);
+            Assert.Equal("runas", install.Verb);            // always the normal Windows administrator prompt
+            Assert.True(install.UseShellExecute);
+            Assert.Equal("remove", VhfInstaller.RemoveStartInfo(report).Arguments);
+        }
+
+        [Theory]
+        [InlineData((int)VhfSignatureKind.Unsigned, "Not signed")]
+        [InlineData((int)VhfSignatureKind.SelfSigned, "Self-signed")]
+        [InlineData((int)VhfSignatureKind.TestCertificate, "test certificate")]
+        [InlineData((int)VhfSignatureKind.UntrustedChain, "does not trust")]
+        [InlineData((int)VhfSignatureKind.Tampered, "does not match its signature")]
+        [InlineData((int)VhfSignatureKind.Expired, "expired")]
+        public void ACatalogThatIsNotProductionSignedIsRefused(int kind, string text)
+        {
+            var reader = new FakeSignatureReader { Catalog = FakeSignatureReader.Of((VhfSignatureKind)kind) };
+            VhfPackageReport report = Check(root => MakePackage(root), reader);
+            Assert.False(report.Ok);
+            Assert.Contains(report.Problems, p => p.StartsWith("The driver catalog") && p.Contains(text));
+            Assert.Throws<InvalidOperationException>(() => VhfInstaller.InstallStartInfo(report));
+        }
+
+        [Fact]
+        public void AnUnsignedSetupToolIsRefusedEvenWithASignedCatalog()
+        {
+            var reader = new FakeSignatureReader { Tool = FakeSignatureReader.Of(VhfSignatureKind.Unsigned) };
+            VhfPackageReport report = Check(root => MakePackage(root), reader);
+            Assert.False(report.Ok);
+            Assert.Contains(report.Problems, p => p.StartsWith("The setup tool"));
+        }
+
+        [Fact]
+        public void AChangedFileIsRefusedBecauseItNoLongerMatchesTheManifest()
+        {
+            VhfPackageReport report = Check(root => { MakePackage(root); File.AppendAllText(System.IO.Path.Combine(root, "driver", "VibeshineVhfGamepad.dll"), "x"); });
+            Assert.False(report.Ok);
+            Assert.Contains(report.Problems, p => p.Contains("VibeshineVhfGamepad.dll") && p.Contains("SHA-256"));
+        }
+
+        [Fact]
+        public void MissingAndUnexpectedFilesAreRefused()
+        {
+            VhfPackageVerifier v = new(new FakeSignatureReader(), "x64");
+            using (var dir = new TempDir())
+            {
+                MakePackage(dir.Path);
+                File.Delete(System.IO.Path.Combine(dir.Path, "driver", "VibeshineVhfGamepad.cat"));
+                Assert.Contains(v.Verify(dir.Path).Problems, p => p.StartsWith("Missing file") && p.Contains(".cat"));
+            }
+            using (var dir = new TempDir())
+            {
+                MakePackage(dir.Path);
+                File.WriteAllText(System.IO.Path.Combine(dir.Path, "extra.dll"), "evil");
+                Assert.Contains(v.Verify(dir.Path).Problems, p => p.StartsWith("Unexpected file") && p.Contains("extra.dll"));
+            }
+            Assert.False(v.Verify(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ge-does-not-exist-" + Guid.NewGuid().ToString("N"))).Ok);
+        }
+
+        [Fact]
+        public void TheManifestMustMatchThisProtocolProcessorAndSchema()
+        {
+            Assert.Contains(Check(root => MakePackage(root, protocol: 3)).Problems, p => p.Contains("protocol 3"));
+            Assert.Contains(Check(root => MakePackage(root, platform: "ARM64")).Problems, p => p.Contains("ARM64") && p.Contains("x64"));
+            Assert.Contains(Check(root => MakePackage(root, schema: 2)).Problems, p => p.Contains("schema_version"));
+            Assert.Contains(Check(root => MakePackage(root, omitFromManifest: true)).Problems, p => p.Contains("not listed"));
+            Assert.Contains(Check(root => MakePackage(root, badJson: true)).Problems, p => p.Contains("not valid JSON"));
+        }
+
+        [Fact]
+        public void AZipIsUnpackedSafelyAndThenVerifiedLikeAFolder()
+        {
+            using var source = new TempDir();
+            MakePackage(source.Path);
+            using var work = new TempDir();
+            string zip = System.IO.Path.Combine(work.Path, "package.zip");
+            ZipFile.CreateFromDirectory(source.Path, zip);
+
+            string unpacked = VhfPackageVerifier.ExtractZip(zip, System.IO.Path.Combine(work.Path, "out"));
+            Assert.True(new VhfPackageVerifier(new FakeSignatureReader(), "x64").Verify(unpacked).Ok);
+        }
+
+        [Fact]
+        public void AZipThatWritesOutsideItsFolderOrHasTooManyFilesIsRefused()
+        {
+            using var work = new TempDir();
+            string evil = System.IO.Path.Combine(work.Path, "evil.zip");
+            using (var stream = File.Create(evil))
+            using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
+            {
+                using var writer = new StreamWriter(zip.CreateEntry("../escaped.txt").Open());
+                writer.Write("x");
+            }
+            Assert.Throws<InvalidDataException>(() => VhfPackageVerifier.ExtractZip(evil, System.IO.Path.Combine(work.Path, "out1")));
+            Assert.False(File.Exists(System.IO.Path.Combine(work.Path, "escaped.txt")));
+
+            string many = System.IO.Path.Combine(work.Path, "many.zip");
+            using (var stream = File.Create(many))
+            using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
+                for (int i = 0; i < 20; i++) using (var w = new StreamWriter(zip.CreateEntry("f" + i + ".txt").Open())) w.Write("x");
+            Assert.Throws<InvalidDataException>(() => VhfPackageVerifier.ExtractZip(many, System.IO.Path.Combine(work.Path, "out2")));
+        }
+    }
+
+    public class VhfSignatureTests
+    {
+        [Fact]
+        public void TheTrustResultAndTheSignerNameDecideWhetherASignatureIsProduction()
+        {
+            VhfSignature Classify(int result, string subject, string issuer) => WinTrustSignatureReader.Classify(result, subject, issuer, "T");
+            Assert.Equal(VhfSignatureKind.Unsigned, Classify(unchecked((int)0x800B0100), "", "").Kind);                          // TRUST_E_NOSIGNATURE
+            Assert.Equal(VhfSignatureKind.Tampered, Classify(unchecked((int)0x80096010), "CN=Acme", "CN=Public CA").Kind);       // TRUST_E_BAD_DIGEST
+            Assert.Equal(VhfSignatureKind.SelfSigned, Classify(0, "CN=Acme", "CN=Acme").Kind);                                   // trusted locally, but signed itself
+            Assert.Equal(VhfSignatureKind.TestCertificate, Classify(0, "CN=Vibeshine VHF Gamepad Test", "CN=Public CA").Kind);
+            Assert.Equal(VhfSignatureKind.TestCertificate, Classify(0, "CN=Acme", "CN=WDKTestCert someone").Kind);
+            Assert.Equal(VhfSignatureKind.UntrustedChain, Classify(unchecked((int)0x800B0109), "CN=Acme", "CN=Unknown CA").Kind);   // CERT_E_UNTRUSTEDROOT
+            Assert.Equal(VhfSignatureKind.Expired, Classify(unchecked((int)0x800B0101), "CN=Acme", "CN=Public CA").Kind);
+            Assert.Equal(VhfSignatureKind.Trusted, Classify(0, "CN=Acme Software Ltd", "CN=Public CA").Kind);
+            Assert.True(Classify(0, "CN=Contest Media", "CN=Public CA").IsProduction);                                           // "test" inside a word is not a test certificate
+        }
+
+        [Fact]
+        public void TestNamesAreRecognisedWithoutFlaggingOrdinaryWords()
+        {
+            foreach (string name in new[] { "CN=Vibeshine VHF Gamepad Test", "CN=WDKTestCert me,123", "CN=Test Signing", "O=Acme, CN=acme test" })
+                Assert.True(WinTrustSignatureReader.LooksLikeTestCertificate(name), name);
+            foreach (string name in new[] { "CN=Contest Media", "CN=Latest Software", "CN=Microsoft Windows Hardware Compatibility Publisher", "" })
+                Assert.False(WinTrustSignatureReader.LooksLikeTestCertificate(name), name);
+        }
+
+        [Fact]
+        public void TheRealReaderSeesAnUnsignedFileAsUnsigned()
+        {
+            using var dir = new TempDir();
+            string file = System.IO.Path.Combine(dir.Path, "plain.exe");
+            File.WriteAllBytes(file, new byte[] { 0x4D, 0x5A, 0x00, 0x00 });
+            VhfSignature sig = new WinTrustSignatureReader().Read(file);
+            Assert.Equal(VhfSignatureKind.Unsigned, sig.Kind);
+            Assert.False(sig.IsProduction);
+            Assert.Equal(VhfSignatureKind.Unsigned, new WinTrustSignatureReader().Read(System.IO.Path.Combine(dir.Path, "missing.cat")).Kind);
+        }
+
+        [Fact]
+        public void TheRealReaderTrustsAMicrosoftSignedExecutable()
+        {
+            // dotnet.exe carries an embedded Microsoft signature; this proves the WinVerifyTrust call itself works end to end.
+            string pf = Environment.GetEnvironmentVariable("ProgramFiles");
+            string dotnet = pf == null ? null : System.IO.Path.Combine(pf, "dotnet", "dotnet.exe");
+            if (dotnet == null || !File.Exists(dotnet)) return;   // nothing known to be signed on this machine
+            VhfSignature sig = new WinTrustSignatureReader().Read(dotnet);
+            Assert.True(sig.Kind == VhfSignatureKind.Trusted, "dotnet.exe: " + sig.Kind + " " + sig.Detail + " " + sig.Subject);
+            Assert.Contains("Microsoft", sig.Subject);
+        }
+
+        [Fact]
+        public void TheRealReaderTrustsAWindowsCatalog()
+        {
+            // The catalog path of the verifier is the one that matters most: check it against a catalog Microsoft ships.
+            string folder = System.IO.Path.Combine(Environment.SystemDirectory, "CatRoot", "{F750E6C3-38EE-11D1-85E5-00C04FC295EE}");
+            string cat = Directory.Exists(folder) ? Directory.EnumerateFiles(folder, "*.cat").FirstOrDefault() : null;
+            if (cat == null) return;
+            VhfSignature sig = new WinTrustSignatureReader().Read(cat);
+            Assert.True(sig.Kind == VhfSignatureKind.Trusted, System.IO.Path.GetFileName(cat) + ": " + sig.Kind + " " + sig.Detail + " " + sig.Subject);
+        }
+    }
+
+    public class VhfDriverInspectorTests
+    {
+        private sealed class FakeDevices : IVhfDeviceInfoSource
+        {
+            public VhfInstalledDevice Device;
+            public Exception Throw;
+            public VhfInstalledDevice Find() { if (Throw != null) throw Throw; return Device; }
+        }
+
+        private static VhfInstalledDevice Installed(string catalog = null) =>
+            new() { DriverVersion = "0.1.0.11", DriverProvider = "Example Publisher", DriverDate = "2026-11-14", CatalogPath = catalog };
+
+        private static VhfDriverStatus Run(FakeDevices devices, FakeVhfTransport transport, FakeSignatureReader reader = null, bool owned = false) =>
+            new VhfDriverInspector(devices, () => transport, reader ?? new FakeSignatureReader()).Inspect(owned);
+
+        [Fact]
+        public void NothingInstalledIsReportedAsNotInstalledAndViGEmStaysTheDefault()
+        {
+            var status = Run(new FakeDevices(), new FakeVhfTransport { OpenResult = VhfWin32.ErrorNotFound });
+            Assert.Equal(VhfDriverState.NotInstalled, status.State);
+            Assert.False(status.IsReady);
+            Assert.Contains("ViGEm", status.Headline);
+            Assert.Contains("not installed", status.SignatureLine);
+        }
+
+        [Fact]
+        public void ADeviceWithoutAControlInterfaceIsInstalledButNotRunning()
+        {
+            var status = Run(new FakeDevices { Device = Installed() }, new FakeVhfTransport { OpenResult = VhfWin32.ErrorNotFound });
+            Assert.Equal(VhfDriverState.InstalledNotRunning, status.State);
+            Assert.Equal("0.1.0.11", status.DriverVersion);
+        }
+
+        [Fact]
+        public void ARunningDriverShowsVersionProviderProfilesAndTheSignatureOfItsCatalog()
+        {
+            var reader = new FakeSignatureReader { Catalog = FakeSignatureReader.Good("CN=Example Publisher") };
+            var status = Run(new FakeDevices { Device = Installed(@"C:\store\driver.cat") }, new FakeVhfTransport(), reader);
+            Assert.Equal(VhfDriverState.Ready, status.State);
+            Assert.True(status.IsReady);
+            Assert.Contains("Xbox Series", status.Profiles);
+            Assert.Contains("DualSense", status.Profiles);
+            Assert.DoesNotContain("360", status.Profiles);
+            Assert.Contains("0.1.0.11", status.VersionLine);
+            Assert.Contains("Example Publisher", status.VersionLine);
+            Assert.Contains("Example Publisher", status.SignatureLine);
+        }
+
+        [Fact]
+        public void ATestSignedInstalledDriverIsShownAsNotAProductionSignature()
+        {
+            var reader = new FakeSignatureReader { Catalog = FakeSignatureReader.Of(VhfSignatureKind.TestCertificate) };
+            var status = Run(new FakeDevices { Device = Installed(@"C:\store\driver.cat") }, new FakeVhfTransport(), reader);
+            Assert.Contains("test certificate", status.SignatureLine);
+            Assert.False(status.Signature.IsProduction);
+        }
+
+        [Fact]
+        public void AProtocolMismatchAndABusyInterfaceAreTold()
+        {
+            Assert.Equal(VhfDriverState.ProtocolMismatch, Run(new FakeDevices { Device = Installed() }, new FakeVhfTransport { MaxVersion = 1 }).State);
+            var busy = Run(new FakeDevices { Device = Installed() }, new FakeVhfTransport { OpenResult = 32 });
+            Assert.Equal(VhfDriverState.InUse, busy.State);
+            Assert.True(busy.IsReady);
+        }
+
+        [Fact]
+        public void WhileThisAppOwnsTheDriverTheHandshakeIsSkipped()
+        {
+            var transport = new FakeVhfTransport();
+            var status = Run(new FakeDevices { Device = Installed() }, transport, owned: true);
+            Assert.Equal(VhfDriverState.Ready, status.State);
+            Assert.Empty(transport.Calls);
+        }
+
+        [Fact]
+        public void AFailureToAskWindowsIsAnErrorWithTheReason()
+        {
+            var status = Run(new FakeDevices { Throw = new Win32Exception(5, "Access is denied") }, new FakeVhfTransport());
+            Assert.Equal(VhfDriverState.Error, status.State);
+            Assert.Contains("Access is denied", status.Headline);
+        }
+
+        [Fact]
+        public void TheRealInspectorRunsWithoutThrowingWhetherOrNotTheDriverIsInstalled()
+        {
+            VhfDriverStatus status = VhfDriverInspector.CreateDefault().Inspect();
+            Assert.NotEqual(VhfDriverState.Error, status.State);
+            Assert.False(string.IsNullOrEmpty(status.Headline));
         }
     }
 }
