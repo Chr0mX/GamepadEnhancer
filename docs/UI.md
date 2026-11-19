@@ -6,7 +6,7 @@ GamepadEnhancer's window is a dark-first, single-accent desktop utility: a persi
 | Page | What it holds |
 |---|---|
 | Dashboard | Live state first: the controller picture (pressed buttons light up), left and right stick plots, triggers and the button event stream, then the virtual controller, output path, physical controller, Network API status; output path (ViGEm or another PC), physical controller, Network API status; the active game and profile; the state of mouse look, paddles, blocking and input capture, each with an "Open" shortcut |
-| Controller | The interactive diagram (Xbox 360 / PS4 switch above it), the editor for the selected control, and the list view of all bindings |
+| Controller | The interactive diagram on two tabs (Buttons, Sticks; Xbox 360 / PS4 follows the layout), the editor for the selected control, a third tab with the list of all bindings, and Reset defaults |
 | Bindings | The advanced bindings list: input, condition selector, Toggle, layer, enabled switch, live running state, Details (timing, turbo, outputs), copy / paste, a "How layers work" box (see [BINDINGS.md](BINDINGS.md)) |
 | Games | Games list (Default, Apex Legends, Warzone), built-in versus saved-changes state, source of the defaults, the game's native layout, Restore defaults |
 | Rear paddles | A large rear view with the four paddles, the same editor, a four-row overview with live "held" dots and the hardware paddle each slot reads |
@@ -52,7 +52,7 @@ Shapes: cards 12 px radius, 16 px padding, accent border on hover; inset tiles 8
 
 ## Layout and content
 - **Dashboard**: a grid of compact cards made of metric tiles: virtual controller (state, output rate, type, path), inputs and network, active configuration, triggers and sticks (live bars and values on the final output), the controller picture, and a button event stream. All values are real engine data; zero while nothing is connected.
-- **Navigation**: icon rail, a header with the app version, a state dot and bordered protocol tags (VIGEM, HOOKS, NET API), and underline tabs inside pages (Controller: Mapping / All bindings; Network and input: Receive / Send / Input and blocking / Appearance and files).
+- **Navigation**: icon rail, a header with the app version, a state dot and bordered protocol tags (VIGEM, HOOKS, NET API), and segmented tabs inside pages (Controller: Buttons / Sticks / All bindings; Network and input: Receive / Send / Input and blocking / Appearance and files).
 - **Controls**: every numeric setting on the mouse and monitor pages is a slider paired with a number box (the number box stays the source of truth).
 - **Measurement views** (`Views/Components/Instruments.cs`): the mouse response curve uses the engine's own `MouseLook.Shape`; the stick scope shows the final right-stick value and the game dead-zone ring; bar meters show trigger travel.
 - **Layout tests**: `UiSmokeTests.NoPageNeedsHorizontalScrolling` checks every page at four window sizes.
@@ -65,3 +65,9 @@ Not adopted: the split-colour wordmark (the app keeps its own plain name), hover
 - **Controller**: the virtual pad type (Xbox 360 or DualShock 4).
 - The header shows `Game · Profile`, with a dot while the setup differs from the loaded profile. Clicking it opens the Profile menu: load, Save, Save as, Duplicate, Rename, Delete, Import, Export, Open profiles folder, Reset game to its defaults. The menu is also on the Games page (always available when the window is too narrow for the header).
 - Loading a profile with unsaved changes asks first. `Default` cannot be renamed or deleted. Switching game clears the loaded profile.
+
+## Controller diagram
+
+The Buttons tab frames the D-pad and the four face buttons in their own panels (left and right of the pad), puts the shoulder and trigger chips above them, stick clicks (and Guide / Touchpad) below, and Share / Options as two chips on top whose lines run down to the pad. The Sticks tab shows the four left-stick directions and the mouse-look right stick. A chip is one line: the control's name, what the game does on it (when there is room) and a badge with what you mapped it to. Only the shown tab's controls can be clicked; the other tab's markers are dimmed (stick directions are left out of the Buttons tab). Changing tab drops a selection that is not on the new tab.
+
+Not copied from the reference design this layout follows: reading a physical controller ("press the matching input on your controller", "set stick centre"), since this app turns keyboard and mouse input into the virtual pad and reads no pad. The accent inside the diagram (selection, light bar, stick rings) is teal; the rest of the app keeps its blue.
