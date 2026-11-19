@@ -31,6 +31,12 @@ namespace GamepadEnhancer
         void SubmitReport();
     }
 
+    /// <summary>Optional: a pad that needs a little service on every engine tick (the VHF pad reads the driver's feedback and recovers).</summary>
+    internal interface IPadPump
+    {
+        void Pump();
+    }
+
     internal sealed class ViGEmXboxPad : IXboxPad
     {
         private readonly IXbox360Controller pad;

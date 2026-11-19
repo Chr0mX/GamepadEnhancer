@@ -13,11 +13,11 @@ namespace GamepadEnhancer
     /// Everything runs on the engine's output thread (Connect and Disconnect on the UI thread, before and after it); a lock keeps the
     /// two from touching the client at once.
     /// </summary>
-    internal sealed class VhfPad : IXboxPad, IDs4Pad
+    internal sealed class VhfPad : IXboxPad, IDs4Pad, IPadPump
     {
         private const long HeartbeatMs = 100;        // resend an unchanged state this often, so the driver's view never goes stale
         private const long RecoverIntervalMs = 500;  // between attempts to bring a lost controller back
-        private const int FeedbackEveryTicks = 4;    // poll the driver's feedback slot every N reports
+        private const long FeedbackPollMs = 20;      // poll the driver's feedback slot this often (from Pump, every engine tick)
         private const int CreateAttempts = 6;        // ERROR_BUSY: the previous child is still being removed
         private const int CreateRetryMs = 100;
 
@@ -35,8 +35,7 @@ namespace GamepadEnhancer
 
         private VhfInput last;
         private bool haveLast, created, lost;
-        private long lastSendMs, lastRecoverMs = long.MinValue;
-        private int tick;
+        private long lastSendMs, lastRecoverMs = -1_000_000, lastPollMs = -1_000_000;
         private string lastStatus;
 
         public VhfPad(VhfClient client, VhfProfileId profile, uint slot = 0, Func<long> nowMs = null, Action<int> sleep = null)
@@ -80,7 +79,7 @@ namespace GamepadEnhancer
                 created = true;
                 lost = false;
                 haveLast = false;
-                tick = 0;
+                lastPollMs = -1_000_000;
                 lastStatus = null;
             }
         }
@@ -231,7 +230,6 @@ namespace GamepadEnhancer
         public void SubmitReport()
         {
             string status = null;
-            VhfFeedback feedback = null;
             lock (gate)
             {
                 if (!created) return;
@@ -245,8 +243,28 @@ namespace GamepadEnhancer
                     if (error == VhfWin32.ErrorSuccess) { last = input; haveLast = true; lastSendMs = now; LastError = 0; }
                     else status = OnSubmitError(error, now);
                 }
+            }
+            Publish(status, null);
+        }
 
-                if (!lost && ++tick % FeedbackEveryTicks == 0) feedback = PollFeedbackNow(ref status);
+        /// <summary>
+        /// Called by the engine on every tick (10 ms), also while the pad is idle and reports are rare: reads what a game wrote to the
+        /// virtual pad (rumble, lightbar) and brings a lost controller back, so neither waits for the next report.
+        /// </summary>
+        public void Pump()
+        {
+            string status = null;
+            VhfFeedback feedback = null;
+            lock (gate)
+            {
+                if (!created) return;
+                long now = nowMs();
+                if (lost) { TryRecover(now, out status); }
+                else if (now - lastPollMs >= FeedbackPollMs)
+                {
+                    lastPollMs = now;
+                    feedback = PollFeedbackNow(ref status);
+                }
             }
             Publish(status, feedback);
         }

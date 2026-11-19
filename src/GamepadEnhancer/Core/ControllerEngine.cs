@@ -62,6 +62,7 @@ namespace GamepadEnhancer
         private ViGEmClient client;
         private IXboxPad xbox;
         private IDs4Pad ds4;
+        private IPadPump pump;
         private Thread thread;
         private volatile bool running;
         private volatile EngineSettings settings = EngineSettings.Default;
@@ -89,6 +90,9 @@ namespace GamepadEnhancer
         public string ControllerName => ControllerLayouts.ForDevice(Family).Name;
         /// <summary>True while the pad is being sent to another PC instead of a local ViGEm pad.</summary>
         public bool IsRemote { get; private set; }
+        /// <summary>Which output created the pad that is connected now: "ViGEm" (the default), "VHF" or "Network".</summary>
+        public string Backend { get; private set; } = "ViGEm";
+        public bool IsVhf => Backend == "VHF";
         public PadFamily Family => useXbox ? PadFamily.Xbox360 : PadFamily.DualShock4;
 
         /// <summary>
@@ -114,11 +118,14 @@ namespace GamepadEnhancer
         public event Action<string> StatusChanged;
         /// <summary>Raised from the engine thread when updating the controller fails; the engine stops itself.</summary>
         public event Action<Exception> Faulted;
+        /// <summary>Rumble / lightbar / LED output a game wrote to the VHF pad (display only). Raised from the engine thread.</summary>
+        internal event Action<VhfFeedback> FeedbackReceived;
 
         // ── Connection ──────────────────────────────────────────────────────────
 
         /// <param name="remote">When set, the pad is sent to another PC (Network API) instead of a local ViGEm pad.</param>
-        public void Connect(bool xbox360, RemoteTarget remote = null)
+        /// <param name="vhf">When set (and no remote), the pad is created through the VHF driver instead of ViGEmBus. ViGEm stays the default.</param>
+        internal void Connect(bool xbox360, RemoteTarget remote = null, VhfTarget vhf = null)
         {
             Disconnect();
             try
@@ -130,6 +137,14 @@ namespace GamepadEnhancer
                     netPad.Link.StatusChanged += text => RaiseStatus("Status: " + text);
                     if (xbox360) xbox = netPad; else ds4 = netPad;
                     netPad.Connect();
+                }
+                else if (vhf != null)
+                {
+                    var vhfPad = new VhfPad(new VhfClient(vhf.CreateTransport()), vhf.Profile);
+                    vhfPad.StatusChanged += text => RaiseStatus("Status: " + text);
+                    vhfPad.FeedbackReceived += feedback => FeedbackReceived?.Invoke(feedback);
+                    if (xbox360) xbox = vhfPad; else ds4 = vhfPad;   // assigned first so a failed Connect is cleaned up below
+                    vhfPad.Connect();
                 }
                 else
                 {
@@ -144,8 +159,10 @@ namespace GamepadEnhancer
                 throw;
             }
 
+            pump = (useXbox ? (object)xbox : ds4) as IPadPump;
             lock (sync) ResetState();
             IsRemote = remote != null;
+            Backend = remote != null ? "Network" : vhf != null ? "VHF" : "ViGEm";
             Snapshots.Reset(Family, true, IsRemote);
             running = true;
             thread = new Thread(Loop) { IsBackground = true, Name = "ViGEm output", Priority = ThreadPriority.Normal };
@@ -167,6 +184,7 @@ namespace GamepadEnhancer
             Bindings.Flush(Paddles.Injector);
             lastMask = 0;
             IsRemote = false;
+            Backend = "ViGEm";
             Snapshots.Reset(Family, false, false);
             lastStatus = null;
         }
@@ -183,6 +201,7 @@ namespace GamepadEnhancer
             try { ds4?.Disconnect(); } catch { }
             xbox = null;
             ds4 = null;
+            pump = null;
             try { client?.Dispose(); } catch { }
             client = null;
         }
@@ -284,6 +303,7 @@ namespace GamepadEnhancer
                             if (useXbox) x?.SubmitReport(); else d?.SubmitReport();
                             Snapshots.NoteReport();
                         }
+                        pump?.Pump();   // VHF: read the driver's feedback and recover a lost controller, also while the pad is idle
                     }
                     catch (Exception ex)
                     {

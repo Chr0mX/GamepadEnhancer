@@ -28,6 +28,13 @@ namespace GamepadEnhancer
         /// <summary>Token of the other PC's Network API (stored in plain text in settings.json, like the receiver's own token).</summary>
         public string RemoteToken { get; set; } = "";
 
+        /// <summary>Which output creates the virtual pad: "vigem" (default, ViGEmBus) or "vhf" (the optional Virtual HID Framework driver).</summary>
+        public string OutputBackend { get; set; } = "vigem";
+        /// <summary>The VHF controller profile: "auto" or one of xbox_series, xbox_one, dualshock4, dualsense (see VhfProfiles). Ignored for ViGEm.</summary>
+        public string VhfProfile { get; set; } = "auto";
+        /// <summary>The driver package folder last chosen for install (a convenience; it is verified again every time).</summary>
+        public string VhfPackagePath { get; set; } = "";
+
         /// <summary>The selected game's id (see GameCatalog); apex by default, which is what the app used to start on.</summary>
         public string ActiveGame { get; set; } = "apex";
         /// <summary>Which hardware paddle (0..3 = Paddle1..4) feeds each of the four paddle slots; see PaddleSlots.NormalizeSourceMap.</summary>

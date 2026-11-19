@@ -21,12 +21,18 @@ namespace GamepadEnhancer.Tests
         public int BusyCreates;                                  // this many creates answer ERROR_BUSY first
         public readonly Queue<byte[]> Feedback = new();
         public int CloseCount;
+        private readonly object gate = new();   // the engine thread and the test thread both touch the fake
 
         public int Open() { if (OpenResult != 0) return OpenResult; IsOpen = true; return 0; }
         public void Close() { IsOpen = false; CloseCount++; }
         public void Dispose() => Close();
 
         public int Ioctl(uint code, byte[] input, byte[] output, out int bytesReturned)
+        {
+            lock (gate) return IoctlLocked(code, input, output, out bytesReturned);
+        }
+
+        private int IoctlLocked(uint code, byte[] input, byte[] output, out int bytesReturned)
         {
             bytesReturned = 0;
             Calls.Add((code, input));
@@ -56,8 +62,8 @@ namespace GamepadEnhancer.Tests
             return VhfWin32.ErrorInvalidParameter;
         }
 
-        public int Count(uint code) => Calls.Count(c => c.Code == code);
-        public byte[] LastInput() => Calls.Last(c => c.Code == VhfProtocol.IoctlSubmitInputState).Input;
+        public int Count(uint code) { lock (gate) return Calls.Count(c => c.Code == code); }
+        public byte[] LastInput() { lock (gate) return Calls.Last(c => c.Code == VhfProtocol.IoctlSubmitInputState).Input; }
 
         public static byte[] InfoResponse(ushort min, ushort max, uint profiles, uint controllers = 16, uint counters = 0)
         {
@@ -603,10 +609,42 @@ namespace GamepadEnhancer.Tests
             var h = new Harness(VhfProfileId.XboxSeries);
             h.Pad.Connect();
             h.Transport.Feedback.Enqueue(FakeVhfTransport.XboxRumble(0, 65535, 0, 0, 0));
-            for (int i = 0; i < 4; i++) { h.Now += 10; h.Pad.SubmitReport(); }
+            h.Now = 25;
+            h.Pad.Pump();                    // the engine calls this every tick, also while the pad is idle
             Assert.Single(h.Feedback);
             Assert.Equal(65535, h.Feedback[0].LowFrequency);
             Assert.Same(h.Feedback[0], h.Pad.LastFeedback);
+        }
+
+        [Fact]
+        public void FeedbackIsNotPolledMoreOftenThanEvery20Ms()
+        {
+            var h = new Harness(VhfProfileId.XboxSeries);
+            h.Pad.Connect();
+            h.Now = 25; h.Pad.Pump();
+            int polls = h.Transport.Count(VhfProtocol.IoctlPollFeedback);
+            h.Now = 30; h.Pad.Pump();
+            h.Now = 40; h.Pad.Pump();
+            Assert.Equal(polls, h.Transport.Count(VhfProtocol.IoctlPollFeedback));
+            h.Now = 46; h.Pad.Pump();
+            Assert.Equal(polls + 1, h.Transport.Count(VhfProtocol.IoctlPollFeedback));
+        }
+
+        [Fact]
+        public void PumpBringsALostControllerBackWithoutWaitingForAReport()
+        {
+            var h = new Harness(VhfProfileId.XboxSeries);
+            h.Pad.Connect();
+            h.Pad.SubmitReport();
+            h.Transport.SubmitResult = VhfWin32.ErrorDeviceRemoved;
+            h.Now = 150;
+            h.Pad.SubmitReport();
+            Assert.True(h.Pad.ControllerLost);
+            h.Transport.SubmitResult = 0;
+            h.Now = 160;
+            h.Pad.Pump();
+            Assert.False(h.Pad.ControllerLost);
+            Assert.Contains(h.Status, s => s.Contains("restored"));
         }
 
         [Fact]
@@ -619,6 +657,98 @@ namespace GamepadEnhancer.Tests
             Assert.Single(h.Status);
             Assert.False(h.Pad.ControllerLost);
             Assert.Equal(VhfWin32.ErrorAccessDenied, h.Pad.LastError);
+        }
+    }
+
+    public class VhfEngineAndSettingsTests
+    {
+        private static bool WaitFor(Func<bool> condition, int ms = 3000)
+        {
+            var end = DateTime.UtcNow.AddMilliseconds(ms);
+            while (DateTime.UtcNow < end) { if (condition()) return true; System.Threading.Thread.Sleep(5); }
+            return condition();
+        }
+
+        [Fact]
+        public void ViGEmIsTheDefaultBackendAndOldSettingsFilesKeepIt()
+        {
+            var fresh = new AppSettings();
+            Assert.Equal("vigem", fresh.OutputBackend);
+            Assert.Equal("auto", fresh.VhfProfile);
+
+            // a settings.json written before the VHF backend existed has none of the new fields
+            var old = System.Text.Json.JsonSerializer.Deserialize<AppSettings>("{\"InputCaptureMethod\":\"RawInput\",\"ActiveGame\":\"apex\"}");
+            Assert.Equal("vigem", old.OutputBackend);
+            Assert.Equal("RawInput", old.InputCaptureMethod);
+
+            var chosen = new AppSettings { OutputBackend = "vhf", VhfProfile = "dualsense" };
+            var back = System.Text.Json.JsonSerializer.Deserialize<AppSettings>(System.Text.Json.JsonSerializer.Serialize(chosen));
+            Assert.Equal("vhf", back.OutputBackend);
+            Assert.Equal("dualsense", back.VhfProfile);
+        }
+
+        [Fact]
+        public void TheProfileFollowsTheLayoutFamilyAndFallsBackToItsDefault()
+        {
+            Assert.Equal(VhfProfileId.XboxSeries, VhfProfiles.Resolve("auto", PadFamily.Xbox360));
+            Assert.Equal(VhfProfileId.XboxOne, VhfProfiles.Resolve("xbox_one", PadFamily.Xbox360));
+            Assert.Equal(VhfProfileId.DualShock4, VhfProfiles.Resolve("auto", PadFamily.DualShock4));
+            Assert.Equal(VhfProfileId.DualSense, VhfProfiles.Resolve("dualsense", PadFamily.DualShock4));
+            // a choice that does not fit the layout is not applied
+            Assert.Equal(VhfProfileId.XboxSeries, VhfProfiles.Resolve("dualsense", PadFamily.Xbox360));
+            Assert.Equal(VhfProfileId.DualShock4, VhfProfiles.Resolve("xbox_one", PadFamily.DualShock4));
+            Assert.Equal(VhfProfileId.DualShock4, VhfProfiles.Resolve(null, PadFamily.DualShock4));
+            Assert.Equal(new[] { "xbox_series", "xbox_one" }, VhfProfiles.For(PadFamily.Xbox360).Select(p => p.Id).ToArray());
+            Assert.Equal(new[] { "dualshock4", "dualsense" }, VhfProfiles.For(PadFamily.DualShock4).Select(p => p.Id).ToArray());
+            // Xbox 360 is never offered: VHF cannot make an XUSB device
+            Assert.DoesNotContain(VhfProfiles.For(PadFamily.Xbox360), p => p.Name.Contains("360"));
+        }
+
+        [Fact]
+        public void EngineCreatesTheVhfPadSendsReportsAndRemovesItOnDisconnect()
+        {
+            var fake = new FakeVhfTransport();
+            using var engine = new ControllerEngine();
+            engine.Connect(true, null, new VhfTarget(VhfProfileId.XboxSeries, () => fake));
+            Assert.True(engine.IsConnected);
+            Assert.True(engine.IsVhf);
+            Assert.Equal("VHF", engine.Backend);
+            Assert.False(engine.IsRemote);
+            Assert.Equal(1, fake.Count(VhfProtocol.IoctlCreateController));
+            Assert.True(WaitFor(() => fake.Count(VhfProtocol.IoctlSubmitInputState) > 0), "no report reached the driver");
+
+            engine.Disconnect();
+            Assert.False(engine.IsConnected);
+            Assert.Equal("ViGEm", engine.Backend);
+            Assert.Equal(1, fake.Count(VhfProtocol.IoctlDestroyController));
+            Assert.False(fake.IsOpen);
+        }
+
+        [Fact]
+        public void EngineCreatesADualSenseWhenAskedAndPollsItsFeedbackEvenWhileIdle()
+        {
+            var fake = new FakeVhfTransport();
+            var got = new List<VhfFeedback>();
+            using var engine = new ControllerEngine();
+            engine.FeedbackReceived += f => { lock (got) got.Add(f); };
+            engine.Connect(false, null, new VhfTarget(VhfProfileId.DualSense, () => fake));
+            byte[] create = fake.Calls.Single(c => c.Code == VhfProtocol.IoctlCreateController).Input;
+            Assert.Equal(6, BinaryPrimitives.ReadUInt16LittleEndian(create.AsSpan(12)));
+
+            fake.Feedback.Enqueue(FakeVhfTransport.XboxRumble(0, 1000, 2000, 0, 0));
+            Assert.True(WaitFor(() => { lock (got) return got.Count > 0; }), "feedback was not read");
+            engine.Disconnect();
+        }
+
+        [Fact]
+        public void AMissingDriverFailsTheConnectWithAMessageAndLeavesTheEngineStopped()
+        {
+            var fake = new FakeVhfTransport { OpenResult = VhfWin32.ErrorNotFound };
+            using var engine = new ControllerEngine();
+            var ex = Assert.Throws<VhfException>(() => engine.Connect(true, null, new VhfTarget(VhfProfileId.XboxSeries, () => fake)));
+            Assert.Contains("not installed", ex.Message);
+            Assert.False(engine.IsConnected);
+            Assert.Equal("ViGEm", engine.Backend);   // nothing was switched silently
         }
     }
 }
