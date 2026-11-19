@@ -146,7 +146,7 @@
           <!-- ───────── Controller ───────── -->
           <ScrollViewer x:Name="pageController" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="16,12,16,16" Spacing="12" MaxWidth="1560" HorizontalAlignment="Stretch">
-              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+              <Grid ColumnDefinitions="Auto,*,Auto">
                 <Border Classes="segbox">
                   <StackPanel Orientation="Horizontal" Spacing="2">
                     <RadioButton Classes="seg" GroupName="ctab" Tag="buttons" IsChecked="True" Content="Buttons" IsCheckedChanged="CTab_Changed" />
@@ -154,7 +154,7 @@
                     <RadioButton Classes="seg" GroupName="ctab" Tag="all" Content="All bindings" IsCheckedChanged="CTab_Changed" />
                   </StackPanel>
                 </Border>
-                <Border Grid.Column="1" Classes="segbox" HorizontalAlignment="Right" Padding="12,6">
+                <Border Grid.Column="1" Classes="segbox" HorizontalAlignment="Right" Padding="12,6" Margin="12,0">
                   <TextBlock x:Name="activeGameLabel" Classes="caption" TextTrimming="CharacterEllipsis" />
                 </Border>
                 <Button Grid.Column="2" Classes="danger" VerticalAlignment="Center" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes to the selected config and go back to its built-in defaults.">
