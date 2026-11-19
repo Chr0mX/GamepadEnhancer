@@ -34,6 +34,8 @@
     <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
     <PackageReference Include="Nefarius.ViGEm.Client" Version="1.21.256" />
+    <!-- SignedCms: reads the signer of a driver catalog (.cat) when a VHF driver package is checked -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>
