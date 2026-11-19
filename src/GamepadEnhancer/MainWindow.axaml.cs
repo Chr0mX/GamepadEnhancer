@@ -81,6 +81,7 @@ namespace GamepadEnhancer
             InitializeMonitor();
             InitializeGames();
             InitializeProfileMenus();
+            InitializeOutput();
             InitializeShell();
 
             ready = true;
@@ -561,10 +562,12 @@ namespace GamepadEnhancer
         /// <summary>Creates the virtual pad for the type chosen in the dropdown (tearing down any previous one first).</summary>
         private async System.Threading.Tasks.Task ConnectNowAsync()
         {
+            bool useVhf = false;
             try
             {
                 PushSettings();
                 bool xbox360 = SelectedControllerLayout().Family == PadFamily.Xbox360;
+                useVhf = VhfSelected;
                 if (appSettings.RemoteSendEnabled)
                 {
                     SaveRemoteSettings();
@@ -572,6 +575,7 @@ namespace GamepadEnhancer
                         throw new InvalidOperationException("Enter the other PC's address and token on the Network tab first.");
                     engine.Connect(xbox360, new RemoteTarget(appSettings.RemoteHost, appSettings.RemotePort, appSettings.RemoteToken));
                 }
+                else if (useVhf) engine.Connect(xbox360, null, CurrentVhfTarget());
                 else engine.Connect(xbox360);
                 SetConnectedUi(true);
             }
@@ -581,7 +585,9 @@ namespace GamepadEnhancer
                 await Dialogs.ShowMessageAsync(this, "Connection Error",
                     (appSettings.RemoteSendEnabled
                         ? "Failed to connect to the other PC.\n\nCheck its address and port, that its Network API is enabled and connected, the token, and the firewall.\n\n"
-                        : "Failed to connect to ViGEm.\n\nMake sure ViGEmBus is installed.\n\n") + ex.Message);
+                        : useVhf
+                            ? "Failed to create the VHF virtual controller.\n\nThe output is still set to VHF; nothing was switched for you. Check the driver on the Network and input page (OUTPUT tab), or switch the output back to ViGEm there.\n\n"
+                            : "Failed to connect to ViGEm.\n\nMake sure ViGEmBus is installed.\n\n") + ex.Message);
             }
         }
 
@@ -601,13 +607,14 @@ namespace GamepadEnhancer
         private void UpdateActiveControllerLabel()
         {
             RefreshControllerLabels();
+            RefillVhfProfiles();
             SyncLayoutSwitch();
             ApplyPaddleSupport();
             string selected = SelectedControllerLayout().Title;
             if (engine.IsConnected)
             {
                 string name = PadLabels.FamilyName(engine.Family);
-                activeControllerLabel.Text = engine.IsRemote ? $"Output: {name} (sent to the other PC)" : $"Output: {name} (ViGEm)";
+                activeControllerLabel.Text = engine.IsRemote ? $"Output: {name} (sent to the other PC)" : $"Output: {name} ({engine.Backend})";
                 Title = "GamepadEnhancer - " + name;
             }
             else

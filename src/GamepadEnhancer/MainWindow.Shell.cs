@@ -203,10 +203,17 @@ namespace GamepadEnhancer
         private void NTab_Changed(object sender, RoutedEventArgs e)
         {
             if (!shellReady || sender is not RadioButton { IsChecked: true, Tag: string tag }) return;
+            ApplyNetworkTab(tag);
+        }
+
+        private void ApplyNetworkTab(string tag)
+        {
             netReceiveSection.IsVisible = tag == "recv";
+            netOutputSection.IsVisible = tag == "output";
             netSendSection.IsVisible = tag == "send";
             netInputSection.IsVisible = tag == "input";
             appearanceSection.IsVisible = tag == "look";
+            if (tag == "output") RefreshVhfStatus();
         }
 
         // ── Live dashboard readouts (real engine snapshots; registered as a viewer only while the dashboard shows) ──
@@ -524,13 +531,15 @@ namespace GamepadEnhancer
             UpdateProfileHeaderText();
             connectButton.IsVisible = !engine.IsConnected;
             disconnectButton.IsVisible = engine.IsConnected;
-            tagOutputText.Text = engine.IsConnected && engine.IsRemote ? "REMOTE PC" : "VIGEM";
+            tagOutputText.Text = engine.IsConnected ? (engine.IsRemote ? "REMOTE PC" : engine.IsVhf ? "VHF" : "VIGEM")
+                : (VhfSelected ? "VHF" : "VIGEM");
             tagOutput.Classes.Set("on", engine.IsConnected);
             tagCaptureText.Text = string.Equals(appSettings.InputCaptureMethod, "RawInput", StringComparison.OrdinalIgnoreCase) ? "RAW INPUT" : "HOOKS";
             tagCapture.Classes.Set("on", true);
             bool netOn = networkApi != null && networkApi.IsRunning;
             tagNetworkText.Text = netOn ? $"NET API :{networkApi.Port}" : "NET API";
             tagNetwork.Classes.Set("on", netOn);
+            UpdateVhfControllerLabel();
         }
 
         private void RefreshDashboard()
@@ -540,9 +549,9 @@ namespace GamepadEnhancer
             {
                 dashVirtualBadge.Set(BadgeState.Ok, "Connected");
                 dashVirtualTitle.Text = ControllerLayouts.ForDevice(engine.Family).Title;
-                dashVirtualDetail.Text = engine.IsRemote ? "Sending to another PC" : "ViGEmBus on this PC";
-                dashOutputBadge.Set(BadgeState.Ok, engine.IsRemote ? "Sending to another PC" : "ViGEm (this PC)");
-                dashOutputDetail.Text = engine.IsRemote ? $"{appSettings.RemoteHost}:{appSettings.RemotePort}" : "ViGEmBus virtual device";
+                dashVirtualDetail.Text = engine.IsRemote ? "Sending to another PC" : engine.IsVhf ? "VHF driver on this PC" : "ViGEmBus on this PC";
+                dashOutputBadge.Set(BadgeState.Ok, engine.IsRemote ? "Sending to another PC" : engine.IsVhf ? "VHF (this PC)" : "ViGEm (this PC)");
+                dashOutputDetail.Text = engine.IsRemote ? $"{appSettings.RemoteHost}:{appSettings.RemotePort}" : engine.IsVhf ? "Virtual HID Framework virtual device" : "ViGEmBus virtual device";
             }
             else
             {
@@ -550,7 +559,8 @@ namespace GamepadEnhancer
                 dashVirtualTitle.Text = layout.Title;
                 dashVirtualDetail.Text = "Selected · not connected";
                 dashOutputBadge.Set(BadgeState.Off, "Idle");
-                dashOutputDetail.Text = appSettings.RemoteSendEnabled ? $"Will send to {appSettings.RemoteHost}:{appSettings.RemotePort}" : "Will use ViGEmBus on this PC (it must be installed)";
+                dashOutputDetail.Text = appSettings.RemoteSendEnabled ? $"Will send to {appSettings.RemoteHost}:{appSettings.RemotePort}"
+                    : VhfSelected ? "Will use the VHF driver on this PC (it must be installed)" : "Will use ViGEmBus on this PC (it must be installed)";
             }
 
             PaddleReading reading = paddleSource.Read();

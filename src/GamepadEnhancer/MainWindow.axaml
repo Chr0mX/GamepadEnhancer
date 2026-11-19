@@ -400,12 +400,13 @@
             <StackPanel Margin="16,12,16,24" Spacing="12" MaxWidth="1500" HorizontalAlignment="Stretch">
               <TextBlock Classes="caption" Text="Two directions. Receive: another computer controls the controller on this PC. Send: this PC's keyboard and mouse drive a controller on another PC. Input is how keyboard and mouse are read and when they are blocked." />
               <Border BorderBrush="{DynamicResource BorderBrushDefault}" BorderThickness="0,0,0,1" Padding="4,0">
-                <StackPanel Orientation="Horizontal">
+                <WrapPanel Orientation="Horizontal">
                   <RadioButton Classes="tab" GroupName="ntab" Tag="recv" IsChecked="True" Content="RECEIVE" IsCheckedChanged="NTab_Changed" />
+                  <RadioButton Classes="tab" GroupName="ntab" Tag="output" Content="OUTPUT" IsCheckedChanged="NTab_Changed" />
                   <RadioButton Classes="tab" GroupName="ntab" Tag="send" Content="SEND" IsCheckedChanged="NTab_Changed" />
                   <RadioButton Classes="tab" GroupName="ntab" Tag="input" Content="INPUT AND BLOCKING" IsCheckedChanged="NTab_Changed" />
                   <RadioButton Classes="tab" GroupName="ntab" Tag="look" Content="APPEARANCE AND FILES" IsCheckedChanged="NTab_Changed" />
-                </StackPanel>
+                </WrapPanel>
               </Border>
               <StackPanel x:Name="networkGrid" MaxWidth="820" HorizontalAlignment="Left" Spacing="12">
                 <v:Section x:Name="netReceiveSection" Title="Receive · Network API" Description="Another computer drives this virtual controller with MAKCU-style text commands over TCP: km.controller(id,value[,hold_ms]), km.controller_clear(). A client can also subscribe to this PC's mouse buttons with km.mouse_stream(1).">
@@ -431,6 +432,31 @@
                     </WrapPanel>
                     <v:StatusBadge x:Name="netStatusBadge" Margin="0,4,0,4" />
                     <TextBlock x:Name="netStatusLabel" Classes="caption" Text="Network API is off" />
+                  </StackPanel>
+                </v:Section>
+
+                <v:Section x:Name="netOutputSection" IsVisible="False" Title="Output · which driver creates the virtual controller" Description="ViGEm (ViGEmBus) is the default and is what this app has always used. VHF is an optional second output that uses Microsoft's Virtual HID Framework through a separately installed driver. Sending to another PC (the Send tab) ignores this choice.">
+                  <StackPanel>
+                    <v:SettingRow Title="Output backend" Description="ViGEm stays the default. The change applies on the next Connect, or at once if a controller is already connected.">
+                      <ComboBox x:Name="outputBackendBox" MinWidth="210" SelectionChanged="OutputBackend_Changed" />
+                    </v:SettingRow>
+                    <v:SettingRow x:Name="vhfProfileRow" Title="VHF controller profile" Description="Which controller Windows sees. It follows the layout you picked (Xbox or PlayStation). VHF cannot make an Xbox 360 controller: use ViGEm for that.">
+                      <ComboBox x:Name="vhfProfileBox" MinWidth="210" SelectionChanged="VhfProfile_Changed" />
+                    </v:SettingRow>
+                    <v:StatusBadge x:Name="vhfDriverBadge" Margin="0,12,0,4" />
+                    <TextBlock x:Name="vhfDriverVersionLabel" Classes="caption" TextWrapping="Wrap" />
+                    <TextBlock x:Name="vhfDriverSignatureLabel" Classes="caption" TextWrapping="Wrap" />
+                    <TextBlock x:Name="vhfControllerLabel" Classes="caption" TextWrapping="Wrap" Margin="0,4,0,0" />
+                    <TextBlock x:Name="vhfFeedbackLabel" Classes="caption" TextWrapping="Wrap" />
+                    <WrapPanel Margin="0,12,0,0">
+                      <Button x:Name="vhfRefreshButton" Margin="0,0,8,8" Click="VhfRefresh_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="restore" /><TextBlock Text="Check driver" /></StackPanel></Button>
+                      <Button x:Name="vhfChooseFolderButton" Margin="0,0,8,8" Click="VhfChooseFolder_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="folder" /><TextBlock Text="Choose package folder..." /></StackPanel></Button>
+                      <Button x:Name="vhfChooseZipButton" Margin="0,0,8,8" Click="VhfChooseZip_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="download" /><TextBlock Text="Choose package .zip..." /></StackPanel></Button>
+                      <Button x:Name="vhfInstallButton" Margin="0,0,8,8" Classes="primary" IsEnabled="False" Click="VhfInstall_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="shield" /><TextBlock Text="Install driver..." /></StackPanel></Button>
+                      <Button x:Name="vhfRemoveButton" Margin="0,0,8,8" Classes="danger" IsEnabled="False" Click="VhfRemove_Click"><StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="trash" /><TextBlock Text="Remove driver..." /></StackPanel></Button>
+                    </WrapPanel>
+                    <TextBlock x:Name="vhfPackageLabel" Classes="caption" TextWrapping="Wrap" Text="No driver package chosen. This app does not include or build the driver: choose a package that has been signed by its publisher, and it is checked before anything is installed." />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Margin="0,10,0,0" Text="Installing needs administrator permission through the normal Windows prompt and never changes Secure Boot or driver signing settings. A virtual controller is visible to games and anti-cheat software as a virtual device. There is no guarantee it is treated like a physical controller, and no guarantee it avoids a kick or a ban: use it only where virtual controllers are allowed." />
                   </StackPanel>
                 </v:Section>
 

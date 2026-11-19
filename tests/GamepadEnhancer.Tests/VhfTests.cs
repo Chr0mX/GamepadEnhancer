@@ -7,6 +7,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
 using Nefarius.ViGEm.Client.Targets.DualShock4;
 using Nefarius.ViGEm.Client.Targets.Xbox360;
 using Xunit;
@@ -781,7 +783,7 @@ namespace GamepadEnhancer.Tests
         };
 
         /// <summary>Writes a package folder the way upstream lays it out, with a manifest whose hashes are right unless told otherwise.</summary>
-        private static void MakePackage(string root, string platform = "x64", int protocol = 2, int schema = 1, bool omitFromManifest = false, bool badJson = false)
+        internal static void MakePackage(string root, string platform = "x64", int protocol = 2, int schema = 1, bool omitFromManifest = false, bool badJson = false)
         {
             foreach (string rel in Payload)
             {
@@ -1079,6 +1081,185 @@ namespace GamepadEnhancer.Tests
             VhfDriverStatus status = VhfDriverInspector.CreateDefault().Inspect();
             Assert.NotEqual(VhfDriverState.Error, status.State);
             Assert.False(string.IsNullOrEmpty(status.Headline));
+        }
+    }
+
+    /// <summary>The OUTPUT tab and the VHF connection through the real window, with a fake driver instead of the real one.</summary>
+    public class VhfOutputUiTests
+    {
+        private static MainWindow Open(List<FakeVhfTransport> made, Action<FakeVhfTransport> configure = null)
+        {
+            var window = new MainWindow();
+            window.VhfTransportFactoryForTests = () =>
+            {
+                var fake = new FakeVhfTransport();
+                configure?.Invoke(fake);
+                lock (made) made.Add(fake);
+                return fake;
+            };
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            return window;
+        }
+
+        /// <summary>The settings file is shared by every test in this process: put the default back.</summary>
+        private static void RestoreDefaults(MainWindow window)
+        {
+            window.SettingsForTests.OutputBackend = "vigem";
+            window.SettingsForTests.VhfProfile = "auto";
+            window.SettingsForTests.VhfPackagePath = "";
+            window.SettingsForTests.Save();
+        }
+
+        [AvaloniaFact]
+        public void ViGEmIsSelectedByDefaultAndTheOutputTabOffersBothBackends()
+        {
+            var made = new List<FakeVhfTransport>();
+            var window = Open(made);
+            try
+            {
+                window.SettingsForTests.OutputBackend = "vigem";
+                window.ShowPageForTests("network");
+                window.ShowNetworkTabForTests("output");
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(window.OutputSectionVisibleForTests);
+                Assert.Equal("vigem", window.OutputBackendForTests);
+                Assert.Equal("VIGEM", window.HeaderOutputTagForTests);
+                Assert.False(window.VhfProfileRowVisibleForTests);   // nothing VHF-specific until VHF is chosen
+
+                window.ShowNetworkTabForTests("recv");
+                Assert.False(window.OutputSectionVisibleForTests);
+            }
+            finally { RestoreDefaults(window); window.Close(); }
+        }
+
+        [AvaloniaFact]
+        public void ChoosingVhfShowsTheProfilesOfTheSelectedLayoutAndTheHeaderSaysVhf()
+        {
+            var made = new List<FakeVhfTransport>();
+            var window = Open(made);
+            try
+            {
+                window.SelectLayoutForTests("xbox360");
+                window.SelectOutputBackendForTests("vhf");
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal("vhf", window.OutputBackendForTests);
+                Assert.True(window.VhfProfileRowVisibleForTests);
+                Assert.Equal(new[] { "xbox_series", "xbox_one" }, window.VhfProfileChoicesForTests);   // no Xbox 360 on VHF
+                Assert.Equal("VHF", window.HeaderOutputTagForTests);
+
+                window.SelectLayoutForTests("dualshock4");
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(new[] { "dualshock4", "dualsense" }, window.VhfProfileChoicesForTests);
+
+                window.SelectOutputBackendForTests("vigem");       // one click back to the default
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal("VIGEM", window.HeaderOutputTagForTests);
+                Assert.False(window.VhfProfileRowVisibleForTests);
+            }
+            finally { RestoreDefaults(window); window.Close(); }
+        }
+
+        [AvaloniaFact]
+        public void ConnectingThroughVhfCreatesTheChosenProfileAndTheWindowSaysSo()
+        {
+            var made = new List<FakeVhfTransport>();
+            var window = Open(made);
+            try
+            {
+                window.SelectLayoutForTests("dualshock4");
+                window.SettingsForTests.VhfProfile = "dualsense";
+                window.SelectOutputBackendForTests("vhf");
+                Dispatcher.UIThread.RunJobs();
+
+                window.ConnectForTests().GetAwaiter().GetResult();
+                Assert.True(window.EngineForTests.IsConnected);
+                Assert.True(window.EngineForTests.IsVhf);
+                Assert.Equal("VHF", window.HeaderOutputTagForTests);
+                Assert.Contains("(VHF)", window.ActiveControllerTextForTests);
+                Assert.Contains("DualSense", window.VhfControllerTextForTests);
+
+                FakeVhfTransport used;
+                lock (made) used = made.Single(f => f.Count(VhfProtocol.IoctlCreateController) > 0);
+                byte[] create = used.Calls.Single(c => c.Code == VhfProtocol.IoctlCreateController).Input;
+                Assert.Equal((ushort)VhfProfileId.DualSense, BinaryPrimitives.ReadUInt16LittleEndian(create.AsSpan(12)));
+
+                window.DisconnectForTests();
+                Assert.False(window.EngineForTests.IsConnected);
+                Assert.Equal(1, used.Count(VhfProtocol.IoctlDestroyController));
+                Assert.Equal("VHF", window.HeaderOutputTagForTests);   // the choice stays selected, ready for the next Connect
+            }
+            finally { window.DisconnectForTests(); RestoreDefaults(window); window.Close(); }
+        }
+
+        [AvaloniaFact]
+        public void TheDefaultBackendStillConnectsThroughViGEmNotVhf()
+        {
+            var made = new List<FakeVhfTransport>();
+            var window = Open(made);
+            try
+            {
+                window.SettingsForTests.OutputBackend = "vigem";
+                // ViGEmBus is not installed on a build machine: the connect fails the way it always did, and the VHF driver is never touched.
+                Assert.Equal("ViGEm", window.EngineForTests.Backend);
+                Assert.False(window.EngineForTests.IsVhf);
+                lock (made) Assert.DoesNotContain(made, f => f.Count(VhfProtocol.IoctlCreateController) > 0);
+            }
+            finally { RestoreDefaults(window); window.Close(); }
+        }
+
+        [AvaloniaFact]
+        public void TheStatusPanelShowsNotInstalledReadyAndProtocolMismatch()
+        {
+            var made = new List<FakeVhfTransport>();
+            var window = Open(made, f => f.OpenResult = VhfWin32.ErrorNotFound);
+            try
+            {
+                window.RefreshVhfStatusNow();
+                Assert.Equal(BadgeState.Off, window.VhfBadgeStateForTests);
+                Assert.Contains("Not installed", window.VhfBadgeTextForTests);
+                Assert.Contains("not installed", window.VhfSignatureTextForTests);
+            }
+            finally { RestoreDefaults(window); window.Close(); }
+
+            made = new List<FakeVhfTransport>();
+            window = Open(made);
+            try
+            {
+                window.RefreshVhfStatusNow();
+                Assert.Equal(BadgeState.Ok, window.VhfBadgeStateForTests);
+                Assert.Contains("Ready", window.VhfBadgeTextForTests);
+                Assert.Contains("Xbox Series", window.VhfBadgeTextForTests);
+            }
+            finally { RestoreDefaults(window); window.Close(); }
+
+            made = new List<FakeVhfTransport>();
+            window = Open(made, f => f.MaxVersion = 1);
+            try
+            {
+                window.RefreshVhfStatusNow();
+                Assert.Equal(BadgeState.Warn, window.VhfBadgeStateForTests);
+                Assert.Contains("protocol", window.VhfBadgeTextForTests);
+            }
+            finally { RestoreDefaults(window); window.Close(); }
+        }
+
+        [AvaloniaFact]
+        public void AnUnsignedPackageIsRefusedAndTheInstallButtonStaysOff()
+        {
+            var made = new List<FakeVhfTransport>();
+            var window = Open(made);
+            using var dir = new TempDir();
+            try
+            {
+                VhfPackageVerifierTests.MakePackage(dir.Path);   // right layout and hashes, but nothing in it is signed
+                VhfPackageReport report = window.VerifyVhfPackage(dir.Path);
+                Assert.False(report.Ok);
+                Assert.Contains("Not signed", window.VhfPackageTextForTests);
+                Assert.False(window.VhfInstallEnabledForTests);
+                Assert.Equal("", window.SettingsForTests.VhfPackagePath);   // a refused package is not remembered
+            }
+            finally { RestoreDefaults(window); window.Close(); }
         }
     }
 }
