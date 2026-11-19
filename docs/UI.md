@@ -71,3 +71,10 @@ Not adopted: the split-colour wordmark (the app keeps its own plain name), hover
 The Buttons tab frames the D-pad and the four face buttons in their own panels (left and right of the pad), puts the shoulder and trigger chips above them, stick clicks (and Guide / Touchpad) below, and Share / Options as two chips on top whose lines run down to the pad. The Sticks tab shows the four left-stick directions and the mouse-look right stick. A chip is one line: the control's name, what the game does on it (when there is room) and a badge with what you mapped it to. Only the shown tab's controls can be clicked; the other tab's markers are dimmed (stick directions are left out of the Buttons tab). Changing tab drops a selection that is not on the new tab.
 
 Not copied from the reference design this layout follows: reading a physical controller ("press the matching input on your controller", "set stick centre"), since this app turns keyboard and mouse input into the virtual pad and reads no pad. The accent inside the diagram (selection, light bar, stick rings) is teal; the rest of the app keeps its blue.
+
+## Output tab (Network and input)
+A fifth tab, OUTPUT, chooses the backend that creates the virtual controller (ViGEm by default, or the optional VHF driver), the VHF profile
+(Xbox Series / Xbox One for an Xbox layout, DualShock 4 / DualSense for PS4), and shows the driver status, version, signature and the last
+rumble output, with explicit package choice, install and removal. The header tag and dashboard name the backend in use. Details and limits:
+[VHF_BACKEND.md](VHF_BACKEND.md). The tab row wraps when the window is narrow.
+

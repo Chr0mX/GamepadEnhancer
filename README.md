@@ -21,6 +21,7 @@ Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm
 - **Mouse buttons over the same link:** a client that subscribes with `km.mouse_stream(1)` gets this PC's mouse buttons pushed back as `km.mouse(mask)` on the connection it already uses for commands (one address, port and token), for example to give Axiom a remote aim button. See [docs/NETWORK_API.md](docs/NETWORK_API.md)
 - **Input blocking and mouse look:** while a chosen game is focused, swallow the keyboard/mouse input you mapped to pad actions so only the controller reaches the game, bind mouse buttons and the wheel to pad actions, and let mouse movement drive the right stick (off by default). See [docs/BLOCKING.md](docs/BLOCKING.md)
 - **Live controller monitor:** an Xbox 360 or DualShock 4 picture of the pad, with a view of the physical input, the processed input, or the final output sent to ViGEm; sticks, analog triggers, button history, pop-out window (always on top or transparent overlay). See [docs/MONITOR.md](docs/MONITOR.md)
+- **Optional VHF output:** instead of ViGEmBus the virtual controller can be created through Microsoft's Virtual HID Framework with the open-source libvirtualgamepad driver (Xbox Series / Xbox One / DualShock 4 / DualSense). ViGEm stays the default; the driver is not included, and a package is checked (trusted signature, hashes) before the app starts its setup tool. See [docs/VHF_BACKEND.md](docs/VHF_BACKEND.md)
 - **Switch the output type while connected** (Xbox 360 / PS4) without restarting; a **Guide / PS** button action
 - Profiles (JSON in `profiles/`) save the controller type, bindings, turbo and mouse look, and can be **imported, exported and edited** by hand; keyboard keys, mouse buttons and mouse movement are kept clearly apart. Files from earlier builds load unchanged
 - **Aiming, recoil and stick shaping are done by the client that drives the pad** (Axiom); this app no longer has base drift, stick filtering or recoil patterns
@@ -28,7 +29,7 @@ Windows desktop app that creates a virtual Xbox 360 or PS4 controller with ViGEm
 ## Requirements
 
 - Windows 10/11
-- ViGEmBus installed on the PC that runs the app
+- ViGEmBus installed on the PC that runs the app (or, for the optional VHF output, a signed libvirtualgamepad driver package; see [docs/VHF_BACKEND.md](docs/VHF_BACKEND.md))
 - .NET 8 SDK for local builds (the .NET 8 Desktop Runtime is enough to run a release)
 
 ## Install and first run
@@ -99,6 +100,8 @@ The pure logic (input block policy, mouse look, process matching, key names) is 
 - [docs/NETWORK_API.md](docs/NETWORK_API.md): Network API and `km.mouse` mouse buttons
 - [docs/BLOCKING.md](docs/BLOCKING.md): input blocking and mouse look
 - [docs/MONITOR.md](docs/MONITOR.md): controller monitor and output types
+- [docs/VHF_BACKEND.md](docs/VHF_BACKEND.md): the optional VHF output, its driver, signing and tests; [research report](docs/VHF_BACKEND_RESEARCH.md)
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md): licences of third-party code
 - [docs/releases/](docs/releases/): release notes
 
 ## Origin

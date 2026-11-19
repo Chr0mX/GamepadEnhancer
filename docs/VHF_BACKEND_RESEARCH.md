@@ -1,6 +1,6 @@
 # Research: a Microsoft VHF virtual gamepad backend for GamepadEnhancer
 
-Status: research only. No source code was changed. Nothing here was built, installed or run: the sandbox this was written in is Linux, has no .NET SDK and no Windows, so there are **no benchmarks and no hardware results** in this document. Every statement is marked with where it comes from: **[code]** read in a cloned repository, **[docs]** read in Microsoft's published documentation sources, **[claim]** stated by a project but not verified by me, **[unverified]** not checked.
+Status: this is the research that preceded the implementation, which is described in [VHF_BACKEND.md](VHF_BACKEND.md). When it was written no source code had been changed. Nothing here was built, installed or run: the sandbox this was written in is Linux, has no .NET SDK and no Windows, so there are **no benchmarks and no hardware results** in this document. Every statement is marked with where it comes from: **[code]** read in a cloned repository, **[docs]** read in Microsoft's published documentation sources, **[claim]** stated by a project but not verified by me, **[unverified]** not checked.
 
 ## 0. Corrections to the task's assumptions
 

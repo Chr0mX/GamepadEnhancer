@@ -47,3 +47,11 @@ with labels resolved for the current controller. DualShock/DualSense paddles are
 (one state machine per binding), `OutputOwnership` (who holds which output), `BindingRuntime` (edge queue, tick update, layers, turbo, status
 snapshot) and `BindingEntries` (file form and validation). `ControllerEngine` forwards timestamped input edges, calls `Update` once per tick
 and ORs the result into the report it already writes; it remains the only writer to the pad. Details and rules: [BINDINGS.md](BINDINGS.md).
+
+## Output backends
+`ControllerEngine` writes the final pad state through two small interfaces (`IXboxPad`, `IDs4Pad` in `Core/PadInterfaces.cs`). Implementations:
+ViGEm (`ViGEmXboxPad`, `ViGEmDs4Pad`, the default), `NetworkPad` (sends to another PC) and `VhfPad` (`Output/Vhf/`, optional). `Connect(xbox, remote, vhf)`
+picks one; a pad may also implement `IPadPump` to be serviced on every engine tick (the VHF pad reads driver feedback and recovers a lost
+controller there). The VHF backend is a typed client of a separately installed driver (`VhfProtocol`, `IVhfTransport`, `VhfClient`) plus a
+package verifier and driver inspector; no processing lives in it. See [VHF_BACKEND.md](VHF_BACKEND.md).
+
