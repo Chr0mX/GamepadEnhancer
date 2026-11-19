@@ -24,7 +24,7 @@ namespace GamepadEnhancer.Tests
         public uint Profiles = VhfProtocol.ProfileBit(VhfProfileId.XboxOne) | VhfProtocol.ProfileBit(VhfProfileId.XboxSeries)
                                | VhfProtocol.ProfileBit(VhfProfileId.DualShock4) | VhfProtocol.ProfileBit(VhfProfileId.DualSense);
         public ushort MinVersion = VhfProtocol.Version, MaxVersion = VhfProtocol.Version;
-        public int QueryResult, CreateResult, DestroyResult, SubmitResult;
+        public int CreateResult, SubmitResult;
         public int BusyCreates;                                  // this many creates answer ERROR_BUSY first
         public readonly Queue<byte[]> Feedback = new();
         public int CloseCount;
@@ -45,7 +45,6 @@ namespace GamepadEnhancer.Tests
             Calls.Add((code, input));
             if (code == VhfProtocol.IoctlQueryInfo)
             {
-                if (QueryResult != 0) return QueryResult;
                 byte[] info = InfoResponse(MinVersion, MaxVersion, Profiles);
                 info.CopyTo(output, 0);
                 bytesReturned = info.Length;
@@ -56,7 +55,7 @@ namespace GamepadEnhancer.Tests
                 if (BusyCreates > 0) { BusyCreates--; return VhfWin32.ErrorBusy; }
                 return CreateResult;
             }
-            if (code == VhfProtocol.IoctlDestroyController) return DestroyResult;
+            if (code == VhfProtocol.IoctlDestroyController) return 0;
             if (code == VhfProtocol.IoctlSubmitInputState) return SubmitResult;
             if (code == VhfProtocol.IoctlPollFeedback)
             {
@@ -932,6 +931,9 @@ namespace GamepadEnhancer.Tests
 
     public class VhfSignatureTests
     {
+        /// <summary>GitHub Actions sets this; there the real-Windows checks must run, not be skipped.</summary>
+        private static bool RunsOnCi => string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"), "true", StringComparison.OrdinalIgnoreCase);
+
         [Fact]
         public void TheTrustResultAndTheSignerNameDecideWhetherASignatureIsProduction()
         {
@@ -974,7 +976,11 @@ namespace GamepadEnhancer.Tests
             // dotnet.exe carries an embedded Microsoft signature; this proves the WinVerifyTrust call itself works end to end.
             string pf = Environment.GetEnvironmentVariable("ProgramFiles");
             string dotnet = pf == null ? null : System.IO.Path.Combine(pf, "dotnet", "dotnet.exe");
-            if (dotnet == null || !File.Exists(dotnet)) return;   // nothing known to be signed on this machine
+            if (dotnet == null || !File.Exists(dotnet))
+            {
+                Assert.False(RunsOnCi, "dotnet.exe was not found on the CI runner, so the real trust check was not exercised");
+                return;   // a developer machine with dotnet elsewhere: nothing known to be signed here
+            }
             VhfSignature sig = new WinTrustSignatureReader().Read(dotnet);
             Assert.True(sig.Kind == VhfSignatureKind.Trusted, "dotnet.exe: " + sig.Kind + " " + sig.Detail + " " + sig.Subject);
             Assert.Contains("Microsoft", sig.Subject);
@@ -986,7 +992,11 @@ namespace GamepadEnhancer.Tests
             // The catalog path of the verifier is the one that matters most: check it against a catalog Microsoft ships.
             string folder = System.IO.Path.Combine(Environment.SystemDirectory, "CatRoot", "{F750E6C3-38EE-11D1-85E5-00C04FC295EE}");
             string cat = Directory.Exists(folder) ? Directory.EnumerateFiles(folder, "*.cat").FirstOrDefault() : null;
-            if (cat == null) return;
+            if (cat == null)
+            {
+                Assert.False(RunsOnCi, "no Windows catalog was found on the CI runner, so the catalog trust check was not exercised");
+                return;
+            }
             VhfSignature sig = new WinTrustSignatureReader().Read(cat);
             Assert.True(sig.Kind == VhfSignatureKind.Trusted, System.IO.Path.GetFileName(cat) + ": " + sig.Kind + " " + sig.Detail + " " + sig.Subject);
         }
