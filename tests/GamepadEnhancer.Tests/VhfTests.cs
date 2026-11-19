@@ -768,10 +768,10 @@ namespace GamepadEnhancer.Tests
         public VhfSignature Read(string path) => path.EndsWith(".cat", StringComparison.OrdinalIgnoreCase) ? Catalog : Tool;
     }
 
-    internal sealed class TempDir : IDisposable
+    internal sealed class VhfTempDir : IDisposable
     {
         public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ge-vhf-" + Guid.NewGuid().ToString("N"));
-        public TempDir() { Directory.CreateDirectory(Path); }
+        public VhfTempDir() { Directory.CreateDirectory(Path); }
         public void Dispose() { try { Directory.Delete(Path, true); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
     }
 
@@ -809,7 +809,7 @@ namespace GamepadEnhancer.Tests
 
         private static VhfPackageReport Check(Action<string> arrange, FakeSignatureReader reader = null, string platform = "x64")
         {
-            using var dir = new TempDir();
+            using var dir = new VhfTempDir();
             arrange(dir.Path);
             return new VhfPackageVerifier(reader ?? new FakeSignatureReader(), platform).Verify(dir.Path);
         }
@@ -817,7 +817,7 @@ namespace GamepadEnhancer.Tests
         [Fact]
         public void AValidSignedPackagePassesAndCanBeInstalledThroughTheElevatedSetupTool()
         {
-            using var dir = new TempDir();
+            using var dir = new VhfTempDir();
             MakePackage(dir.Path);
             VhfPackageReport report = new VhfPackageVerifier(new FakeSignatureReader(), "x64").Verify(dir.Path);
             Assert.True(report.Ok, report.Summary());
@@ -870,13 +870,13 @@ namespace GamepadEnhancer.Tests
         public void MissingAndUnexpectedFilesAreRefused()
         {
             VhfPackageVerifier v = new(new FakeSignatureReader(), "x64");
-            using (var dir = new TempDir())
+            using (var dir = new VhfTempDir())
             {
                 MakePackage(dir.Path);
                 File.Delete(System.IO.Path.Combine(dir.Path, "driver", "VibeshineVhfGamepad.cat"));
                 Assert.Contains(v.Verify(dir.Path).Problems, p => p.StartsWith("Missing file") && p.Contains(".cat"));
             }
-            using (var dir = new TempDir())
+            using (var dir = new VhfTempDir())
             {
                 MakePackage(dir.Path);
                 File.WriteAllText(System.IO.Path.Combine(dir.Path, "extra.dll"), "evil");
@@ -898,9 +898,9 @@ namespace GamepadEnhancer.Tests
         [Fact]
         public void AZipIsUnpackedSafelyAndThenVerifiedLikeAFolder()
         {
-            using var source = new TempDir();
+            using var source = new VhfTempDir();
             MakePackage(source.Path);
-            using var work = new TempDir();
+            using var work = new VhfTempDir();
             string zip = System.IO.Path.Combine(work.Path, "package.zip");
             ZipFile.CreateFromDirectory(source.Path, zip);
 
@@ -911,7 +911,7 @@ namespace GamepadEnhancer.Tests
         [Fact]
         public void AZipThatWritesOutsideItsFolderOrHasTooManyFilesIsRefused()
         {
-            using var work = new TempDir();
+            using var work = new VhfTempDir();
             string evil = System.IO.Path.Combine(work.Path, "evil.zip");
             using (var stream = File.Create(evil))
             using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
@@ -959,7 +959,7 @@ namespace GamepadEnhancer.Tests
         [Fact]
         public void TheRealReaderSeesAnUnsignedFileAsUnsigned()
         {
-            using var dir = new TempDir();
+            using var dir = new VhfTempDir();
             string file = System.IO.Path.Combine(dir.Path, "plain.exe");
             File.WriteAllBytes(file, new byte[] { 0x4D, 0x5A, 0x00, 0x00 });
             VhfSignature sig = new WinTrustSignatureReader().Read(file);
@@ -1249,7 +1249,7 @@ namespace GamepadEnhancer.Tests
         {
             var made = new List<FakeVhfTransport>();
             var window = Open(made);
-            using var dir = new TempDir();
+            using var dir = new VhfTempDir();
             try
             {
                 VhfPackageVerifierTests.MakePackage(dir.Path);   // right layout and hashes, but nothing in it is signed
