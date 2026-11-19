@@ -86,6 +86,34 @@ namespace GamepadEnhancer.Tests
             window.Close();
         }
 
+        [AvaloniaFact]
+        public void TheControllerTabsSwitchTheDiagramPageAndDropASelectionThatIsNotOnIt()
+        {
+            var window = new MainWindow();
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            window.ShowPageForTests("controller");
+            Assert.Equal(DiagramPage.Buttons, window.DiagramForTests.Page);
+
+            window.SelectSlotForTests(Inputs.FaceSouth);
+            Assert.Equal(Inputs.FaceSouth, window.SelectedSlotForTests);
+
+            window.ShowControllerTabForTests("sticks");
+            Assert.Equal(DiagramPage.Sticks, window.DiagramForTests.Page);
+            Assert.Null(window.SelectedSlotForTests);                         // a face button is not on the sticks page
+            Assert.Null(window.DiagramForTests.SelectedId);
+
+            window.SelectSlotForTests(Inputs.LsUp);
+            window.ShowControllerTabForTests("all");                          // the list of bindings keeps the diagram page and the selection
+            Assert.Equal(DiagramPage.Sticks, window.DiagramForTests.Page);
+            Assert.Equal(Inputs.LsUp, window.SelectedSlotForTests);
+
+            window.ShowControllerTabForTests("buttons");
+            Assert.Equal(DiagramPage.Buttons, window.DiagramForTests.Page);
+            Assert.Null(window.SelectedSlotForTests);
+            window.Close();
+        }
+
         /// <summary>
         /// Renders each page to a PNG (set GE_SCREENSHOT_DIR; CI uploads the folder) so the real layout can be looked at.
         /// It never fails on pixels, only on exceptions.
@@ -108,6 +136,14 @@ namespace GamepadEnhancer.Tests
                     Dispatcher.UIThread.RunJobs();
                     var frame = window.CaptureRenderedFrame();
                     frame?.Save(Path.Combine(dir, $"{key}-{w}.png"));
+                    if (key == "controller")
+                    {
+                        window.ShowControllerTabForTests("sticks");
+                        window.UpdateLayout();
+                        Dispatcher.UIThread.RunJobs();
+                        window.CaptureRenderedFrame()?.Save(Path.Combine(dir, $"controller-sticks-{w}.png"));
+                        window.ShowControllerTabForTests("buttons");
+                    }
                 }
                 window.Close();
             }

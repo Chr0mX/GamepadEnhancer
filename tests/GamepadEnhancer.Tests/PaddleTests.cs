@@ -367,14 +367,17 @@ namespace GamepadEnhancer.Tests
         public void ChipsNeverOverlapEachOther(bool xbox)
         {
             PadFamily family = xbox ? PadFamily.Xbox360 : PadFamily.DualShock4;
-            var chips = ControllerLayout.For(family).Select(s => s.Chip).ToList();
-            for (int i = 0; i < chips.Count; i++)
-                for (int j = i + 1; j < chips.Count; j++)
-                {
-                    bool overlap = chips[i].X < chips[j].X + chips[j].W && chips[j].X < chips[i].X + chips[i].W
-                                && chips[i].Y < chips[j].Y + chips[j].H && chips[j].Y < chips[i].Y + chips[i].H;
-                    Assert.False(overlap, $"chips {i} and {j} overlap");
-                }
+            foreach (DiagramPage page in new[] { DiagramPage.Buttons, DiagramPage.Sticks })
+            {
+                var chips = ControllerLayout.For(family, page).Select(s => s.Chip).ToList();
+                for (int i = 0; i < chips.Count; i++)
+                    for (int j = i + 1; j < chips.Count; j++)
+                    {
+                        bool overlap = chips[i].X < chips[j].X + chips[j].W && chips[j].X < chips[i].X + chips[i].W
+                                    && chips[i].Y < chips[j].Y + chips[j].H && chips[j].Y < chips[i].Y + chips[i].H;
+                        Assert.False(overlap, $"{page} page: chips {i} and {j} overlap");
+                    }
+            }
         }
 
         [Fact]
@@ -384,7 +387,8 @@ namespace GamepadEnhancer.Tests
                 foreach (LayoutSlot s in ControllerLayout.For(family))
                 {
                     var c = s.Chip;
-                    Assert.Equal(s.Id, ControllerLayout.HitTest(family, c.X + c.W / 2, c.Y + c.H / 2).Id);       // its chip
+                    // a chip answers on its own page (the two pages reuse the same columns)
+                    Assert.Equal(s.Id, ControllerLayout.HitTest(ControllerLayout.For(family, s.Page), c.X + c.W / 2, c.Y + c.H / 2).Id);
                 }
 
             LayoutSlot cross = ControllerLayout.Find(PadFamily.DualShock4, ControllerEngine.ActionACross);
@@ -405,6 +409,66 @@ namespace GamepadEnhancer.Tests
             Assert.Equal(right.Id, ControllerLayout.HitTest(PadFamily.DualShock4, right.MX, right.MY).Id);
             LayoutSlot r3 = ControllerLayout.Find(PadFamily.DualShock4, ControllerEngine.ActionRsR3);
             Assert.Equal(r3.Id, ControllerLayout.HitTest(PadFamily.DualShock4, r3.MX + 27, r3.MY).Id);             // ring outside the stick marker
+        }
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void EveryControlIsOnExactlyOnePage(bool xbox)
+        {
+            PadFamily family = xbox ? PadFamily.Xbox360 : PadFamily.DualShock4;
+            var all = ControllerLayout.For(family).Select(s => s.Id).OrderBy(x => x).ToList();
+            var pages = ControllerLayout.For(family, DiagramPage.Buttons).Concat(ControllerLayout.For(family, DiagramPage.Sticks)).Select(s => s.Id).OrderBy(x => x).ToList();
+            Assert.Equal(all, pages);
+
+            // the sticks page is the four left-stick directions and the right stick (mouse); everything else is a button
+            var sticks = ControllerLayout.For(family, DiagramPage.Sticks).Select(s => s.Id).ToHashSet();
+            Assert.Equal(5, sticks.Count);
+            Assert.Contains(ControllerLayout.RightStickId, sticks);
+            Assert.All(ControllerLayout.For(family, DiagramPage.Buttons), s => Assert.False(InputChoices.IsStickAction(s.Id) || s.Id == ControllerLayout.RightStickId));
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void TheDpadAndTheFaceButtonsAreFramedInTheirOwnPanels(bool xbox)
+        {
+            PadFamily family = xbox ? PadFamily.Xbox360 : PadFamily.DualShock4;
+            var groups = ControllerLayout.Groups(family, DiagramPage.Buttons);
+            Assert.Equal(new[] { "D-Pad", "Face Buttons" }, groups.Select(g => g.Title).OrderBy(x => x).ToArray());
+            foreach (SlotGroup g in groups)
+            {
+                var members = ControllerLayout.For(family, DiagramPage.Buttons).Where(s => s.Group == g.Title).ToList();
+                Assert.Equal(4, members.Count);
+                foreach (LayoutSlot m in members)
+                {
+                    var c = m.Chip;     // the panel contains every chip it frames, with room for its title above them
+                    Assert.True(c.X >= g.X && c.X + c.W <= g.X + g.W && c.Y >= g.Y + ControllerLayout.GroupTitleH - 0.001 && c.Y + c.H <= g.Y + g.H, $"{m.Id} is not inside the {g.Title} panel");
+                }
+                // and no other chip sits inside the panel
+                foreach (LayoutSlot other in ControllerLayout.For(family, DiagramPage.Buttons).Except(members))
+                {
+                    var c = other.Chip;
+                    bool inside = c.X < g.X + g.W && g.X < c.X + c.W && c.Y < g.Y + g.H && g.Y < c.Y + c.H;
+                    Assert.False(inside, $"{other.Id} overlaps the {g.Title} panel");
+                }
+            }
+            Assert.Equal(new[] { "Left Stick", "Right Stick" }, ControllerLayout.Groups(family, DiagramPage.Sticks).Select(g => g.Title).OrderBy(x => x).ToArray());
+        }
+
+        [Fact]
+        public void ShareAndOptionsSitOnTopOfThePadAndTheOtherButtonsFlankIt()
+        {
+            foreach (PadFamily family in new[] { PadFamily.DualShock4, PadFamily.Xbox360 })
+            {
+                LayoutSlot share = ControllerLayout.Find(family, ControllerEngine.ActionBackShare), options = ControllerLayout.Find(family, ControllerEngine.ActionStartOptions);
+                Assert.Equal(SlotSide.Top, share.Side);
+                Assert.Equal(SlotSide.Top, options.Side);
+                Assert.True(share.Chip.X + share.Chip.W < options.Chip.X);                      // side by side, share on the left
+                Assert.True(share.Chip.X >= ControllerLayout.ChipW + 12 && options.Chip.X + options.Chip.W <= ControllerLayout.Width - ControllerLayout.ChipW - 12);   // between the two columns
+                Assert.Equal(16, share.Chip.Y);
+                Assert.True(ControllerLayout.Find(family, ControllerEngine.ActionLtL2).Chip.X < share.Chip.X);
+                Assert.True(ControllerLayout.Find(family, ControllerEngine.ActionRtR2).Chip.X > options.Chip.X);
+            }
         }
     }
 }

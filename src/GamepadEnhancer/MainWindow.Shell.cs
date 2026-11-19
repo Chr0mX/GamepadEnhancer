@@ -179,9 +179,26 @@ namespace GamepadEnhancer
         private void CTab_Changed(object sender, RoutedEventArgs e)
         {
             if (!shellReady || sender is not RadioButton { IsChecked: true, Tag: string tag }) return;
-            controllerMapPane.IsVisible = tag == "map";
-            allBindingsPane.IsVisible = tag == "all";
+            ApplyControllerTab(tag);
         }
+
+        /// <summary>Switches the Controller page between the diagram's two pages (Buttons, Sticks) and the full list of bindings.</summary>
+        private void ApplyControllerTab(string tag)
+        {
+            bool list = tag == "all";
+            controllerMapPane.IsVisible = !list;
+            allBindingsPane.IsVisible = list;
+            if (list || diagram == null) return;
+            diagram.Page = tag == "sticks" ? DiagramPage.Sticks : DiagramPage.Buttons;
+            // a control that is not on the page now showing is no longer selected
+            LayoutSlot slot = selectedSlot == null ? null : ControllerLayout.Find(diagram.Family, selectedSlot);
+            if (slot != null && !slot.IsPaddle && slot.Page != diagram.Page) { selectedSlot = null; SyncEditor(); }
+            diagram.SelectedId = selectedSlot;
+        }
+
+        internal void ShowControllerTabForTests(string tag) => ApplyControllerTab(tag);
+        internal string SelectedSlotForTests => selectedSlot;
+        internal void SelectSlotForTests(string id) { OnSlotSelected(id); diagram.SelectedId = id; }
 
         private void NTab_Changed(object sender, RoutedEventArgs e)
         {

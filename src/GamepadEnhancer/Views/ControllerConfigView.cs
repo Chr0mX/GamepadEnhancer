@@ -30,7 +30,7 @@ namespace GamepadEnhancer
             GradientStops = new GradientStops { new GradientStop(Color.Parse(top), 0), new GradientStop(Color.Parse(bottom), 1) }
         };
 
-        private static readonly IBrush BackdropTop = B("#1A1D27"), TextDim = B("#8B8FA3"), TextBright = B("#E4E6EF"), Accent = B("#4F8CFF"), Good = B("#34D399");
+        private static readonly IBrush BackdropTop = B("#1A1D27"), TextDim = B("#8B8FA3"), TextBright = B("#E4E6EF"), Accent = B("#5EEAD4"), Good = B("#34D399");
         private static readonly IBrush BackdropFill = B("#1A1D27");
         private static readonly IBrush BodyFill = B("#22263A");
         private static readonly IBrush PartFill = B("#2A2E3E");
@@ -42,7 +42,8 @@ namespace GamepadEnhancer
         private static readonly IBrush ShadowBrush = A("#000000", 38);
         private static readonly IBrush DotBrush = A("#8B8FA3", 90);
 
-        private static readonly IBrush DimBrush = B("#4B4E63"), BoundBrush = B("#4F8CFF"), WhiteBrush = B("#FFFFFF");
+        private static readonly IBrush DimBrush = B("#4B4E63"), BoundBrush = B("#3FB6A8"), WhiteBrush = B("#FFFFFF");
+        private static readonly IBrush GroupFill = A("#FFFFFF", 7), GroupEdge = A("#8B8FA3", 60), BadgeFill = A("#FFFFFF", 16), BadgeEdge = A("#8B8FA3", 50);
         private static readonly IBrush KeyBrush = B("#6C9CFF"), MouseBrush = B("#4CD787"), PadBrush = B("#FFB84C");
 
         private static readonly Typeface Bold = new(FontFamily.Default, FontStyle.Normal, FontWeight.SemiBold);
@@ -156,6 +157,7 @@ namespace GamepadEnhancer
         private PadFamily family = PadFamily.DualShock4;
         private bool overview;
         private DiagramMode mode = DiagramMode.Controls;
+        private DiagramPage page = DiagramPage.Buttons;
         private string selectedId;
 
         /// <summary>Text shown on a slot's chip (its current mapping, e.g. "Space" or "Not set").</summary>
@@ -210,7 +212,18 @@ namespace GamepadEnhancer
             set { if (mode != value) { mode = value; InvalidateVisual(); } }
         }
 
-        private IReadOnlyList<LayoutSlot> Slots() => mode == DiagramMode.Paddles ? ControllerLayout.ForPaddles(family) : ControllerLayout.For(family);
+        /// <summary>Which page the diagram shows: the buttons, or the stick directions. Only the shown page's chips can be clicked.</summary>
+        public DiagramPage Page
+        {
+            get => page;
+            set { if (page != value) { page = value; InvalidateVisual(); } }
+        }
+
+        /// <summary>The slots you can click right now (the paddle view's four, or the shown page's).</summary>
+        private IReadOnlyList<LayoutSlot> Slots() => mode == DiagramMode.Paddles ? ControllerLayout.ForPaddles(family) : ControllerLayout.For(family, page);
+
+        /// <summary>Every marker that is drawn, including the other page's (dimmed).</summary>
+        private IReadOnlyList<LayoutSlot> AllSlots() => mode == DiagramMode.Paddles ? ControllerLayout.ForPaddles(family) : ControllerLayout.For(family);
 
         public string SelectedId
         {
@@ -280,14 +293,14 @@ namespace GamepadEnhancer
 
         // ── Drawing ─────────────────────────────────────────────────────────────
 
-        private static readonly IBrush GlowBrush = A("#4F8CFF", 70), HaloBrush = A("#FFFFFF", 60), RidgeBrush = A("#FFFFFF", 45),
+        private static readonly IBrush GlowBrush = A("#5EEAD4", 70), HaloBrush = A("#FFFFFF", 60), RidgeBrush = A("#FFFFFF", 45),
             BodyEdge = B("#3B4157"), PartEdge = B("#4B4E63"), FaintEdge = A("#8B8FA3", 70), ScrimBrush = A("#0F1117", 150);
 
         private List<LayoutSlot> DrawOrder()
         {
             if (!drawOrder.TryGetValue((family, mode), out List<LayoutSlot> list))
             {
-                list = new List<LayoutSlot>(Slots());
+                list = new List<LayoutSlot>(AllSlots());
                 list.Sort((a, b) => (b.MW * b.MH).CompareTo(a.MW * a.MH));   // big shapes first so small ones stay on top of them
                 drawOrder[(family, mode)] = list;
             }
@@ -300,12 +313,23 @@ namespace GamepadEnhancer
             context.DrawRectangle(BackdropFill, null, new Rect(Bounds.Size));
             using (context.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(ox, oy)))
             {
-                if (!overview) DrawHeader(context);
+                if (!overview && mode == DiagramMode.Paddles) DrawHeader(context);
                 if (mode == DiagramMode.Paddles) DrawRearBody(context); else DrawBodies(context);
                 IReadOnlyList<LayoutSlot> slots = Slots();
+                if (!overview && mode == DiagramMode.Controls) DrawGroups(context);
                 if (!overview) foreach (LayoutSlot s in slots) DrawConnector(context, s);
                 foreach (LayoutSlot s in DrawOrder()) DrawMarker(context, s);
                 if (!overview) foreach (LayoutSlot s in slots) DrawChip(context, s);
+            }
+        }
+
+        /// <summary>The panels that frame the D-pad, the face buttons and a stick, each with its title.</summary>
+        private void DrawGroups(DrawingContext c)
+        {
+            foreach (SlotGroup g in ControllerLayout.Groups(family, page))
+            {
+                c.DrawRectangle(GroupFill, PenFor(GroupEdge, 1), new Rect(g.X, g.Y, g.W, g.H), 10, 10);
+                DrawTextLeftMiddle(c, g.Title, 11, TextDim, g.X + 12, g.Y + ControllerLayout.GroupTitleH / 2 + 1, true);
             }
         }
 
@@ -336,6 +360,9 @@ namespace GamepadEnhancer
                 for (int i = 1; i <= 3; i++)
                     using (c.PushTransform(Matrix.CreateTranslation(0, 2 + i * 3))) c.DrawGeometry(ShadowBrush, null, Ds4Body);
                 c.DrawGeometry(BodyFill, PenFor(BodyEdge, 2), Ds4Body);
+                // the light bar
+                c.DrawLine(PenFor(GlowBrush, 7, true), new Point(404, 160), new Point(476, 160));
+                c.DrawLine(PenFor(Accent, 2.4, true), new Point(404, 160), new Point(476, 160));
             }
             else
             {
@@ -400,6 +427,7 @@ namespace GamepadEnhancer
             var chip = s.Chip;
             Point from = s.Side == SlotSide.Left ? new Point(chip.X + chip.W, chip.Y + chip.H / 2)
                 : s.Side == SlotSide.Right ? new Point(chip.X, chip.Y + chip.H / 2)
+                : s.Side == SlotSide.Top ? new Point(chip.X + chip.W / 2, chip.Y + chip.H)
                 : new Point(chip.X + chip.W / 2, chip.Y);
             bool hot = IsPressed(s) || string.Equals(s.Id, selectedId, StringComparison.OrdinalIgnoreCase);
             c.DrawLine(hot ? PenFor(Accent, 1.8, true) : Dotted(DimBrush, 1.2), from, new Point(s.MX, s.MY));
@@ -418,7 +446,12 @@ namespace GamepadEnhancer
             bool available = !s.IsPaddle || IsAvailable(s.Id);
             Point centre = new(s.MX, s.MY);
 
-            using (c.PushOpacity(available ? 1.0 : 0.4))
+            // the other page's controls: the stick directions are left out of the buttons page, everything else is drawn dimmed
+            bool onPage = overview || mode == DiagramMode.Paddles || s.Page == page;
+            if (!onPage && s.Page == DiagramPage.Sticks) return;
+            selected &= onPage; pressed &= onPage;
+
+            using (c.PushOpacity((available ? 1.0 : 0.4) * (onPage ? 1.0 : 0.35)))
             {
                 if (selected) DrawHalo(c, s);
 
@@ -569,6 +602,14 @@ namespace GamepadEnhancer
             return KeyBrush;
         }
 
+        /// <summary>The title as shown in a group panel: the group's own name is dropped ("D-Pad Up" under "D-Pad" reads "Up").</summary>
+        private static string ChipTitle(LayoutSlot s)
+        {
+            if (s.Group != null && s.Title.StartsWith(s.Group + " ", StringComparison.OrdinalIgnoreCase)) return s.Title.Substring(s.Group.Length + 1);
+            if (s.Id == ControllerLayout.RightStickId) return "Mouse look";
+            return s.Title;
+        }
+
         private void DrawChip(DrawingContext c, LayoutSlot s)
         {
             var chip = s.Chip;
@@ -578,45 +619,103 @@ namespace GamepadEnhancer
             bool enabled = !s.IsPaddle || IsSlotEnabled(s.Id);
             string mapping = MappingText(s.Id);
             string native = NativeText(s.Id);
-            string line2 = mapping;
-            if (s.IsPaddle && !enabled) line2 = "Off";
-            else if (!string.IsNullOrEmpty(native)) line2 = mapping + "  ·  " + native;
-            if (s.IsPaddle && !available) line2 += "  (not detected)";
             bool big = chip.H > ControllerLayout.ChipH + 8;   // the paddle view's larger chips get three lines
-            string line3 = null;
-            if (big)
-            {
-                line2 = s.IsPaddle && !enabled ? "Off" : mapping;
-                var notes = new List<string>();
-                if (!(s.IsPaddle && !enabled) && !string.IsNullOrEmpty(native)) notes.Add(native);
-                if (s.IsPaddle && !available) notes.Add("not detected");
-                line3 = notes.Count == 0 ? null : Ellipsize(string.Join("  ·  ", notes), 34);
-                line2 = Ellipsize(line2, 24);
-            }
-            else line2 = Ellipsize(line2, 35);
 
             double flash = FlashAmount(s.Id);
             Rect r = new(chip.X, chip.Y, chip.W, chip.H);
             IBrush accent = KindBrush(mapping, s.IsPaddle && !enabled);
+            bool unset = accent == DimBrush;
             using (c.PushOpacity(available ? 1.0 : 0.55))
             {
                 c.DrawRectangle(ShadowBrush, null, new Rect(r.X, r.Y + 2, r.Width, r.Height), 8, 8);
-                c.DrawRectangle(ChipFill, PenFor(selected ? WhiteBrush : pressed ? Accent : FaintEdge, selected ? 2 : 1.2), r, 8, 8);
+                if (selected) c.DrawRectangle(null, PenFor(GlowBrush, 5), r.Inflate(1.5), 9, 9);
+                c.DrawRectangle(ChipFill, PenFor(selected ? Accent : pressed ? Accent : FaintEdge, selected ? 1.8 : 1.2), r, 8, 8);
+                if (pressed) c.DrawRectangle(GlowBrush, null, r, 8, 8);
                 if (flash > 0) c.DrawRectangle(new SolidColorBrush(Color.FromArgb((byte)(80 * flash), 0x4C, 0xD7, 0x87)), null, r, 8, 8);
-                c.DrawRectangle(accent, null, new Rect(r.X + 1, r.Y + 6, 3.5, r.Height - 12), 2, 2);
-                bool unset = accent == DimBrush;
+
                 if (big)
                 {
+                    string line2 = s.IsPaddle && !enabled ? "Off" : mapping;
+                    var notes = new List<string>();
+                    if (!(s.IsPaddle && !enabled) && !string.IsNullOrEmpty(native)) notes.Add(native);
+                    if (s.IsPaddle && !available) notes.Add("not detected");
+                    string line3 = notes.Count == 0 ? null : Ellipsize(string.Join("  ·  ", notes), 34);
+                    c.DrawRectangle(accent, null, new Rect(r.X + 1, r.Y + 6, 3.5, r.Height - 12), 2, 2);
                     DrawText(c, Ellipsize(s.Title.ToUpperInvariant(), 26), 11, TextDim, new Point(r.X + 14, r.Y + 7), false, true);
-                    DrawText(c, line2, 15, unset ? TextDim : TextBright, new Point(r.X + 14, r.Y + 24), false, false);
+                    DrawText(c, Ellipsize(line2, 24), 15, unset ? TextDim : TextBright, new Point(r.X + 14, r.Y + 24), false, false);
                     if (line3 != null) DrawText(c, line3, 10.5, TextDim, new Point(r.X + 14, r.Y + 46), false, false);
+                    return;
                 }
-                else
-                {
-                    DrawText(c, s.Title.ToUpperInvariant(), 9, TextDim, new Point(r.X + 12, r.Y + 4), false, true);
-                    DrawText(c, line2, 11, unset ? TextDim : TextBright, new Point(r.X + 12, r.Y + 17), false, false);
-                }
+
+                // one line: the control's name on the left, what it is mapped to in a small badge on the right
+                string badge = s.IsPaddle && !enabled ? "Off" : string.IsNullOrEmpty(mapping) ? "Not set" : mapping;
+                if (s.IsPaddle && !available) badge = "Not detected";
+                double midY = r.Y + r.Height / 2;
+                double badgeMax = r.Width * 0.5;
+                string badgeText = FitText(badge, 11, true, badgeMax - 16);
+                double badgeW = TextWidth(badgeText, 11, true) + 16;
+                var badgeRect = new Rect(r.Right - 8 - badgeW, midY - 10, badgeW, 20);
+                c.DrawRectangle(BadgeFill, PenFor(BadgeEdge, 1), badgeRect, 6, 6);
+                DrawTextLeftMiddle(c, badgeText, 11, unset ? TextDim : accent, badgeRect.X + 8, midY, true);
+
+                string title = ChipTitle(s);
+                double titleMax = badgeRect.X - (r.X + 12) - 6;
+                string titleText = FitText(title, 12, true, titleMax);
+                DrawTextLeftMiddle(c, titleText, 12, TextBright, r.X + 12, midY, true);
+
+                // what the game does on this button, when there is room left for it
+                double used = TextWidth(titleText, 12, true);
+                double room = titleMax - used - 8;
+                if (!string.IsNullOrEmpty(native) && room >= 28)
+                    DrawTextLeftMiddle(c, FitText(native, 10, false, room), 10, TextDim, r.X + 12 + used + 8, midY, false);
             }
+        }
+
+        private readonly Dictionary<(string, double, bool, double), string> fitCache = new();
+
+        /// <summary>The text cut with an ellipsis so it is at most <paramref name="maxWidth"/> wide.</summary>
+        private string FitText(string text, double size, bool bold, double maxWidth)
+        {
+            if (string.IsNullOrEmpty(text) || maxWidth <= 0) return "";
+            if (TextWidth(text, size, bold) <= maxWidth) return text;
+            var key = (text, size, bold, Math.Round(maxWidth));
+            if (fitCache.TryGetValue(key, out string hit)) return hit;
+            string result = "…";
+            for (int n = text.Length - 1; n > 0; n--)
+            {
+                string t = text.Substring(0, n).TrimEnd() + "…";
+                if (TextWidth(t, size, bold) <= maxWidth) { result = t; break; }
+            }
+            if (fitCache.Count > 400) fitCache.Clear();
+            return fitCache[key] = result;
+        }
+
+        private readonly Dictionary<(string, double, bool), double> widthCache = new();
+
+        private double TextWidth(string text, double size, bool bold)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+            var key = (text, size, bold);
+            if (!widthCache.TryGetValue(key, out double w))
+            {
+                w = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, bold ? Bold : Typeface.Default, size, TextBright).Width;
+                if (widthCache.Count > 800) widthCache.Clear();
+                widthCache[key] = w;
+            }
+            return w;
+        }
+
+        private void DrawTextLeftMiddle(DrawingContext c, string text, double size, IBrush brush, double x, double midY, bool bold)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            var key = (text, size, brush, bold);
+            if (!textCache.TryGetValue(key, out FormattedText ft))
+            {
+                ft = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, bold ? Bold : Typeface.Default, size, brush);
+                if (textCache.Count > 600) textCache.Clear();
+                textCache[key] = ft;
+            }
+            c.DrawText(ft, new Point(x, midY - ft.Height / 2));
         }
 
         private static string Ellipsize(string text, int max) =>

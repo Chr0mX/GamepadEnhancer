@@ -146,24 +146,32 @@
           <!-- ───────── Controller ───────── -->
           <ScrollViewer x:Name="pageController" IsVisible="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="16,12,16,16" Spacing="12" MaxWidth="1560" HorizontalAlignment="Stretch">
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBlock x:Name="activeGameLabel" Classes="caption" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Classes="ghost" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes to the selected config and go back to its built-in defaults.">
-                  <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="restore" /><TextBlock Text="Restore defaults" /></StackPanel>
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Border Classes="segbox">
+                  <StackPanel Orientation="Horizontal" Spacing="2">
+                    <RadioButton Classes="seg" GroupName="ctab" Tag="buttons" IsChecked="True" Content="Buttons" IsCheckedChanged="CTab_Changed" />
+                    <RadioButton Classes="seg" GroupName="ctab" Tag="sticks" Content="Sticks" IsCheckedChanged="CTab_Changed" />
+                    <RadioButton Classes="seg" GroupName="ctab" Tag="all" Content="All bindings" IsCheckedChanged="CTab_Changed" />
+                  </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="segbox" HorizontalAlignment="Right" Padding="12,6">
+                  <TextBlock x:Name="activeGameLabel" Classes="caption" TextTrimming="CharacterEllipsis" />
+                </Border>
+                <Button Grid.Column="2" Classes="danger" VerticalAlignment="Center" Click="RestoreGameDefaults_Click" ToolTip.Tip="Discard your changes to the selected config and go back to its built-in defaults.">
+                  <StackPanel Orientation="Horizontal" Spacing="8"><v:Icon Kind="restore" /><TextBlock Text="Reset defaults" /></StackPanel>
                 </Button>
               </Grid>
-
-              <Border BorderBrush="{DynamicResource BorderBrushDefault}" BorderThickness="0,0,0,1" Padding="4,0">
-                <StackPanel Orientation="Horizontal">
-                  <RadioButton Classes="tab" GroupName="ctab" Tag="map" IsChecked="True" Content="MAPPING" IsCheckedChanged="CTab_Changed" />
-                  <RadioButton Classes="tab" GroupName="ctab" Tag="all" Content="ALL BINDINGS" IsCheckedChanged="CTab_Changed" />
-                </StackPanel>
-              </Border>
 
               <StackPanel x:Name="controllerMapPane" Spacing="12">
               <Grid x:Name="controllerGrid" ColumnDefinitions="*,12,310" RowDefinitions="Auto,Auto">
                 <Border x:Name="diagramPanel" Grid.Column="0" Classes="panel" Padding="0" ClipToBounds="True">
-                  <Border x:Name="diagramHost" Height="580" MinHeight="320" />
+                  <Grid RowDefinitions="*,Auto">
+                    <Border x:Name="diagramHost" Height="580" MinHeight="320" />
+                    <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrushDefault}" BorderThickness="0,1,0,0" Padding="16,10">
+                      <TextBlock x:Name="diagramHint" Classes="caption" TextWrapping="Wrap"
+                                 Text="Click a button or stick direction on the controller, or its label, then press the key, mouse button or wheel notch you want for it." />
+                    </Border>
+                  </Grid>
                 </Border>
                 <Border x:Name="inspectorHostController" Grid.Column="2" />
               </Grid>
