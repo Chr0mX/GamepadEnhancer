@@ -69,6 +69,10 @@ namespace GamepadEnhancer.Tests
         }
 
         public int Count(uint code) { lock (gate) return Calls.Count(c => c.Code == code); }
+        /// <summary>The input of the single call with this code (read under the lock: an engine thread may be adding calls).</summary>
+        public byte[] SingleInput(uint code) { lock (gate) return Calls.Single(c => c.Code == code).Input; }
+        public void EnqueueFeedback(byte[] evt) { lock (gate) Feedback.Enqueue(evt); }
+        public int CallTotal { get { lock (gate) return Calls.Count; } }
         public byte[] LastInput() { lock (gate) return Calls.Last(c => c.Code == VhfProtocol.IoctlSubmitInputState).Input; }
 
         public static byte[] InfoResponse(ushort min, ushort max, uint profiles, uint controllers = 16, uint counters = 0)
@@ -738,10 +742,10 @@ namespace GamepadEnhancer.Tests
             using var engine = new ControllerEngine();
             engine.FeedbackReceived += f => { lock (got) got.Add(f); };
             engine.Connect(false, null, new VhfTarget(VhfProfileId.DualSense, () => fake));
-            byte[] create = fake.Calls.Single(c => c.Code == VhfProtocol.IoctlCreateController).Input;
+            byte[] create = fake.SingleInput(VhfProtocol.IoctlCreateController);
             Assert.Equal(6, BinaryPrimitives.ReadUInt16LittleEndian(create.AsSpan(12)));
 
-            fake.Feedback.Enqueue(FakeVhfTransport.XboxRumble(0, 1000, 2000, 0, 0));
+            fake.EnqueueFeedback(FakeVhfTransport.XboxRumble(0, 1000, 2000, 0, 0));
             Assert.True(WaitFor(() => { lock (got) return got.Count > 0; }), "feedback was not read");
             engine.Disconnect();
         }
@@ -1074,7 +1078,7 @@ namespace GamepadEnhancer.Tests
             var transport = new FakeVhfTransport();
             var status = Run(new FakeDevices { Device = Installed() }, transport, owned: true);
             Assert.Equal(VhfDriverState.Ready, status.State);
-            Assert.Empty(transport.Calls);
+            Assert.Equal(0, transport.CallTotal);
         }
 
         [Fact]
@@ -1191,7 +1195,7 @@ namespace GamepadEnhancer.Tests
 
                 FakeVhfTransport used;
                 lock (made) used = made.Single(f => f.Count(VhfProtocol.IoctlCreateController) > 0);
-                byte[] create = used.Calls.Single(c => c.Code == VhfProtocol.IoctlCreateController).Input;
+                byte[] create = used.SingleInput(VhfProtocol.IoctlCreateController);
                 Assert.Equal((ushort)VhfProfileId.DualSense, BinaryPrimitives.ReadUInt16LittleEndian(create.AsSpan(12)));
 
                 window.DisconnectForTests();
